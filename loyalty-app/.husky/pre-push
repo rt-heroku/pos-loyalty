@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run pre-push checks
+echo "🚀 Running pre-push checks..."
+
+# Run pre-commit checks first
+echo "🔍 Running pre-commit checks..."
+npm run pre-commit
+
+# Build the project to ensure it compiles
+echo "🏗️  Building project..."
+npm run build
+
+echo "✅ All pre-push checks passed! Ready to push."

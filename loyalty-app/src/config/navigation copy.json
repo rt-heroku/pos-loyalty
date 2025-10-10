@@ -1,0 +1,163 @@
+{
+  "mainMenu": [
+    {
+      "id": "dashboard",
+      "label": "Dashboard",
+      "icon": "Home",
+      "href": "/dashboard",
+      "description": "Overview of your loyalty status and recent activity"
+    },
+    {
+      "id": "loyalty",
+      "label": "Loyalty Program",
+      "icon": "Crown",
+      "href": "/loyalty",
+      "description": "Manage your points, rewards, and tier status"
+    },
+    {
+      "id": "transactions",
+      "label": "Transactions",
+      "icon": "Receipt",
+      "description": "View your order history and track current orders",
+      "submenu": [
+        {
+          "id": "history",
+          "label": "Transaction History",
+          "icon": "Receipt",
+          "href": "/transactions",
+          "description": "Complete transaction history with search and filters"
+        }
+        /*,
+        {
+          "id": "tracking",
+          "label": "Order Tracking",
+          "icon": "Truck",
+          "href": "/tracking",
+          "description": "Track current orders and shipping status"
+        }
+          */
+      ]
+    },
+    {
+      "id": "chat",
+      "label": "AI Assistant",
+      "icon": "MessageCircle",
+      "href": "/chat",
+      "description": "Chat with our AI-powered support agent"
+    },
+    {
+      "id": "products",
+      "label": "Products",
+      "icon": "ShoppingBag",
+      "description": "Browse products and manage wishlists",
+      "submenu": [
+        {
+          "id": "catalog",
+          "label": "Product Catalog",
+          "icon": "ShoppingBag",
+          "href": "/products",
+          "description": "Browse our complete product catalog"
+        },
+        {
+          "id": "wishlist",
+          "label": "My Wishlist",
+          "icon": "Heart",
+          "href": "/wishlist",
+          "description": "View and manage your saved products"
+        },
+        {
+          "id": "deals",
+          "label": "Special Deals",
+          "icon": "Tag",
+          "href": "/deals",
+          "description": "Exclusive offers for loyalty members"
+        }
+      ]
+    },
+    {
+      "id": "stores",
+      "label": "Stores & Services",
+      "icon": "MapPin",
+      "description": "Find stores and book services",
+      "submenu": [
+        {
+          "id": "locator",
+          "label": "Store Locator",
+          "icon": "MapPin",
+          "href": "/stores",
+          "description": "Find stores near you with interactive map"
+        }
+        /*,
+        {
+          "id": "appointments",
+          "label": "My Appointments",
+          "icon": "Calendar",
+          "href": "/appointments",
+          "description": "View and manage your service appointments"
+        },
+        {
+          "id": "work-orders",
+          "label": "Work Orders",
+          "icon": "Wrench",
+          "href": "/work-orders",
+          "description": "Track your service requests and repairs"
+        }
+        */
+      ]
+    },
+    {
+      "id": "profile",
+      "label": "Profile",
+      "icon": "User",
+      "href": "/profile",
+      "description": "Manage your account settings and preferences"
+    },
+    {
+      "id": "support",
+      "label": "Support",
+      "icon": "MessageCircle",
+      "description": "Get help and contact customer service",
+      "submenu": [
+        {
+          "id": "chat",
+          "label": "AI Assistant",
+          "icon": "MessageCircle",
+          "href": "/chat",
+          "description": "Chat with our AI-powered support agent"
+        }
+        /*,
+        {
+          "id": "tickets",
+          "label": "Support Tickets",
+          "icon": "Ticket",
+          "href": "/support/tickets",
+          "description": "View and manage your support requests"
+        },
+        {
+          "id": "faq",
+          "label": "FAQ",
+          "icon": "HelpCircle",
+          "href": "/support/faq",
+          "description": "Frequently asked questions and help articles"
+        }
+        */
+      ]
+    }
+  ],
+  "bottomMenu": [
+    {
+      "id": "settings",
+      "label": "Settings",
+      "icon": "Settings",
+      "href": "/settings",
+      "description": "Application and account settings"
+    },
+    {
+      "id": "help",
+      "label": "Help & Support",
+      "icon": "HelpCircle",
+      "href": "/help",
+      "description": "Get help and contact support"
+    }
+  ]
+}

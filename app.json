@@ -1,0 +1,12 @@
+{
+  "name": "Unified POS & Loyalty App",
+  "description": "Unified Point of Sale system with customer loyalty features. Express.js serves POS at /pos, Next.js serves loyalty at /loyalty. Built with React, Express.js, Next.js, and PostgreSQL.",
+  "repository": "https://github.com/rt-heroku/unified-pos-loyalty",
+  "keywords": ["mule", "pos", "loyalty", "nextjs", "express", "unified"],
+  "addons": [
+    "heroku-postgresql"
+  ],
+  "scripts": {
+    "postdeploy": "psql $DATABASE_URL -f db/database.sql && cd loyalty-app && psql $DATABASE_URL -f db/loyalty-database-changes.sql"
+  }
+}

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified POS & Loyalty System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 3rem;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+            font-weight: bold;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 3rem;
+            line-height: 1.6;
+        }
+
+        .apps-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .app-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .app-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border-color: #667eea;
+        }
+
+        .app-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 1rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            color: white;
+        }
+
+        .pos-icon {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        }
+
+        .loyalty-icon {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+        }
+
+        .app-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .app-description {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .powered-by {
+            border-top: 1px solid #e9ecef;
+            padding-top: 2rem;
+            margin-top: 2rem;
+        }
+
+        .powered-by-text {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .logo-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: #666;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .logo-item:hover {
+            color: #667eea;
+        }
+
+        .logo-img {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem;
+            }
+
+            .apps-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .logos {
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">M</div>
+        <h1>Unified POS & Loyalty System</h1>
+        <p class="subtitle">
+            Complete business solution with Point of Sale and Customer Loyalty management
+        </p>
+
+        <div class="apps-grid">
+            <a href="/pos" class="app-card">
+                <div class="app-icon pos-icon">🛒</div>
+                <div class="app-title">Point of Sale</div>
+                <div class="app-description">
+                    Manage sales, inventory, and transactions with our powerful POS system
+                </div>
+            </a>
+
+            <a href="/loyalty" class="app-card">
+                <div class="app-icon loyalty-icon">⭐</div>
+                <div class="app-title">Loyalty Program</div>
+                <div class="app-description">
+                    Track customer points, rewards, and engagement with our loyalty platform
+                </div>
+            </a>
+        </div>
+
+        <div class="powered-by">
+            <div class="powered-by-text">Powered by</div>
+            <div class="logos">
+                <a href="https://www.mulesoft.com" class="logo-item" target="_blank">
+                    <div class="logo-img" style="background: #00A2DF; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.7rem;">M</div>
+                    <span>MuleSoft</span>
+                </a>
+                <a href="https://www.heroku.com" class="logo-item" target="_blank">
+                    <div class="logo-img" style="background: #430098; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.7rem;">H</div>
+                    <span>Heroku</span>
+                </a>
+                <a href="https://www.salesforce.com" class="logo-item" target="_blank">
+                    <div class="logo-img" style="background: #00A1E0; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.7rem;">S</div>
+                    <span>Salesforce</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

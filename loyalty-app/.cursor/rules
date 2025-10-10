@@ -1,0 +1,328 @@
+# Customer Loyalty App - Cursor Rules
+
+## Project Overview
+This is a Next.js 14 customer loyalty application with PWA capabilities, built with TypeScript, Tailwind CSS, and PostgreSQL. The app provides mobile-first responsive design with features like loyalty points, product catalog, chat system, and store management.
+
+## Technology Stack
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS with custom design system
+- **Database**: PostgreSQL with pg-pool
+- **Authentication**: JWT with bcryptjs
+- **Forms**: React Hook Form with Zod validation
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
+- **PWA**: next-pwa with service worker
+- **Deployment**: Heroku
+
+## Architecture Patterns
+
+### File Structure
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── api/               # API routes
+│   ├── (auth)/            # Route groups
+│   └── globals.css        # Global styles
+├── components/            # Reusable components
+│   ├── layout/           # Layout components
+│   ├── forms/            # Form components
+│   ├── chat/             # Chat system components
+│   └── [feature]/        # Feature-specific components
+├── contexts/             # React contexts
+├── lib/                  # Utility libraries
+├── types/                # TypeScript type definitions
+└── config/               # Configuration files
+```
+
+### Component Patterns
+- Use functional components with TypeScript
+- Implement mobile-first responsive design
+- Use Tailwind CSS for styling with custom design tokens
+- Follow component composition patterns
+- Use React Hook Form for form handling
+- Implement proper error boundaries and loading states
+
+### API Route Patterns
+- Use Next.js App Router API routes (`route.ts`)
+- Implement proper authentication with JWT
+- Use Zod for request validation
+- Follow RESTful conventions
+- Implement proper error handling and logging
+- Use database connection pooling with pg-pool
+
+## Code Standards
+
+### TypeScript
+- Use strict TypeScript configuration
+- Define proper interfaces for all data structures
+- Use type guards and proper error handling
+- Avoid `any` types, use proper typing
+- Export types from dedicated type files
+
+### React Components
+- Use functional components with hooks
+- Implement proper prop typing with interfaces
+- Use React.memo for performance optimization when needed
+- Follow the single responsibility principle
+- Use custom hooks for complex logic
+
+### Styling
+- Use Tailwind CSS utility classes
+- Follow the established design system colors and spacing
+- Implement responsive design with mobile-first approach
+- Use custom CSS classes sparingly, prefer Tailwind utilities
+- Follow the established animation patterns
+
+### Database
+- Use parameterized queries to prevent SQL injection
+- Implement proper connection pooling
+- Use transactions for multi-step operations
+- Follow the established schema patterns
+- Implement proper error handling and retry logic
+
+## Design System
+
+### Colors
+- Primary: Blue scale (50-950)
+- Secondary: Gray scale (50-950)
+- Success: Green scale (50-950)
+- Warning: Yellow scale (50-950)
+- Error: Red scale (50-950)
+- Loyalty: Bronze, Silver, Gold, Platinum
+
+### Typography
+- Font Family: Inter (primary), JetBrains Mono (monospace)
+- Responsive font sizes with proper line heights
+- Consistent heading hierarchy
+
+### Spacing & Layout
+- Use Tailwind spacing scale
+- Implement consistent padding and margins
+- Use CSS Grid and Flexbox for layouts
+- Follow mobile-first responsive breakpoints
+
+### Components
+- Use consistent button styles and sizes
+- Implement proper form input styling
+- Follow established card and modal patterns
+- Use consistent icon sizing and spacing
+
+## PWA Features
+- Implement service worker for offline functionality
+- Use proper manifest configuration
+- Implement push notifications
+- Add app installation prompts
+- Use proper caching strategies
+- Implement background sync
+
+## Authentication & Security
+- Use JWT tokens for authentication
+- Implement proper password hashing with bcryptjs
+- Use secure session management
+- Implement rate limiting for API routes
+- Follow OWASP security guidelines
+- Use HTTPS in production
+
+## Database Schema
+- Use PostgreSQL with proper indexing
+- Implement foreign key constraints
+- Use proper data types (DECIMAL for money, TIMESTAMP for dates)
+- Follow naming conventions (snake_case for columns)
+- Implement proper audit trails
+- Use JSONB for flexible data storage
+
+## Performance
+- Implement code splitting and lazy loading
+- Use Next.js Image component for optimized images
+- Implement proper caching strategies
+- Use React.memo and useMemo for expensive operations
+- Optimize bundle size with webpack configuration
+- Implement proper loading states
+
+## Error Handling
+- Use proper try-catch blocks in API routes
+- Implement global error boundaries
+- Use proper HTTP status codes
+- Log errors appropriately
+- Provide user-friendly error messages
+- Implement retry logic for network requests
+
+## Testing
+- Write unit tests for utility functions
+- Test API routes with proper mocking
+- Test React components with user interactions
+- Implement integration tests for critical flows
+- Use proper test data and cleanup
+
+## Deployment
+- Use Heroku for deployment
+- Implement proper environment variable management
+- Use database migrations for schema changes
+- Implement proper logging and monitoring
+- Use proper build optimization
+- Implement proper health checks
+
+## Code Quality
+- Use ESLint and Prettier for code formatting
+- Follow consistent naming conventions
+- Write self-documenting code
+- Use proper comments for complex logic
+- Implement proper TypeScript strict mode
+- Follow SOLID principles
+
+## Mobile-First Design
+- Design for mobile devices first
+- Use touch-friendly interface elements
+- Implement proper gesture support
+- Use responsive images and layouts
+- Implement proper viewport configuration
+- Test on various device sizes
+
+## Accessibility
+- Use proper semantic HTML
+- Implement proper ARIA labels
+- Ensure proper color contrast
+- Support keyboard navigation
+- Implement screen reader support
+- Test with accessibility tools
+
+## Chat System
+- Implement real-time messaging with proper state management
+- Use proper message threading and sessions
+- Implement file upload functionality
+- Use proper typing indicators
+- Implement proper error handling for network issues
+- Use proper message status tracking
+
+## Loyalty System
+- Implement proper points calculation
+- Use proper tier management
+- Implement reward redemption logic
+- Track customer activity and engagement
+- Implement proper analytics and reporting
+- Use proper data validation for transactions
+
+## Store Management
+- Implement proper location-based features
+- Use proper service booking functionality
+- Implement work order management
+- Use proper appointment scheduling
+- Implement proper inventory tracking
+- Use proper customer service features
+
+## Best Practices
+- Follow the established patterns in the codebase
+- Use proper error handling and logging
+- Implement proper loading states
+- Use proper form validation
+- Implement proper data fetching patterns
+- Use proper state management
+- Follow the established component patterns
+- Use proper TypeScript typing
+- Implement proper security measures
+- Use proper performance optimizations
+
+## Common Patterns
+
+### API Route Structure
+```typescript
+export async function POST(request: NextRequest) {
+  try {
+    // Validate input with Zod
+    const validation = schema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+    }
+
+    // Authenticate user
+    const user = await verifyToken(token);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Business logic
+    const result = await query('SELECT * FROM table WHERE id = $1', [id]);
+
+    return NextResponse.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+```
+
+### Component Structure
+```typescript
+interface ComponentProps {
+  // Define props with proper typing
+}
+
+export default function Component({ prop1, prop2 }: ComponentProps) {
+  // Use proper hooks
+  const [state, setState] = useState<Type>(initialValue);
+  
+  // Use proper event handlers
+  const handleClick = useCallback(() => {
+    // Handle click
+  }, [dependencies]);
+
+  return (
+    <div className="proper-tailwind-classes">
+      {/* Component content */}
+    </div>
+  );
+}
+```
+
+### Form Handling
+```typescript
+const schema = z.object({
+  field: z.string().min(1, 'Field is required'),
+});
+
+const { register, handleSubmit, formState: { errors } } = useForm({
+  resolver: zodResolver(schema),
+});
+
+const onSubmit = async (data: FormData) => {
+  // Handle form submission
+};
+```
+## Development environment
+- Use environment variables set in .env
+- When using heroku, check if the cli token is expired, if so ask me to login. Use the command heroku login and I can go to the browser and login.
+
+## Development Workflow
+1. Create feature branches from main
+2. Implement changes following established patterns
+3. Write proper tests for new functionality
+4. Use proper TypeScript typing
+5. Follow the established styling patterns
+6. Test on mobile devices
+7. Submit pull requests with proper descriptions
+8. Deploy to staging for testing
+9. Deploy to production after approval
+
+## Environment Setup
+- Node.js >= 18.0.0
+- npm >= 8.0.0
+- PostgreSQL database
+- Proper environment variables
+- Heroku CLI for deployment
+
+## Monitoring & Logging
+- Use proper console logging for debugging
+- Implement proper error tracking
+- Monitor performance metrics
+- Track user interactions
+- Monitor database performance
+- Implement proper alerting
+
+This application follows modern web development best practices with a focus on performance, security, and user experience. Always prioritize mobile-first design and ensure proper accessibility support.
+
+
+Keep going until the job is completely solved before ending your turn
+Use your tools, don't guess. If you're unsure about code or files, open them -- do not hallucinate
+Plan then reflect, Plan throughly before every tool call and reflect on the outcome after.
+ 

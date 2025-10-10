@@ -1,0 +1,489 @@
+#%RAML 1.0
+title: Customer Loyalty Chat API
+version: v1
+baseUri: https://your-mulesoft-api.com/chat/{version}
+description: |
+  This API provides chat functionality for the Customer Loyalty App,
+  integrating with Salesforce Agentforce for AI-powered customer support.
+
+securitySchemes:
+  oauth_2_0:
+    description: |
+      OAuth 2.0 authentication for secure access to chat services
+    type: OAuth 2.0
+    describedBy:
+      headers:
+        Authorization:
+          description: |
+            Bearer token for OAuth 2.0 authentication
+          type: string
+            example: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      responses:
+        401:
+          description: Unauthorized - Invalid or expired token
+        403:
+          description: Forbidden - Insufficient permissions
+
+securedBy: [oauth_2_0]
+
+types:
+  ChatRequest:
+    type: object
+    properties:
+      message:
+        type: string
+        description: The user's message content
+        example: "I need help with my loyalty points"
+        minLength: 1
+        maxLength: 4000
+      userId:
+        type: string
+        description: Unique identifier for the user
+        example: "user-12345"
+        pattern: "^[a-zA-Z0-9_-]+$"
+      sessionId:
+        type: string
+        description: Unique identifier for the chat session
+        example: "session-67890"
+        pattern: "^[a-zA-Z0-9_-]+$"
+      conversationId?:
+        type: string
+        description: Salesforce conversation ID for continuity
+        example: "conv-abc123"
+      attachments?:
+        type: array
+        items:
+          type: object
+          properties:
+            fileName:
+              type: string
+              description: Name of the attached file
+              example: "receipt.pdf"
+            mimeType:
+              type: string
+              description: MIME type of the file
+              example: "application/pdf"
+            fileData:
+              type: string
+              description: Base64 encoded file content
+              example: "JVBERi0xLjQKJcfsj6IKNSAwIG9iago8PAovVHlwZSAvUGFnZQovUGFyZW50IDMgMCBSCi9NZWRpYUJveCBbMCAwIDU5NSA4NDJdCi9SZXNvdXJjZXMgPDwKL0ZvbnQgPDwKL0YxIDIgMCBSCj4+Cj4+Ci9Db250ZW50cyA0IDAgUgo+PgplbmRvYmoK..."
+        maxItems: 5
+      metadata?:
+        type: object
+        properties:
+          userAgent?:
+            type: string
+            description: User's browser/device information
+            example: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+          timestamp?:
+            type: string
+            format: date-time
+            description: Client-side timestamp
+            example: "2024-01-15T10:30:00Z"
+          source?:
+            type: string
+            description: Source of the message (web, mobile, etc.)
+            example: "web"
+            enum: [web, mobile, api]
+          priority?:
+            type: string
+            description: Message priority level
+            example: "normal"
+            enum: [low, normal, high, urgent]
+        additionalProperties: true
+    required: [message, userId, sessionId]
+
+  ChatResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        description: Whether the request was successful
+        example: true
+      message?:
+        type: string
+        description: The AI agent's response message
+        example: "I'd be happy to help you with your loyalty points. Let me check your account..."
+      conversationId?:
+        type: string
+        description: Salesforce conversation ID for tracking
+        example: "conv-abc123"
+      agentId?:
+        type: string
+        description: ID of the AI agent that responded
+        example: "agent-ai-001"
+      messageId?:
+        type: string
+        description: Unique identifier for this response message
+        example: "msg-xyz789"
+      attachments?:
+        type: array
+        items:
+          type: object
+          properties:
+            fileName:
+              type: string
+              description: Name of the attached file
+              example: "loyalty_summary.pdf"
+            mimeType:
+              type: string
+              description: MIME type of the file
+              example: "application/pdf"
+            fileData:
+              type: string
+              description: Base64 encoded file content
+              example: "JVBERi0xLjQKJcfsj6IKNSAwIG9iago8PAovVHlwZSAvUGFnZQovUGFyZW50IDMgMCBSCi9NZWRpYUJveCBbMCAwIDU5NSA4NDJdCi9SZXNvdXJjZXMgPDwKL0ZvbnQgPDwKL0YxIDIgMCBSCj4+Cj4+Ci9Db250ZW50cyA0IDAgUgo+PgplbmRvYmoK..."
+      metadata?:
+        type: object
+        properties:
+          responseTime?:
+            type: number
+            description: Response time in milliseconds
+            example: 1250
+          confidence?:
+            type: number
+            description: AI confidence score (0-1)
+            example: 0.95
+          suggestedActions?:
+            type: array
+            items:
+              type: object
+              properties:
+                action:
+                  type: string
+                  description: Action type
+                  example: "redirect"
+                label:
+                  type: string
+                  description: Human-readable action label
+                  example: "View My Points"
+                url?:
+                  type: string
+                  description: URL for the action
+                  example: "/loyalty"
+                data?:
+                  type: object
+                  description: Additional data for the action
+        additionalProperties: true
+      error?:
+        type: object
+        properties:
+          code:
+            type: string
+            description: Error code
+            example: "RATE_LIMIT_EXCEEDED"
+          message:
+            type: string
+            description: Human-readable error message
+            example: "Too many requests. Please try again later."
+          details?:
+            type: object
+            description: Additional error details
+            properties:
+              retryAfter?:
+                type: number
+                description: Seconds to wait before retrying
+                example: 60
+              requestId?:
+                type: string
+                description: Unique request identifier for support
+                example: "req-12345"
+    required: [success]
+
+  ErrorResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: false
+      error:
+        type: object
+        properties:
+          code:
+            type: string
+            example: "VALIDATION_ERROR"
+          message:
+            type: string
+            example: "Invalid request parameters"
+          details?:
+            type: object
+            properties:
+              field?:
+                type: string
+                example: "message"
+              reason?:
+                type: string
+                example: "Message cannot be empty"
+    required: [success, error]
+
+  HealthCheck:
+    type: object
+    properties:
+      status:
+        type: string
+        example: "healthy"
+        enum: [healthy, degraded, unhealthy]
+      timestamp:
+        type: string
+        format: date-time
+        example: "2024-01-15T10:30:00Z"
+      version:
+        type: string
+        example: "1.0.0"
+      services:
+        type: object
+        properties:
+          salesforce:
+            type: string
+            example: "connected"
+          ai:
+            type: string
+            example: "available"
+          database:
+            type: string
+            example: "connected"
+
+/messages:
+  post:
+    description: Send a message to the AI agent and receive a response
+    body:
+      application/json:
+        type: ChatRequest
+        examples:
+          simple_text:
+            value: |
+              {
+                "message": "I need help with my loyalty points",
+                "userId": "user-12345",
+                "sessionId": "session-67890"
+              }
+          with_attachment:
+            value: |
+              {
+                "message": "I have a receipt to upload for points",
+                "userId": "user-12345",
+                "sessionId": "session-67890",
+                "attachments": [
+                  {
+                    "fileName": "receipt.pdf",
+                    "mimeType": "application/pdf",
+                    "fileData": "JVBERi0xLjQKJcfsj6IKNSAwIG9iago8PAovVHlwZSAvUGFnZQovUGFyZW50IDMgMCBSCi9NZWRpYUJveCBbMCAwIDU5NSA4NDJdCi9SZXNvdXJjZXMgPDwKL0ZvbnQgPDwKL0YxIDIgMCBSCj4+Cj4+Ci9Db250ZW50cyA0IDAgUgo+PgplbmRvYmoK..."
+                  }
+                ]
+              }
+          with_metadata:
+            value: |
+              {
+                "message": "I'm having trouble with my account",
+                "userId": "user-12345",
+                "sessionId": "session-67890",
+                "metadata": {
+                  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                  "timestamp": "2024-01-15T10:30:00Z",
+                  "source": "web",
+                  "priority": "high"
+                }
+              }
+    responses:
+      200:
+        description: Successful response from AI agent
+        body:
+          application/json:
+            type: ChatResponse
+            examples:
+              successful_response:
+                value: |
+                  {
+                    "success": true,
+                    "message": "I'd be happy to help you with your loyalty points. Let me check your account and I can see you have 1,250 points available. Would you like me to show you how to redeem them?",
+                    "conversationId": "conv-abc123",
+                    "agentId": "agent-ai-001",
+                    "messageId": "msg-xyz789",
+                    "metadata": {
+                      "responseTime": 1250,
+                      "confidence": 0.95,
+                      "suggestedActions": [
+                        {
+                          "action": "redirect",
+                          "label": "View My Points",
+                          "url": "/loyalty"
+                        },
+                        {
+                          "action": "redirect",
+                          "label": "Redeem Points",
+                          "url": "/loyalty/redeem"
+                        }
+                      ]
+                    }
+                  }
+              response_with_attachment:
+                value: |
+                  {
+                    "success": true,
+                    "message": "I've processed your receipt and added 50 points to your account! Here's a summary of your transaction.",
+                    "conversationId": "conv-abc123",
+                    "agentId": "agent-ai-001",
+                    "messageId": "msg-xyz790",
+                    "attachments": [
+                      {
+                        "fileName": "points_summary.pdf",
+                        "mimeType": "application/pdf",
+                        "fileData": "JVBERi0xLjQKJcfsj6IKNSAwIG9iago8PAovVHlwZSAvUGFnZQovUGFyZW50IDMgMCBSCi9NZWRpYUJveCBbMCAwIDU5NSA4NDJdCi9SZXNvdXJjZXMgPDwKL0ZvbnQgPDwKL0YxIDIgMCBSCj4+Cj4+Ci9Db250ZW50cyA0IDAgUgo+PgplbmRvYmoK..."
+                      }
+                    ],
+                    "metadata": {
+                      "responseTime": 2100,
+                      "confidence": 0.98
+                    }
+                  }
+      400:
+        description: Bad request - Invalid input
+        body:
+          application/json:
+            type: ErrorResponse
+            example: |
+              {
+                "success": false,
+                "error": {
+                  "code": "VALIDATION_ERROR",
+                  "message": "Invalid request parameters",
+                  "details": {
+                    "field": "message",
+                    "reason": "Message cannot be empty"
+                  }
+                }
+              }
+      401:
+        description: Unauthorized - Invalid or missing authentication
+        body:
+          application/json:
+            type: ErrorResponse
+            example: |
+              {
+                "success": false,
+                "error": {
+                  "code": "UNAUTHORIZED",
+                  "message": "Invalid or expired authentication token"
+                }
+              }
+      429:
+        description: Too many requests - Rate limit exceeded
+        body:
+          application/json:
+            type: ErrorResponse
+            example: |
+              {
+                "success": false,
+                "error": {
+                  "code": "RATE_LIMIT_EXCEEDED",
+                  "message": "Too many requests. Please try again later.",
+                  "details": {
+                    "retryAfter": 60,
+                    "requestId": "req-12345"
+                  }
+                }
+              }
+      500:
+        description: Internal server error
+        body:
+          application/json:
+            type: ErrorResponse
+            example: |
+              {
+                "success": false,
+                "error": {
+                  "code": "INTERNAL_ERROR",
+                  "message": "An unexpected error occurred. Please try again later.",
+                  "details": {
+                    "requestId": "req-12345"
+                  }
+                }
+              }
+
+/health:
+  get:
+    description: Check the health status of the chat service
+    securedBy: []
+    responses:
+      200:
+        description: Service health status
+        body:
+          application/json:
+            type: HealthCheck
+            example: |
+              {
+                "status": "healthy",
+                "timestamp": "2024-01-15T10:30:00Z",
+                "version": "1.0.0",
+                "services": {
+                  "salesforce": "connected",
+                  "ai": "available",
+                  "database": "connected"
+                }
+              }
+      503:
+        description: Service unavailable
+        body:
+          application/json:
+            type: HealthCheck
+            example: |
+              {
+                "status": "unhealthy",
+                "timestamp": "2024-01-15T10:30:00Z",
+                "version": "1.0.0",
+                "services": {
+                  "salesforce": "disconnected",
+                  "ai": "unavailable",
+                  "database": "connected"
+                }
+              }
+
+/conversations/{conversationId}:
+  uriParameters:
+    conversationId:
+      type: string
+      description: Salesforce conversation ID
+      example: "conv-abc123"
+  get:
+    description: Get conversation history from Salesforce
+    responses:
+      200:
+        description: Conversation history
+        body:
+          application/json:
+            type: object
+            properties:
+              conversationId:
+                type: string
+                example: "conv-abc123"
+              messages:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: "msg-001"
+                    content:
+                      type: string
+                      example: "Hello, how can I help you?"
+                    timestamp:
+                      type: string
+                      format: date-time
+                      example: "2024-01-15T10:30:00Z"
+                    isFromAgent:
+                      type: boolean
+                      example: true
+      404:
+        description: Conversation not found
+        body:
+          application/json:
+            type: ErrorResponse
+            example: |
+              {
+                "success": false,
+                "error": {
+                  "code": "CONVERSATION_NOT_FOUND",
+                  "message": "Conversation with ID 'conv-abc123' not found"
+                }
+              }

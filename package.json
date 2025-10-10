@@ -1,0 +1,59 @@
+{
+  "name": "unified-pos-loyalty",
+  "version": "1.0.0",
+  "description": "Unified POS and Loyalty system with Express reverse proxy",
+  "main": "server.js",
+  "author": "Rodrigo Torres",
+  "license": "MIT",
+  "keywords": [
+    "pos",
+    "point-of-sale",
+    "loyalty",
+    "mulesoft",
+    "postgresql",
+    "react",
+    "express",
+    "nextjs",
+    "unified"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rodrigo-torres/unified-pos-loyalty"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "start:production": "concurrently \"node server.js\" \"cd loyalty-app && npm start\"",
+    "dev": "./start-dev.sh",
+    "build": "npm install && cd loyalty-app && npm run build",
+    "build:loyalty": "cd loyalty-app && npm run build",
+    "heroku-postbuild": "npm run build && node update-cache-version.js && cd loyalty-app && psql $DATABASE_URL -f db/loyalty-database-changes.sql",
+    "update-cache": "node update-cache-version.js",
+    "clear-cache": "npm run update-cache && echo 'Cache version updated! Please refresh your browser.'",
+    "lint": "eslint public/**/*.js --ext .js",
+    "lint:fix": "eslint public/**/*.js --ext .js --fix",
+    "check-syntax": "node check-syntax.js",
+    "precommit": "npm run check-syntax",
+    "loyalty:dev": "cd loyalty-app && npm run dev",
+    "loyalty:build": "cd loyalty-app && npm run build",
+    "loyalty:start": "cd loyalty-app && npm start"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "http-proxy-middleware": "^2.0.6",
+    "multer": "^2.0.2",
+    "path": "^0.12.7",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "eslint": "^9.35.0",
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
+  }
+}
