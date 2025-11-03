@@ -66,8 +66,11 @@ unified-pos-loyalty/
 - npm 9.x
 - PostgreSQL database
 
-### Local Development
 
+## Deploy to Heroku
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://www.heroku.com/deploy?template=https://github.com/rt-heroku/pos-demo)
+
+## 🛠️ Local Setup
 1. **Clone and setup:**
    ```bash
    cd unified-pos-loyalty
