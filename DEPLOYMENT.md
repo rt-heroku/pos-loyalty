@@ -103,6 +103,26 @@ Required environment variables:
 - `/loyalty` - Loyalty application (proxied to Next.js)
 - `/loyalty/api/*` - Loyalty API endpoints (handled by Next.js)
 
+## Important: Dependencies Configuration
+
+### Build-Time Dependencies in `dependencies` (Not `devDependencies`)
+
+For Heroku deployment, **build-critical packages must be in `dependencies`**, not `devDependencies`:
+
+**Why?** Heroku may skip `devDependencies` in production builds, causing build failures.
+
+**Build-critical packages** (in `loyalty-app/package.json`):
+- `tailwindcss` - Required for CSS compilation
+- `typescript` - Required for TypeScript compilation
+- `postcss` & `autoprefixer` - Required for CSS processing
+- `@types/*` packages - Required for TypeScript builds
+- `@tailwindcss/*` plugins - Required for Tailwind features
+
+**Development-only packages** (can stay in `devDependencies`):
+- `eslint` - Code linting (optional for build)
+- `prettier` - Code formatting (optional for build)
+- `@typescript-eslint/*` - Linting plugins (optional for build)
+
 ## Troubleshooting
 
 ### "next: not found" Error
@@ -113,11 +133,17 @@ Required environment variables:
 cd loyalty-app && npm install
 ```
 
+### "Cannot find module 'tailwindcss'" Error
+**Problem**: Build-time dependencies are in `devDependencies` and Heroku skipped them
+
+**Solution**: Move build-critical dependencies to `dependencies` (already done in this project)
+
 ### Build Fails on Heroku
 **Check**:
 1. `postinstall` script is present in root `package.json`
 2. `heroku-postbuild` script runs `npm run build`
 3. Both `node_modules` directories exist (root and loyalty-app)
+4. Build-critical packages are in `dependencies`, not `devDependencies`
 
 ### Proxy Not Working
 **Check**:
