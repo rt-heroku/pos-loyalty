@@ -635,7 +635,7 @@ window.Views.LoyaltyView= ({
             React.createElement('div', { key: 'customer-list', className: 'bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700' }, [
                 React.createElement('div', { key: 'list-content', className: 'p-6' }, [
                     loading ? (
-                        React.createElement('div', { className: 'text-center py-12' }, [
+                        React.createElement('div', { key: 'loading-state', className: 'text-center py-12' }, [
                             React.createElement('div', { 
                                 key: 'spinner',
                                 className: 'animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4' 
@@ -646,7 +646,7 @@ window.Views.LoyaltyView= ({
                             }, 'Loading customers...')
                         ])
                     ) : sortedCustomers.length === 0 ? (
-                        React.createElement('div', { className: 'text-center py-12' }, [
+                        React.createElement('div', { key: 'empty-state', className: 'text-center py-12' }, [
                             React.createElement(Users, { 
                                 key: 'icon',
                                 className: 'mx-auto mb-4 text-gray-400', 

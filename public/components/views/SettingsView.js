@@ -1740,7 +1740,8 @@ sfdc.account=`;
                                     value: newLocationForm.address_line1,
                                     onChange: (e) => handleInputChange('address_line1', e.target.value),
                                     className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
-                                    placeholder: 'Street Address *'
+                                    placeholder: 'Street Address *',
+                                    autoComplete: 'off'
                                 }),
                                 React.createElement('input', {
                                     key: 'address-line2-input',
@@ -1748,7 +1749,8 @@ sfdc.account=`;
                                     value: newLocationForm.address_line2,
                                     onChange: (e) => handleInputChange('address_line2', e.target.value),
                                     className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
-                                    placeholder: 'Apartment, suite, etc. (optional)'
+                                    placeholder: 'Apartment, suite, etc. (optional)',
+                                    autoComplete: 'off'
                                 }),
                                 React.createElement('div', { key: 'address-city-state-zip-container', className: 'grid grid-cols-2 md:grid-cols-3 gap-4' }, [
                                     React.createElement('input', {
@@ -1757,7 +1759,8 @@ sfdc.account=`;
                                         value: newLocationForm.city,
                                         onChange: (e) => handleInputChange('city', e.target.value),
                                         className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
-                                        placeholder: 'City *'
+                                        placeholder: 'City *',
+                                        autoComplete: 'off'
                                     }),
                                     React.createElement('input', {
                                         key: 'state-input',
@@ -1766,7 +1769,8 @@ sfdc.account=`;
                                         onChange: (e) => handleInputChange('state', e.target.value),
                                         className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
                                         placeholder: 'State *',
-                                        maxLength: 2
+                                        maxLength: 2,
+                                        autoComplete: 'off'
                                     }),
                                     React.createElement('input', {
                                         key: 'zip-code-input',
@@ -1774,7 +1778,8 @@ sfdc.account=`;
                                         value: newLocationForm.zip_code,
                                         onChange: (e) => handleInputChange('zip_code', e.target.value),
                                         className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
-                                        placeholder: 'ZIP Code *'
+                                        placeholder: 'ZIP Code *',
+                                        autoComplete: 'off'
                                     })
                                 ])
                             ])
