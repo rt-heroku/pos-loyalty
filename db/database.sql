@@ -134,7 +134,7 @@ CREATE TABLE customers (
     city VARCHAR(100),
     state VARCHAR(50),
     zip_code VARCHAR(20),
-    country VARCHAR(100);,
+    country VARCHAR(100),
     marketing_consent BOOLEAN DEFAULT false,
     member_status VARCHAR(50) DEFAULT 'Active' CHECK (member_status IN ('Active', 'Inactive', 'Under Fraud Investigation', 'Merged', 'Fraudulent Member')),
     enrollment_date DATE DEFAULT CURRENT_DATE,
@@ -144,9 +144,9 @@ CREATE TABLE customers (
     tier_calculation_number DECIMAL(10,2) DEFAULT 0.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
-    created_by_user INTEGER
+    created_by_user INTEGER,
+    user_id INTEGER
 );
-ALTER TABLE customers ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id);
 
 -- Transactions table with all columns
 CREATE TABLE transactions (
@@ -410,6 +410,9 @@ CREATE TABLE users (
     created_by INTEGER REFERENCES users(id),
     updated_by INTEGER REFERENCES users(id)
 );
+
+-- Add foreign key to customers table now that users table exists
+ALTER TABLE customers ADD CONSTRAINT fk_customers_user_id FOREIGN KEY (user_id) REFERENCES users(id);
 
 -- User sessions table
 CREATE TABLE user_sessions (
@@ -1052,7 +1055,7 @@ SELECT
     c.tier_calculation_number,
     c.notes,
     
-    EXTRACT(DAY FROM CURRENT_DATE - c.enrollment_date::DATE) as days_since_enrollment,
+    (CURRENT_DATE - c.enrollment_date::DATE) as days_since_enrollment,
     
     CASE 
         WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, c.enrollment_date::DATE)) >= 1 THEN
@@ -1660,7 +1663,7 @@ INSERT INTO roles (name, description, permissions) VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- Insert default admin user (password: P@$$word1)
-INSERT INTO users (username, email, password_hash, first_name, last_name, role_id, is_active, role) 
+INSERT INTO users (username, email, password_hash, first_name, last_name, role_id, is_active) 
 SELECT 
     'admin',
     'admin@pos.com',
@@ -1668,8 +1671,7 @@ SELECT
     'System',
     'Administrator',
     r.id,
-    true,
-    'admin'
+    true
 FROM roles r 
 WHERE r.name = 'admin'
 ON CONFLICT (email) DO NOTHING;

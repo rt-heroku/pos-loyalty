@@ -6,6 +6,16 @@
   "addons": [
     "heroku-postgresql"
   ],
+  "env": {
+    "JWT_SECRET": {
+      "description": "Enter a secret key for the JWT token",
+      "value": "wAK6rM4Qg9dBhsr89X0GANUOSsZQpEIz0OPEQptS/rI="
+    },
+    "NEXT_PUBLIC_APP_URL": {
+      "description": "Enter your app URL once it is deployed",
+      "value": "https://<your-app-name>.herokuapp.com/loyalty"
+    }
+  },
   "scripts": {
     "postdeploy": "psql $DATABASE_URL -f db/database.sql && cd loyalty-app && psql $DATABASE_URL -f db/loyalty-database-changes.sql"
   }

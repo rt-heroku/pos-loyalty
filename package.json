@@ -22,11 +22,12 @@
   },
   "scripts": {
     "start": "node server.js",
-    "start:production": "concurrently \"node server.js\" \"cd loyalty-app && npm start\"",
+    "start:production": "concurrently \"node server.js\" \"cd loyalty-app && node .next/standalone/server.js\"",
     "dev": "./start-dev.sh",
     "postinstall": "cd loyalty-app && npm install",
-    "build": "npm run build:loyalty",
+    "build": "npm run build:loyalty && npm run build:copy-standalone",
     "build:loyalty": "cd loyalty-app && npm run build",
+    "build:copy-standalone": "cd loyalty-app && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/",
     "heroku-postbuild": "npm run build && node update-cache-version.js && cd loyalty-app && psql $DATABASE_URL -f db/loyalty-database-changes.sql",
     "update-cache": "node update-cache-version.js",
     "clear-cache": "npm run update-cache && echo 'Cache version updated! Please refresh your browser.'",
@@ -36,7 +37,7 @@
     "precommit": "npm run check-syntax",
     "loyalty:dev": "cd loyalty-app && npm run dev",
     "loyalty:build": "cd loyalty-app && npm run build",
-    "loyalty:start": "cd loyalty-app && npm start"
+    "loyalty:start": "cd loyalty-app && node .next/standalone/server.js"
   },
   "dependencies": {
     "concurrently": "^8.2.2",

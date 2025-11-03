@@ -2,14 +2,20 @@
 
 ## Problem Summary
 
-The Heroku build was failing with these errors:
-1. ❌ `Cannot find module 'tailwindcss'`
-2. ❌ `Module not found: Can't resolve '@/contexts/AuthContext'`
-3. ❌ TypeScript compilation errors
+The Heroku deployment had multiple issues:
+1. ❌ Build Error: `Cannot find module 'tailwindcss'`
+2. ❌ Build Error: `Module not found: Can't resolve '@/contexts/AuthContext'`
+3. ❌ Build Error: TypeScript compilation errors
+4. ❌ Runtime Error: `concurrently: not found`
+5. ❌ Runtime Error: `"next start" does not work with "output: standalone"`
 
-## Root Cause
+## Root Causes
 
-**Heroku skips `devDependencies` during production builds**, but our build-critical packages (Tailwind CSS, TypeScript, PostCSS) were in `devDependencies`.
+1. **Build Dependencies**: Heroku skips `devDependencies` during production builds, but build-critical packages (Tailwind CSS, TypeScript, PostCSS) were in `devDependencies`.
+
+2. **Runtime Dependencies**: The `concurrently` package needed to start both servers was in `devDependencies`.
+
+3. **Standalone Mode**: Next.js configured with `output: 'standalone'` requires using `node .next/standalone/server.js` instead of `next start`, and requires copying static files.
 
 ## Solution Applied
 
@@ -61,6 +67,35 @@ production=false
 ```
 
 This ensures all dependencies are installed, even in production mode.
+
+### 4. Updated Start Script for Standalone Mode
+
+**File**: `package.json` (root)
+
+Next.js with `output: 'standalone'` requires using the standalone server instead of `next start`:
+
+**Before**:
+```json
+"start:production": "concurrently \"node server.js\" \"cd loyalty-app && npm start\""
+```
+
+**After**:
+```json
+"start:production": "concurrently \"node server.js\" \"cd loyalty-app && node .next/standalone/server.js\""
+```
+
+### 5. Added Post-Build Step to Copy Static Files
+
+**File**: `package.json` (root)
+
+Standalone mode requires copying `public` and `.next/static` folders:
+
+```json
+"build": "npm run build:loyalty && npm run build:copy-standalone",
+"build:copy-standalone": "cd loyalty-app && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/"
+```
+
+This ensures all static assets are available when running the standalone server.
 
 ## Why This Matters
 

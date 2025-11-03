@@ -842,12 +842,12 @@ CREATE INDEX IF NOT EXISTS idx_appointments_service_id ON appointments(service_i
 CREATE INDEX IF NOT EXISTS idx_appointments_date_time ON appointments(date, time);
 CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
 
--- Work orders indexes
-CREATE INDEX IF NOT EXISTS idx_work_orders_user_id ON work_orders(user_id);
-CREATE INDEX IF NOT EXISTS idx_work_orders_store_id ON work_orders(store_id);
+-- Work orders indexes (using actual column names from work_orders table)
+CREATE INDEX IF NOT EXISTS idx_work_orders_customer_id ON work_orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_work_orders_location_id ON work_orders(location_id);
 CREATE INDEX IF NOT EXISTS idx_work_orders_status ON work_orders(status);
 CREATE INDEX IF NOT EXISTS idx_work_orders_priority ON work_orders(priority);
-CREATE INDEX IF NOT EXISTS idx_work_orders_type ON work_orders(type);
+CREATE INDEX IF NOT EXISTS idx_work_orders_work_type ON work_orders(work_type);
 
 -- Store events indexes
 CREATE INDEX IF NOT EXISTS idx_store_events_store_id ON store_events(store_id);
