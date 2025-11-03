@@ -67,9 +67,6 @@ unified-pos-loyalty/
 - PostgreSQL database
 
 
-## Deploy to Heroku
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://www.heroku.com/deploy?template=https://github.com/rt-heroku/pos-demo)
-
 ## 🛠️ Local Setup
 1. **Clone and setup:**
    ```bash
