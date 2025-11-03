@@ -17,6 +17,6 @@
     }
   },
   "scripts": {
-    "postdeploy": "psql $DATABASE_URL -f db/database.sql && cd loyalty-app && psql $DATABASE_URL -f db/loyalty-database-changes.sql"
+    "postdeploy": "psql $DATABASE_URL -f db/database.sql && psql $DATABASE_URL -f loyalty-app/db/loyalty-database-changes.sql"
   }
 }
