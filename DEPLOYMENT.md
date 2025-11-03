@@ -138,6 +138,11 @@ cd loyalty-app && npm install
 
 **Solution**: Move build-critical dependencies to `dependencies` (already done in this project)
 
+### "concurrently: not found" Error
+**Problem**: Runtime dependency `concurrently` is in `devDependencies` and Heroku skipped it
+
+**Solution**: Move `concurrently` to `dependencies` in root `package.json` (already done in this project)
+
 ### Build Fails on Heroku
 **Check**:
 1. `postinstall` script is present in root `package.json`

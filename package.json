@@ -39,6 +39,7 @@
     "loyalty:start": "cd loyalty-app && npm start"
   },
   "dependencies": {
+    "concurrently": "^8.2.2",
     "cors": "^2.8.5",
     "csv-parser": "^3.2.0",
     "dotenv": "^16.3.1",
@@ -49,7 +50,6 @@
     "pg": "^8.11.3"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
     "eslint": "^9.35.0",
     "nodemon": "^3.0.1"
   },

@@ -13,7 +13,7 @@ The Heroku build was failing with these errors:
 
 ## Solution Applied
 
-### 1. Moved Build-Critical Dependencies to `dependencies`
+### 1. Moved Build-Critical Dependencies to `dependencies` (Loyalty App)
 
 **File**: `loyalty-app/package.json`
 
@@ -30,6 +30,15 @@ The Heroku build was failing with these errors:
 - ✅ `eslint` - Code linting
 - ✅ `prettier` - Code formatting
 - ✅ `@typescript-eslint/*` - ESLint TypeScript plugins
+
+### 1b. Moved Runtime-Critical Dependencies to `dependencies` (Root)
+
+**File**: `package.json` (root)
+
+**Moved from `devDependencies` to `dependencies`:**
+- ✅ `concurrently` - Required to start both servers in production
+
+**Why?** The `start:production` script uses `concurrently` to run both Express and Next.js servers simultaneously. Without it in `dependencies`, Heroku can't start the app.
 
 ### 2. Added Heroku Configuration
 
@@ -82,7 +91,17 @@ This ensures all dependencies are installed, even in production mode.
   "scripts": {
     "postinstall": "cd loyalty-app && npm install",
     "build": "npm run build:loyalty",
-    "build:loyalty": "cd loyalty-app && npm run build"
+    "build:loyalty": "cd loyalty-app && npm run build",
+    "start:production": "concurrently \"node server.js\" \"cd loyalty-app && npm start\""
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2",  // ✅ Moved from devDependencies
+    "express": "^4.18.2",
+    // ... other runtime dependencies
+  },
+  "devDependencies": {
+    "eslint": "^9.35.0",
+    "nodemon": "^3.0.1"  // Only dev-time tools remain here
   },
   "heroku-run-build-script": true
 }
@@ -167,10 +186,12 @@ npm run build
 Before deploying to Heroku:
 - [ ] `tailwindcss` is in `loyalty-app/package.json` `dependencies`
 - [ ] `typescript` is in `loyalty-app/package.json` `dependencies`
+- [ ] `concurrently` is in root `package.json` `dependencies`
 - [ ] `postinstall` script exists in root `package.json`
 - [ ] `.npmrc` file exists in `loyalty-app/`
 - [ ] Local build works: `npm run build`
 - [ ] Clean install works: `rm -rf node_modules && npm install`
+- [ ] Start script works: `npm run start:production`
 
 ## Next Steps
 
