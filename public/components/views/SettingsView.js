@@ -953,12 +953,18 @@ window.Views.SettingsView = ({
 
         // Generated History Functions
         const loadGeneratedHistory = async () => {
+            console.log('🔍 loadGeneratedHistory called');
+            console.log('🌐 API BASE_URL:', window.API.BASE_URL);
+            console.log('📍 Calling endpoint: /generated-products/history');
+            console.log('🔗 Full URL will be:', window.API.BASE_URL + '/generated-products/history');
+            
             setLoadingHistory(true);
             try {
-                const response = await window.API.call('/api/generated-products/history');
+                const response = await window.API.call('/generated-products/history');
+                console.log('✅ Response received:', response);
                 setGeneratedHistory(response);
             } catch (error) {
-                console.error('Failed to load generated history:', error);
+                console.error('❌ Failed to load generated history:', error);
                 alert(`Failed to load generated history: ${error.message}`);
             } finally {
                 setLoadingHistory(false);
@@ -1457,7 +1463,12 @@ sfdc.account=`;
 
         const TabButton = ({ tab, label, icon: Icon, active }) => (
             React.createElement('button', {
-                onClick: () => setActiveTab(tab),
+                onClick: () => {
+                    console.log('🖱️ Tab clicked:', label, '(tab:', tab, ')');
+                    console.log('📂 Current active tab:', activeTab);
+                    console.log('🔄 Setting active tab to:', tab);
+                    setActiveTab(tab);
+                },
                 className: `flex items-center gap-2 px-4 py-2 font-medium text-sm rounded-lg transition-colors ${
                     active 
                         ? 'bg-blue-600 text-white' 

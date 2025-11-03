@@ -28,6 +28,12 @@ window.API = {
     // Generic API call function
     call: async function(endpoint, options = {}) {
         try {
+            const fullUrl = `${this.BASE_URL}${endpoint}`;
+            console.log('🌐 API.call - BASE_URL:', this.BASE_URL);
+            console.log('📍 API.call - endpoint:', endpoint);
+            console.log('🔗 API.call - Full URL:', fullUrl);
+            console.log('🔧 API.call - Options:', options);
+            
             const token = localStorage.getItem('auth_token');
             const headers = {
                 'Content-Type': 'application/json',
@@ -39,10 +45,13 @@ window.API = {
                 headers['Authorization'] = `Bearer ${token}`;
             }
 
-            const response = await fetch(`${this.BASE_URL}${endpoint}`, {
+            const response = await fetch(fullUrl, {
                 headers,
                 ...options,
             });
+            
+            console.log('📥 API.call - Response status:', response.status);
+            console.log('📥 API.call - Response URL:', response.url);
             
             if (!response.ok) {
                 if (response.status === 401) {
@@ -56,9 +65,11 @@ window.API = {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            return await response.json();
+            const data = await response.json();
+            console.log('✅ API.call - Response data:', data);
+            return data;
         } catch (error) {
-            console.error('API call failed:', error);
+            console.error('❌ API call failed:', error);
             throw error;
         }
     },
