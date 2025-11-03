@@ -1558,37 +1558,39 @@ sfdc.account=`;
         const LocationFormModal_ = ({ show, onClose, title, isEdit = false }) => {return null;};
 
         // FIX: Optimized Location Form Modal that doesn't lose focus
-        const LocationFormModal = ({ show, onClose, title, isEdit = false, location = null }) => {
-            if (!show) return null;
+        // Memoize LocationFormModal to prevent recreation on every render
+        const LocationFormModal = React.useMemo(() => {
+            return ({ show, onClose, title, isEdit = false, location = null }) => {
+                if (!show) return null;
 
-            // Populate form data when editing - use state to prevent infinite loop
-            React.useEffect(() => {
-                if (isEdit && location && !hasPopulatedForm) {
-                    console.log('Populating form for location:', location.store_name, 'ID:', location.id);
-                    formDataRef.current = {
-                        store_code: location.store_code || '',
-                        store_name: location.store_name || '',
-                        brand: location.brand || '',
-                        address_line1: location.address_line1 || '',
-                        address_line2: location.address_line2 || '',
-                        city: location.city || '',
-                        state: location.state || '',
-                        zip_code: location.zip_code || '',
-                        phone: location.phone || '',
-                        email: location.email || '',
-                        tax_rate: location.tax_rate?.toString() || '0.08',
-                        manager_name: location.manager_name || '',
-                        logo_base64: location.logo_base64 || null
-                    };
-                    setNewLocationForm(formDataRef.current);
-                    if (location.logo_base64) {
-                        setLogoPreview(location.logo_base64);
+                // Populate form data when editing - use state to prevent infinite loop
+                React.useEffect(() => {
+                    if (isEdit && location && !hasPopulatedForm) {
+                        console.log('Populating form for location:', location.store_name, 'ID:', location.id);
+                        formDataRef.current = {
+                            store_code: location.store_code || '',
+                            store_name: location.store_name || '',
+                            brand: location.brand || '',
+                            address_line1: location.address_line1 || '',
+                            address_line2: location.address_line2 || '',
+                            city: location.city || '',
+                            state: location.state || '',
+                            zip_code: location.zip_code || '',
+                            phone: location.phone || '',
+                            email: location.email || '',
+                            tax_rate: location.tax_rate?.toString() || '0.08',
+                            manager_name: location.manager_name || '',
+                            logo_base64: location.logo_base64 || null
+                        };
+                        setNewLocationForm(formDataRef.current);
+                        if (location.logo_base64) {
+                            setLogoPreview(location.logo_base64);
+                        }
+                        setHasPopulatedForm(true);
                     }
-                    setHasPopulatedForm(true);
-                }
-            }, [isEdit, location?.id, hasPopulatedForm]); // Include hasPopulatedForm in dependencies
+                }, [isEdit, location?.id, hasPopulatedForm]); // Include hasPopulatedForm in dependencies
 
-            return React.createElement('div', {key: 'location-form-modal',
+                return React.createElement('div', {key: 'location-form-modal',
                 className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'
             }, [
                 React.createElement('div', { 
@@ -1876,7 +1878,8 @@ sfdc.account=`;
                     ])
                 ])
             ]);
-        };
+            };
+        }, []); // Empty dependency array - only create once
 
 
         return React.createElement('div', { key: 'settings-container', className: 'space-y-6 dark:text-white' }, [
