@@ -218,7 +218,7 @@ window.Views.SettingsView = ({
 
         const loadUsers = async () => {
             try {
-                const data = await window.API.call('/api/users');
+                const data = await window.API.call('/users');
                 setUsers(data);
             } catch (err) {
                 console.error('Failed to load users:', err);
@@ -228,7 +228,7 @@ window.Views.SettingsView = ({
 
         const loadRoles = async () => {
             try {
-                const data = await window.API.call('/api/roles');
+                const data = await window.API.call('/roles');
                 setRoles(data);
             } catch (err) {
                 console.error('Failed to load roles:', err);
@@ -239,7 +239,7 @@ window.Views.SettingsView = ({
         const handleCreateUser = async (e) => {
             e.preventDefault();
             try {
-                await window.API.call('/api/users', {
+                await window.API.call('/users', {
                     method: 'POST',
                     body: JSON.stringify(createUserForm)
                 });
@@ -360,7 +360,7 @@ window.Views.SettingsView = ({
 
         const loadSystemSettings = async () => {
             try {
-                const data = await window.API.call('/api/system-settings');
+                const data = await window.API.call('/system-settings');
                 setSystemSettings(data);
                 setFilteredSettings(data);
             } catch (error) {
@@ -372,7 +372,7 @@ window.Views.SettingsView = ({
 
         const loadDatabaseInfo = async () => {
             try {
-                const data = await window.API.call('/api/system-settings/database/info');
+                const data = await window.API.call('/system-settings/database/info');
                 setDatabaseInfo(data);
             } catch (error) {
                 console.error('Failed to load database info:', error);
@@ -382,7 +382,7 @@ window.Views.SettingsView = ({
 
         const loadEnvInfo = async () => {
             try {
-                const data = await window.API.call('/api/system-settings/env/info');
+                const data = await window.API.call('/system-settings/env/info');
                 setEnvInfo(data);
             } catch (error) {
                 console.error('Failed to load environment info:', error);
@@ -394,7 +394,7 @@ window.Views.SettingsView = ({
         const loadMulesoftFlows = async () => {
             setFlowsLoading(true);
             try {
-                const data = await window.API.call('/api/mulesoft/flows');
+                const data = await window.API.call('/mulesoft/flows');
                 setMulesoftFlows(data);
             } catch (error) {
                 console.error('Failed to load MuleSoft flows:', error);
@@ -409,7 +409,7 @@ window.Views.SettingsView = ({
         const updateMulesoftFlows = async () => {
             setFlowsUpdating(true);
             try {
-                const data = await window.API.call('/api/mulesoft/flows', {
+                const data = await window.API.call('/mulesoft/flows', {
                     method: 'POST',
                     body: JSON.stringify(mulesoftFlows)
                 });
@@ -727,7 +727,7 @@ window.Views.SettingsView = ({
             setShowTestDataOutput(true);
             
             try {
-                const response = await window.API.call('/api/load-test-data', {
+                const response = await window.API.call('/load-test-data', {
                     method: 'POST'
                 });
                 
@@ -834,7 +834,7 @@ window.Views.SettingsView = ({
                 
                 // Save generated products to database
                 const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                await window.API.call('/api/generated-products/save', {
+                await window.API.call('/generated-products/save', {
                     method: 'POST',
                     body: JSON.stringify({
                         batchId: batchId,
@@ -977,7 +977,7 @@ window.Views.SettingsView = ({
             }
 
             try {
-                await window.API.call('/api/generated-products/delete-batch', {
+                await window.API.call('/generated-products/delete-batch', {
                     method: 'DELETE',
                     body: JSON.stringify({ batchId: batchId })
                 });
