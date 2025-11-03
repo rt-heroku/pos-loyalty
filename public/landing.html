@@ -4,223 +4,187 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unified POS & Loyalty System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #333;
-        }
-
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            padding: 3rem;
-            max-width: 600px;
-            width: 90%;
-            text-align: center;
-        }
-
-        .logo {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 2rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 3rem;
-            font-weight: bold;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .subtitle {
-            font-size: 1.2rem;
-            color: #666;
-            margin-bottom: 3rem;
-            line-height: 1.6;
-        }
-
-        .apps-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-
-        .app-card {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 2rem;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .app-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            border-color: #667eea;
-        }
-
-        .app-icon {
-            width: 60px;
-            height: 60px;
-            margin: 0 auto 1rem;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-            color: white;
-        }
-
-        .pos-icon {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-        }
-
-        .loyalty-icon {
-            background: linear-gradient(135deg, #4ecdc4, #44a08d);
-        }
-
-        .app-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .app-description {
-            font-size: 0.9rem;
-            color: #666;
-            line-height: 1.4;
-        }
-
-        .powered-by {
-            border-top: 1px solid #e9ecef;
-            padding-top: 2rem;
-            margin-top: 2rem;
-        }
-
-        .powered-by-text {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 1rem;
-        }
-
-        .logos {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .logo-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-            color: #666;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .logo-item:hover {
-            color: #667eea;
-        }
-
-        .logo-img {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 2rem;
-            }
-
-            .apps-grid {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-
-            h1 {
-                font-size: 2rem;
-            }
-
-            .logos {
-                gap: 1rem;
-            }
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="logo">M</div>
-        <h1>Unified POS & Loyalty System</h1>
-        <p class="subtitle">
-            Complete business solution with Point of Sale and Customer Loyalty management
-        </p>
-
-        <div class="apps-grid">
-            <a href="/pos" class="app-card">
-                <div class="app-icon pos-icon">🛒</div>
-                <div class="app-title">Point of Sale</div>
-                <div class="app-description">
-                    Manage sales, inventory, and transactions with our powerful POS system
+<body class="bg-white">
+    <!-- Header -->
+    <header class="relative z-10 border-b border-gray-200 bg-white">
+        <nav class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex h-16 items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
+                            <svg class="h-7 w-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <span class="ml-3 text-xl font-bold text-gray-900">Unified System</span>
                 </div>
-            </a>
+            </div>
+        </nav>
+    </header>
 
-            <a href="/loyalty" class="app-card">
-                <div class="app-icon loyalty-icon">⭐</div>
-                <div class="app-title">Loyalty Program</div>
-                <div class="app-description">
-                    Track customer points, rewards, and engagement with our loyalty platform
-                </div>
-            </a>
+    <!-- Main Content -->
+    <main class="relative">
+        <!-- Hero Section -->
+        <div class="mx-auto max-w-7xl px-4 pb-16 pt-20 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
+                    Complete Business Solution
+                    <span class="bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent block mt-2">
+                        POS & Loyalty Platform
+                    </span>
+                </h1>
+                <p class="mx-auto mt-6 max-w-3xl text-lg leading-8 text-gray-600">
+                    Manage your entire business with our integrated Point of Sale and Customer Loyalty system. 
+                    Streamline operations, boost sales, and reward your customers all in one place.
+                </p>
+            </div>
         </div>
 
-        <div class="powered-by">
-            <div class="powered-by-text">Powered by</div>
-            <div class="logos">
-                <a href="https://www.mulesoft.com" class="logo-item" target="_blank">
-                    <div class="logo-img" style="background: #00A2DF; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.7rem;">M</div>
-                    <span>MuleSoft</span>
+        <!-- Apps Grid -->
+        <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:gap-12">
+                <!-- POS App Card -->
+                <a href="/pos" class="group relative rounded-2xl border-2 border-blue-100 bg-white p-8 shadow-sm transition-all hover:border-blue-300 hover:shadow-xl">
+                    <div class="mb-6">
+                        <div class="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-orange-600 shadow-lg">
+                            <svg class="h-9 w-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-3">
+                        Point of Sale
+                    </h3>
+                    <p class="text-gray-600 mb-6 leading-relaxed">
+                        Powerful POS system to manage sales, inventory, and transactions. 
+                        Process payments, track inventory in real-time, and generate detailed reports.
+                    </p>
+                    <div class="flex items-center text-blue-600 font-semibold group-hover:translate-x-2 transition-transform">
+                        <span>Access POS System</span>
+                        <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
                 </a>
-                <a href="https://www.heroku.com" class="logo-item" target="_blank">
-                    <div class="logo-img" style="background: #430098; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.7rem;">H</div>
-                    <span>Heroku</span>
-                </a>
-                <a href="https://www.salesforce.com" class="logo-item" target="_blank">
-                    <div class="logo-img" style="background: #00A1E0; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.7rem;">S</div>
-                    <span>Salesforce</span>
+
+                <!-- Loyalty App Card -->
+                <a href="/loyalty" class="group relative rounded-2xl border-2 border-blue-100 bg-white p-8 shadow-sm transition-all hover:border-blue-300 hover:shadow-xl">
+                    <div class="mb-6">
+                        <div class="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
+                            <svg class="h-9 w-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-3">
+                        Loyalty Program
+                    </h3>
+                    <p class="text-gray-600 mb-6 leading-relaxed">
+                        Comprehensive loyalty platform to track customer points, manage rewards, and boost engagement. 
+                        Build lasting relationships with your customers.
+                    </p>
+                    <div class="flex items-center text-blue-600 font-semibold group-hover:translate-x-2 transition-transform">
+                        <span>Access Loyalty Platform</span>
+                        <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
                 </a>
             </div>
         </div>
-    </div>
+
+        <!-- Features Section -->
+        <div class="bg-gradient-to-br from-blue-50 to-blue-100 py-16">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+                        Why Choose Our Platform?
+                    </h2>
+                </div>
+                <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+                    <!-- Feature 1 -->
+                    <div class="text-center">
+                        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-md">
+                            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Lightning Fast</h3>
+                        <p class="text-sm text-gray-600">Process transactions and track loyalty points in real-time</p>
+                    </div>
+                    <!-- Feature 2 -->
+                    <div class="text-center">
+                        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-md">
+                            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Secure & Reliable</h3>
+                        <p class="text-sm text-gray-600">Enterprise-grade security for your business data</p>
+                    </div>
+                    <!-- Feature 3 -->
+                    <div class="text-center">
+                        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-md">
+                            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Analytics & Insights</h3>
+                        <p class="text-sm text-gray-600">Detailed reports and business intelligence</p>
+                    </div>
+                    <!-- Feature 4 -->
+                    <div class="text-center">
+                        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-md">
+                            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Mobile Ready</h3>
+                        <p class="text-sm text-gray-600">Works seamlessly on any device, anywhere</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200">
+        <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+            <div class="text-center mb-8">
+                <p class="text-sm text-gray-600 mb-4">Powered by</p>
+                <div class="flex items-center justify-center gap-8 flex-wrap">
+                    <a href="https://www.mulesoft.com" target="_blank" class="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors">
+                        <div class="flex h-8 w-8 items-center justify-center rounded bg-blue-500 text-white font-bold text-sm">M</div>
+                        <span class="font-medium">MuleSoft</span>
+                    </a>
+                    <a href="https://www.heroku.com" target="_blank" class="flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-colors">
+                        <div class="flex h-8 w-8 items-center justify-center rounded bg-purple-600 text-white font-bold text-sm">H</div>
+                        <span class="font-medium">Heroku</span>
+                    </a>
+                    <a href="https://www.salesforce.com" target="_blank" class="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors">
+                        <div class="flex h-8 w-8 items-center justify-center rounded bg-blue-400 text-white font-bold text-sm">S</div>
+                        <span class="font-medium">Salesforce</span>
+                    </a>
+                </div>
+            </div>
+            <div class="border-t border-gray-200 pt-8">
+                <p class="text-center text-sm text-gray-500">
+                    © 2024 Unified POS & Loyalty System. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>
 
