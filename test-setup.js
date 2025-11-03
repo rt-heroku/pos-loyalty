@@ -153,3 +153,4 @@ if (allFilesExist) {
   console.log('❌ Some tests failed. Please check the configuration.');
   process.exit(1);
 }
+
