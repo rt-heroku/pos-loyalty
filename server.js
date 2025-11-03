@@ -1105,6 +1105,20 @@ app.post('/api/generated-products/save', async (req, res) => {
 
 app.get('/api/generated-products/history', async (req, res) => {
   try {
+    // Check if generated_products table exists
+    const tableCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'generated_products'
+      );
+    `);
+
+    if (!tableCheck.rows[0].exists) {
+      console.log('generated_products table does not exist, returning empty array');
+      return res.json([]);
+    }
+
     // Get all generated products grouped by batch
     const result = await pool.query(`
       SELECT 
