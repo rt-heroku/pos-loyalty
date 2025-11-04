@@ -1223,6 +1223,20 @@ app.delete('/api/generated-products/delete-batch', async (req, res) => {
 // Get all orders with filters
 app.get('/api/orders', async (req, res) => {
     try {
+        // Check if orders table exists
+        const tableCheck = await pool.query(`
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables
+                WHERE table_schema = 'public'
+                AND table_name = 'orders'
+            );
+        `);
+
+        if (!tableCheck.rows[0].exists) {
+            console.log('orders table does not exist, returning empty array');
+            return res.json([]);
+        }
+
         const { 
             location_id, 
             status, 
@@ -1321,7 +1335,7 @@ app.get('/api/orders', async (req, res) => {
         res.json(result.rows);
     } catch (err) {
         console.error('Error fetching orders:', err);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error', details: err.message });
     }
 });
 
