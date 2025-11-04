@@ -1619,7 +1619,14 @@ INSERT INTO system_settings (setting_key, setting_value, setting_type, descripti
 ('journal_subtype_id', '', 'text', 'Journal Sub-Type', 'loyalty', false, true, 'admin', 'admin'),
 ('journal_type_id', '', 'text', 'Journal Type', 'loyalty', false, true, 'admin', 'admin'),
 ('loyalty_program_id', '', 'text', 'Loyalty Program Id', 'loyalty', false, true, 'admin', 'admin'),
-('enrollment_journal_subtype_id', '', 'text', NULL, 'integration', false, true, 'admin', 'admin')
+('enrollment_journal_subtype_id', '', 'text', NULL, 'integration', false, true, 'admin', 'admin'),
+('landing_page', 'landing_system_name', 'POS & Loyalty System', 'System name displayed in header next to logo', 'string', false, true, 'admin', 'admin'),
+('landing_page', 'landing_title1', 'Complete Business Solution', 'Main title (first line) on landing page', 'string', false, true, 'admin', 'admin'),
+('landing_page', 'landing_title2', 'POS & Loyalty Platform', 'Secondary title (second line with gradient) on landing page', 'string', false, true, 'admin', 'admin'),
+('landing_page', 'landing_subtitle', 'Manage your entire business with our integrated Point of Sale and Customer Loyalty system. Streamline operations, boost sales, and reward your customers all in one place.', 'Subtitle/description text on landing page', 'text', false, true, 'admin', 'admin')
+('landing_page', 'landing_title2', 'POS & Loyalty Platform', 'Secondary title (second line with gradient) on landing page', 'string'),
+('landing_page', 'landing_subtitle', 'Manage your entire business with our integrated Point of Sale and Customer Loyalty system. Streamline operations, boost sales, and reward your customers all in one place.', 'Subtitle/description text on landing page', 'text')
+
 ON CONFLICT (setting_key) DO NOTHING;
 
 -- Insert default roles
