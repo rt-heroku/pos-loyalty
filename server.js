@@ -1216,6 +1216,316 @@ app.delete('/api/generated-products/delete-batch', async (req, res) => {
   }
 });
 
+// =====================================================
+// ORDERS API ENDPOINTS
+// =====================================================
+
+// Get all orders with filters
+app.get('/api/orders', async (req, res) => {
+    try {
+        const { 
+            location_id, 
+            status, 
+            origin, 
+            date_from, 
+            date_to,
+            customer_id,
+            search 
+        } = req.query;
+
+        let query = `
+            SELECT 
+                o.*,
+                c.first_name || ' ' || c.last_name as customer_name,
+                c.loyalty_number as customer_loyalty_number,
+                c.phone as customer_phone,
+                c.email as customer_email,
+                COUNT(oi.id) as item_count,
+                l.name as location_name
+            FROM orders o
+            LEFT JOIN customers c ON o.customer_id = c.id
+            LEFT JOIN order_items oi ON o.id = oi.order_id
+            LEFT JOIN locations l ON o.location_id = l.id
+            WHERE 1=1
+        `;
+
+        const params = [];
+        let paramCount = 1;
+
+        if (location_id) {
+            query += ` AND o.location_id = $${paramCount}`;
+            params.push(location_id);
+            paramCount++;
+        }
+
+        if (status) {
+            query += ` AND o.status = $${paramCount}`;
+            params.push(status);
+            paramCount++;
+        }
+
+        if (origin) {
+            query += ` AND o.origin = $${paramCount}`;
+            params.push(origin);
+            paramCount++;
+        }
+
+        if (customer_id) {
+            query += ` AND o.customer_id = $${paramCount}`;
+            params.push(customer_id);
+            paramCount++;
+        }
+
+        if (date_from) {
+            query += ` AND o.order_date >= $${paramCount}`;
+            params.push(date_from);
+            paramCount++;
+        }
+
+        if (date_to) {
+            query += ` AND o.order_date <= $${paramCount}`;
+            params.push(date_to + ' 23:59:59');
+            paramCount++;
+        }
+
+        if (search) {
+            query += ` AND (
+                o.order_number ILIKE $${paramCount} OR
+                c.first_name ILIKE $${paramCount} OR
+                c.last_name ILIKE $${paramCount} OR
+                c.loyalty_number ILIKE $${paramCount} OR
+                c.phone ILIKE $${paramCount} OR
+                c.email ILIKE $${paramCount}
+            )`;
+            params.push(`%${search}%`);
+            paramCount++;
+        }
+
+        query += `
+            GROUP BY o.id, c.first_name, c.last_name, c.loyalty_number, c.phone, c.email, l.name
+            ORDER BY o.order_date DESC
+        `;
+
+        const result = await pool.query(query, params);
+
+        // Get items for each order
+        for (let order of result.rows) {
+            const itemsResult = await pool.query(`
+                SELECT * FROM order_items
+                WHERE order_id = $1
+                ORDER BY id
+            `, [order.id]);
+            order.items = itemsResult.rows;
+        }
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching orders:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Get single order by ID
+app.get('/api/orders/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const orderResult = await pool.query(`
+            SELECT 
+                o.*,
+                c.first_name || ' ' || c.last_name as customer_name,
+                c.loyalty_number as customer_loyalty_number,
+                c.phone as customer_phone,
+                c.email as customer_email,
+                l.name as location_name
+            FROM orders o
+            LEFT JOIN customers c ON o.customer_id = c.id
+            LEFT JOIN locations l ON o.location_id = l.id
+            WHERE o.id = $1
+        `, [id]);
+
+        if (orderResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        const order = orderResult.rows[0];
+
+        // Get order items
+        const itemsResult = await pool.query(`
+            SELECT * FROM order_items
+            WHERE order_id = $1
+            ORDER BY id
+        `, [id]);
+
+        order.items = itemsResult.rows;
+
+        res.json(order);
+    } catch (err) {
+        console.error('Error fetching order:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Create new order
+app.post('/api/orders', async (req, res) => {
+    const client = await pool.connect();
+    
+    try {
+        await client.query('BEGIN');
+
+        const {
+            customer_id,
+            location_id,
+            status = 'pending',
+            origin = 'pos',
+            subtotal,
+            discount_amount = 0,
+            tax_amount,
+            total_amount,
+            voucher_id,
+            voucher_discount = 0,
+            coupon_code,
+            coupon_discount = 0,
+            payment_method,
+            notes,
+            created_by,
+            items = []
+        } = req.body;
+
+        // Create order
+        const orderResult = await client.query(`
+            INSERT INTO orders (
+                customer_id, location_id, status, origin,
+                subtotal, discount_amount, tax_amount, total_amount,
+                voucher_id, voucher_discount, coupon_code, coupon_discount,
+                payment_method, notes, created_by
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            RETURNING *
+        `, [
+            customer_id, location_id, status, origin,
+            subtotal, discount_amount, tax_amount, total_amount,
+            voucher_id, voucher_discount, coupon_code, coupon_discount,
+            payment_method, notes, created_by
+        ]);
+
+        const order = orderResult.rows[0];
+
+        // Create order items
+        for (const item of items) {
+            await client.query(`
+                INSERT INTO order_items (
+                    order_id, product_id, product_name, product_sku, product_image_url,
+                    quantity, unit_price, tax_amount, discount_amount, voucher_discount, total_price, notes
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            `, [
+                order.id, item.product_id, item.product_name, item.product_sku, item.product_image_url,
+                item.quantity, item.unit_price, item.tax_amount || 0, item.discount_amount || 0, 
+                item.voucher_discount || 0, item.total_price, item.notes
+            ]);
+        }
+
+        await client.query('COMMIT');
+
+        // Fetch complete order with items
+        const completeOrder = await pool.query(`
+            SELECT 
+                o.*,
+                c.first_name || ' ' || c.last_name as customer_name,
+                c.loyalty_number as customer_loyalty_number,
+                c.phone as customer_phone,
+                c.email as customer_email
+            FROM orders o
+            LEFT JOIN customers c ON o.customer_id = c.id
+            WHERE o.id = $1
+        `, [order.id]);
+
+        const itemsResult = await pool.query(`
+            SELECT * FROM order_items WHERE order_id = $1
+        `, [order.id]);
+
+        const result = completeOrder.rows[0];
+        result.items = itemsResult.rows;
+
+        res.json(result);
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error creating order:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        client.release();
+    }
+});
+
+// Update order status
+app.patch('/api/orders/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, changed_by } = req.body;
+
+        const result = await pool.query(`
+            UPDATE orders
+            SET status = $1, created_by = $2, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $3
+            RETURNING *
+        `, [status, changed_by, id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error updating order status:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Link transaction to order
+app.patch('/api/orders/:id/transaction', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { transaction_id } = req.body;
+
+        const result = await pool.query(`
+            UPDATE orders
+            SET transaction_id = $1, status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $2
+            RETURNING *
+        `, [transaction_id, id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error linking transaction to order:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Get order status history
+app.get('/api/orders/:id/history', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const result = await pool.query(`
+            SELECT 
+                osh.*,
+                u.username as changed_by_username
+            FROM order_status_history osh
+            LEFT JOIN users u ON osh.changed_by = u.id
+            WHERE osh.order_id = $1
+            ORDER BY osh.created_at DESC
+        `, [id]);
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching order history:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Customers / Loyalty System
 app.get('/api/customers', async (req, res) => {
   try {

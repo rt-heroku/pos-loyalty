@@ -1619,14 +1619,15 @@ INSERT INTO system_settings (setting_key, setting_value, setting_type, descripti
 ('journal_subtype_id', '', 'text', 'Journal Sub-Type', 'loyalty', false, true, 'admin', 'admin'),
 ('journal_type_id', '', 'text', 'Journal Type', 'loyalty', false, true, 'admin', 'admin'),
 ('loyalty_program_id', '', 'text', 'Loyalty Program Id', 'loyalty', false, true, 'admin', 'admin'),
-('enrollment_journal_subtype_id', '', 'text', NULL, 'integration', false, true, 'admin', 'admin'),
-('landing_page', 'landing_system_name', 'POS & Loyalty System', 'System name displayed in header next to logo', 'string', false, true, 'admin', 'admin'),
-('landing_page', 'landing_title1', 'Complete Business Solution', 'Main title (first line) on landing page', 'string', false, true, 'admin', 'admin'),
-('landing_page', 'landing_title2', 'POS & Loyalty Platform', 'Secondary title (second line with gradient) on landing page', 'string', false, true, 'admin', 'admin'),
-('landing_page', 'landing_subtitle', 'Manage your entire business with our integrated Point of Sale and Customer Loyalty system. Streamline operations, boost sales, and reward your customers all in one place.', 'Subtitle/description text on landing page', 'text', false, true, 'admin', 'admin')
-('landing_page', 'landing_title2', 'POS & Loyalty Platform', 'Secondary title (second line with gradient) on landing page', 'string'),
-('landing_page', 'landing_subtitle', 'Manage your entire business with our integrated Point of Sale and Customer Loyalty system. Streamline operations, boost sales, and reward your customers all in one place.', 'Subtitle/description text on landing page', 'text')
+('enrollment_journal_subtype_id', '', 'text', NULL, 'integration', false, true, 'admin', 'admin')
+ON CONFLICT (setting_key) DO NOTHING;
 
+INSERT INTO system_settings (category, setting_key, setting_value, description, setting_type, is_encrypted, is_active, created_by, updated_by)
+VALUES 
+('landing_page', 'landing_system_name', 'POS & Loyalty System', 'System name displayed in header next to logo', 'text', false, true, 'admin', 'admin'),
+('landing_page', 'landing_title1', 'Complete Business Solution', 'Main title (first line) on landing page', 'text', false, true, 'admin', 'admin'),
+('landing_page', 'landing_title2', 'POS & Loyalty Platform', 'Secondary title (second line with gradient) on landing page', 'text', false, true, 'admin', 'admin'),
+('landing_page', 'landing_subtitle', 'Manage your entire business with our integrated Point of Sale and Customer Loyalty system. Streamline operations, boost sales, and reward your customers all in one place.', 'Subtitle/description text on landing page', 'text', false, true, 'admin', 'admin')
 ON CONFLICT (setting_key) DO NOTHING;
 
 -- Insert default roles
@@ -1686,6 +1687,127 @@ ON CONFLICT (email) DO NOTHING;
 -- =============================================================================
 -- COMPLETION MESSAGE
 -- =============================================================================
+
+-- =====================================================
+-- ORDERS SYSTEM
+-- =====================================================
+-- Orders table for tracking customer orders across POS and online channels
+CREATE TABLE IF NOT EXISTS orders (
+    id SERIAL PRIMARY KEY,
+    order_number VARCHAR(50) UNIQUE NOT NULL,
+    customer_id INTEGER REFERENCES customers(id),
+    location_id INTEGER REFERENCES locations(id),
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'pending',
+    origin VARCHAR(50) DEFAULT 'pos', -- pos, online, mobile, kiosk
+    subtotal DECIMAL(10,2) DEFAULT 0.00,
+    discount_amount DECIMAL(10,2) DEFAULT 0.00,
+    tax_amount DECIMAL(10,2) DEFAULT 0.00,
+    total_amount DECIMAL(10,2) DEFAULT 0.00,
+    voucher_id INTEGER,
+    voucher_discount DECIMAL(10,2) DEFAULT 0.00,
+    coupon_code VARCHAR(50),
+    coupon_discount DECIMAL(10,2) DEFAULT 0.00,
+    payment_method VARCHAR(50),
+    transaction_id INTEGER REFERENCES transactions(id),
+    notes TEXT,
+    created_by INTEGER REFERENCES users(id),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP
+);
+
+-- Order items table for individual products in an order
+CREATE TABLE IF NOT EXISTS order_items (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+    product_id INTEGER REFERENCES products(id),
+    product_name VARCHAR(255) NOT NULL,
+    product_sku VARCHAR(100),
+    product_image_url TEXT,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    unit_price DECIMAL(10,2) NOT NULL,
+    tax_amount DECIMAL(10,2) DEFAULT 0.00,
+    discount_amount DECIMAL(10,2) DEFAULT 0.00,
+    voucher_discount DECIMAL(10,2) DEFAULT 0.00,
+    total_price DECIMAL(10,2) NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Order status history for tracking status changes
+CREATE TABLE IF NOT EXISTS order_status_history (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+    old_status VARCHAR(50),
+    new_status VARCHAR(50) NOT NULL,
+    changed_by INTEGER REFERENCES users(id),
+    change_reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for orders
+CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_orders_location_id ON orders(location_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_orders_origin ON orders(origin);
+CREATE INDEX IF NOT EXISTS idx_orders_order_date ON orders(order_date);
+CREATE INDEX IF NOT EXISTS idx_orders_order_number ON orders(order_number);
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
+CREATE INDEX IF NOT EXISTS idx_order_status_history_order_id ON order_status_history(order_id);
+
+-- Function to generate order number
+CREATE OR REPLACE FUNCTION generate_order_number()
+RETURNS TEXT AS $$
+DECLARE
+    new_number TEXT;
+    counter INTEGER;
+BEGIN
+    -- Get the count of orders today
+    SELECT COUNT(*) INTO counter
+    FROM orders
+    WHERE DATE(order_date) = CURRENT_DATE;
+    
+    -- Generate order number: ORD-YYYYMMDD-####
+    new_number := 'ORD-' || TO_CHAR(CURRENT_DATE, 'YYYYMMDD') || '-' || LPAD((counter + 1)::TEXT, 4, '0');
+    
+    RETURN new_number;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to auto-generate order number
+CREATE OR REPLACE FUNCTION set_order_number()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.order_number IS NULL OR NEW.order_number = '' THEN
+        NEW.order_number := generate_order_number();
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_set_order_number
+BEFORE INSERT ON orders
+FOR EACH ROW
+EXECUTE FUNCTION set_order_number();
+
+-- Trigger to log status changes
+CREATE OR REPLACE FUNCTION log_order_status_change()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.status IS DISTINCT FROM NEW.status THEN
+        INSERT INTO order_status_history (order_id, old_status, new_status, changed_by)
+        VALUES (NEW.id, OLD.status, NEW.status, NEW.created_by);
+    END IF;
+    NEW.updated_at := CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_log_order_status_change
+BEFORE UPDATE ON orders
+FOR EACH ROW
+EXECUTE FUNCTION log_order_status_change();
 
 -- This completes the simplified database schema
 -- All tables are created with complete column definitions
