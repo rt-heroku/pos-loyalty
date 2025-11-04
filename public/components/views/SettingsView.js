@@ -2032,14 +2032,32 @@ sfdc.account=`;
                                             return;
                                         }
                                         
-                                        // Compress image using canvas
+                                        // Compress image using canvas with intelligent sizing
                                         const canvas = document.createElement('canvas');
                                         const ctx = canvas.getContext('2d');
                                         
-                                        // Calculate new dimensions (max 1024px on longest side)
+                                        // Target size in KB (aim for 512KB max)
+                                        const targetSizeKB = 512;
+                                        const targetSizeBytes = targetSizeKB * 1024;
+                                        const originalSizeKB = file.size / 1024;
+                                        
+                                        // Calculate compression ratio needed
+                                        let compressionRatio = 1.0;
+                                        let maxDimension = 1024;
+                                        
+                                        if (file.size > targetSizeBytes) {
+                                            // Calculate how much we need to reduce
+                                            compressionRatio = Math.sqrt(targetSizeBytes / file.size);
+                                            // Adjust max dimension based on compression ratio
+                                            maxDimension = Math.floor(Math.max(img.width, img.height) * compressionRatio);
+                                            // Ensure minimum size of 512px
+                                            maxDimension = Math.max(512, Math.min(1024, maxDimension));
+                                            console.log(`📊 Compression needed: ${originalSizeKB.toFixed(2)}KB → target ${targetSizeKB}KB (ratio: ${(compressionRatio * 100).toFixed(1)}%)`);
+                                        }
+                                        
+                                        // Calculate new dimensions
                                         let width = img.width;
                                         let height = img.height;
-                                        const maxDimension = 1024;
                                         
                                         if (width > maxDimension || height > maxDimension) {
                                             if (width > height) {
@@ -2051,16 +2069,45 @@ sfdc.account=`;
                                             }
                                         }
                                         
-                                        canvas.width = width;
-                                        canvas.height = height;
-                                        ctx.drawImage(img, 0, 0, width, height);
+                                        canvas.width = Math.round(width);
+                                        canvas.height = Math.round(height);
+                                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                                         
-                                        // Convert to base64 with compression (0.85 quality for JPEG)
-                                        const base64 = canvas.toDataURL('image/jpeg', 0.85);
+                                        // Determine quality based on file size
+                                        let quality = 0.85;
+                                        if (file.size > 1.5 * 1024 * 1024) {
+                                            quality = 0.75; // Lower quality for very large files
+                                        } else if (file.size > 1 * 1024 * 1024) {
+                                            quality = 0.80;
+                                        }
                                         
-                                        // Check compressed size
-                                        const compressedSize = (base64.length * 3) / 4; // Approximate size in bytes
-                                        console.log(`Image compressed: ${(file.size / 1024).toFixed(2)}KB → ${(compressedSize / 1024).toFixed(2)}KB`);
+                                        // Convert to base64 with compression
+                                        let base64 = canvas.toDataURL('image/jpeg', quality);
+                                        
+                                        // If still too large, reduce quality further
+                                        let attempts = 0;
+                                        while ((base64.length * 3) / 4 > targetSizeBytes && quality > 0.5 && attempts < 3) {
+                                            quality -= 0.1;
+                                            base64 = canvas.toDataURL('image/jpeg', quality);
+                                            attempts++;
+                                            console.log(`🔄 Retry ${attempts}: Reducing quality to ${(quality * 100).toFixed(0)}%`);
+                                        }
+                                        
+                                        // Check final compressed size
+                                        const compressedSize = (base64.length * 3) / 4;
+                                        const compressedSizeKB = compressedSize / 1024;
+                                        const reductionPercent = ((1 - compressedSize / file.size) * 100).toFixed(1);
+                                        
+                                        console.log(`✅ Image compressed: ${originalSizeKB.toFixed(2)}KB → ${compressedSizeKB.toFixed(2)}KB (${reductionPercent}% reduction)`);
+                                        console.log(`📐 Dimensions: ${img.width}x${img.height} → ${canvas.width}x${canvas.height}`);
+                                        console.log(`🎨 Quality: ${(quality * 100).toFixed(0)}%`);
+                                        
+                                        if (compressedSize > targetSizeBytes * 1.5) {
+                                            window.NotificationManager.warning(
+                                                'Image still large',
+                                                `Compressed to ${compressedSizeKB.toFixed(0)}KB. Consider using a smaller image for best performance.`
+                                            );
+                                        }
                                         
                                         handleCurrentLocationLogoUpdate(base64);
                                     };
