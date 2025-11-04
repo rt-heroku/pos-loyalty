@@ -1291,12 +1291,25 @@ sfdc.account=`;
                     // Update the selected location with new logo
                     onLocationChange(updatedLocation);
                     window.NotificationManager.success('Logo updated successfully');
+                } else if (response.status === 413) {
+                    window.NotificationManager.error(
+                        'Image too large', 
+                        'The image file is too large. Please use a smaller image (recommended: under 500KB) or compress the image before uploading.'
+                    );
                 } else {
-                    throw new Error('Failed to update logo');
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `Failed to update logo (${response.status})`);
                 }
             } catch (error) {
                 console.error('Error updating logo:', error);
-                window.NotificationManager.error('Failed to update logo', error.message);
+                if (error.message.includes('413') || error.message.includes('too large')) {
+                    window.NotificationManager.error(
+                        'Image too large', 
+                        'The image file is too large. Please use a smaller image (recommended: under 500KB) or compress the image before uploading.'
+                    );
+                } else {
+                    window.NotificationManager.error('Failed to update logo', error.message);
+                }
             }
         };
 
@@ -2019,12 +2032,37 @@ sfdc.account=`;
                                             return;
                                         }
                                         
-                                        const reader = new FileReader();
-                                        reader.onload = (e) => {
-                                            const base64 = e.target.result;
-                                            handleCurrentLocationLogoUpdate(base64);
-                                        };
-                                        reader.readAsDataURL(file);
+                                        // Compress image using canvas
+                                        const canvas = document.createElement('canvas');
+                                        const ctx = canvas.getContext('2d');
+                                        
+                                        // Calculate new dimensions (max 1024px on longest side)
+                                        let width = img.width;
+                                        let height = img.height;
+                                        const maxDimension = 1024;
+                                        
+                                        if (width > maxDimension || height > maxDimension) {
+                                            if (width > height) {
+                                                height = (height / width) * maxDimension;
+                                                width = maxDimension;
+                                            } else {
+                                                width = (width / height) * maxDimension;
+                                                height = maxDimension;
+                                            }
+                                        }
+                                        
+                                        canvas.width = width;
+                                        canvas.height = height;
+                                        ctx.drawImage(img, 0, 0, width, height);
+                                        
+                                        // Convert to base64 with compression (0.85 quality for JPEG)
+                                        const base64 = canvas.toDataURL('image/jpeg', 0.85);
+                                        
+                                        // Check compressed size
+                                        const compressedSize = (base64.length * 3) / 4; // Approximate size in bytes
+                                        console.log(`Image compressed: ${(file.size / 1024).toFixed(2)}KB → ${(compressedSize / 1024).toFixed(2)}KB`);
+                                        
+                                        handleCurrentLocationLogoUpdate(base64);
                                     };
                                     img.onerror = () => {
                                         window.NotificationManager.warning('Invalid image', `Invalid image file. Please try a different format (JPG, PNG, GIF). File type: ${file.type}`);
