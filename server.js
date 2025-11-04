@@ -157,6 +157,7 @@ app.get('/api/landing-config', async (req, res) => {
     });
     
     res.json({
+      systemName: settings.landing_system_name || 'Unified System',
       title1: settings.landing_title1 || 'Complete Business Solution',
       title2: settings.landing_title2 || 'POS & Loyalty Platform',
       subtitle: settings.landing_subtitle || 'Manage your entire business with our integrated Point of Sale and Customer Loyalty system. Streamline operations, boost sales, and reward your customers all in one place.',
@@ -168,6 +169,7 @@ app.get('/api/landing-config', async (req, res) => {
     console.error('Error fetching landing config:', err);
     // Return defaults on error
     res.json({
+      systemName: 'Unified System',
       title1: 'Complete Business Solution',
       title2: 'POS & Loyalty Platform',
       subtitle: 'Manage your entire business with our integrated Point of Sale and Customer Loyalty system. Streamline operations, boost sales, and reward your customers all in one place.',

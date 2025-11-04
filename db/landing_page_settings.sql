@@ -4,6 +4,7 @@
 -- Insert landing page settings
 INSERT INTO system_settings (category, setting_key, setting_value, description, data_type)
 VALUES 
+    ('landing_page', 'landing_system_name', 'Unified System', 'System name displayed in header next to logo', 'string'),
     ('landing_page', 'landing_title1', 'Complete Business Solution', 'Main title (first line) on landing page', 'string'),
     ('landing_page', 'landing_title2', 'POS & Loyalty Platform', 'Secondary title (second line with gradient) on landing page', 'string'),
     ('landing_page', 'landing_subtitle', 'Manage your entire business with our integrated Point of Sale and Customer Loyalty system. Streamline operations, boost sales, and reward your customers all in one place.', 'Subtitle/description text on landing page', 'text')
