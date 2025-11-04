@@ -278,6 +278,14 @@ window.Icons = {
         React.createElement('circle', { key: 'circle', cx: "7.5", cy: "7.5", r: ".5" })
     ]),
 
+    ChevronDown: (props) => React.createElement('svg', { ...iconProps, ...props }, [
+        React.createElement('path', { key: 'path', d: "m6 9 6 6 6-6" })
+    ]),
+
+    ChevronUp: (props) => React.createElement('svg', { ...iconProps, ...props }, [
+        React.createElement('path', { key: 'path', d: "m18 15-6-6-6 6" })
+    ]),
+
     Hash: (props) => React.createElement('svg', { ...iconProps, ...props }, [
         React.createElement('line', { key: 'line1', x1: "4", x2: "20", y1: "9", y2: "9" }),
         React.createElement('line', { key: 'line2', x1: "4", x2: "20", y1: "15", y2: "15" }),
