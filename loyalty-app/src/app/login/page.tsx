@@ -78,9 +78,9 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center">
+          <div className="mb-4 inline-flex h-24 w-max items-center justify-center">
             {companyLogo ? (
-              <div className="relative h-16 w-16">
+              <div className="relative h-24 w-96">
                 <Image
                   src={companyLogo}
                   alt="Logo"
@@ -89,7 +89,7 @@ export default function LoginPage() {
                 />
               </div>
             ) : (
-              <div className="h-16 w-16 animate-pulse rounded-full bg-gray-200"></div>
+              <div className="h-24 w-96 animate-pulse rounded bg-gray-200"></div>
             )}
           </div>
           <h1 className="mb-2 text-2xl font-bold text-gray-900">
@@ -215,17 +215,6 @@ export default function LoginPage() {
               </Link>
             </p>
           </div>
-        </div>
-
-        {/* Default Credentials Info */}
-        <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4 text-center">
-          <p className="text-xs text-gray-600">
-            Default admin credentials:
-            <br />
-            <span className="font-mono">
-              Username: admin | Password: P@$$word1
-            </span>
-          </p>
         </div>
       </div>
     </div>
