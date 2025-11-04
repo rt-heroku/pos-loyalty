@@ -75,6 +75,9 @@ app.use((req, res, next) => {
   res.setHeader('Expires', '0');
   next();
 });
+// Static file serving for images at root level (for landing page)
+app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
+
 // Static file serving for POS app at /pos path
 app.use('/pos', express.static(path.join(__dirname, 'public'), {
     setHeaders: (res, path) => {
