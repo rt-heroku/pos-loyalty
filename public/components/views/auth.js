@@ -8,6 +8,30 @@ window.Auth = {
         });
         const [loading, setLoading] = React.useState(false);
         const [error, setError] = React.useState('');
+        const [companyLogo, setCompanyLogo] = React.useState(null);
+
+        // Load company logo on mount
+        React.useEffect(() => {
+            const loadCompanyLogo = async () => {
+                try {
+                    const response = await fetch('/api/locations/current');
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.location && data.location.logo_base64) {
+                            setCompanyLogo(data.location.logo_base64);
+                        } else {
+                            setCompanyLogo('/images/logo.svg');
+                        }
+                    } else {
+                        setCompanyLogo('/images/logo.svg');
+                    }
+                } catch (error) {
+                    console.error('Error loading company logo:', error);
+                    setCompanyLogo('/images/logo.svg');
+                }
+            };
+            loadCompanyLogo();
+        }, []);
 
         const handleSubmit = async (e) => {
             e.preventDefault();
@@ -53,12 +77,17 @@ window.Auth = {
                 React.createElement('div', { key: 'header', className: 'text-center mb-8' }, [
                     React.createElement('div', { 
                         key: 'logo',
-                        className: 'mx-auto mb-4 w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center' 
+                        className: 'mx-auto mb-4 w-16 h-16 flex items-center justify-center' 
                     }, [
-                        React.createElement('span', { 
-                            key: 'icon',
-                            className: 'text-white text-2xl font-bold' 
-                        }, 'POS')
+                        companyLogo ? React.createElement('img', {
+                            key: 'logo-img',
+                            src: companyLogo,
+                            alt: 'Logo',
+                            className: 'w-16 h-16 object-contain'
+                        }) : React.createElement('div', {
+                            key: 'logo-placeholder',
+                            className: 'w-16 h-16 bg-gray-200 rounded-full animate-pulse'
+                        })
                     ]),
                     React.createElement('h2', { 
                         key: 'title',
