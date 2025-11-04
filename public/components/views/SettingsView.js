@@ -830,15 +830,34 @@ window.Views.SettingsView = ({
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                const productsData = await response.json();
+                const apiResponse = await response.json();
+                
+                console.log('📦 MuleSoft API Response:', apiResponse);
+                
+                // Extract products and metadata from response
+                // The API might return { products: [...], prompt: "...", raw_response: "..." }
+                // or just an array of products
+                const productsData = Array.isArray(apiResponse) ? apiResponse : (apiResponse.products || apiResponse);
+                const promptText = apiResponse.prompt || `Generate ${generateForm.numberOfProducts} ${generateForm.segment} products for ${generateForm.brand}`;
+                const rawResponseText = typeof apiResponse === 'string' ? apiResponse : JSON.stringify(apiResponse);
                 
                 // Save generated products to database
                 const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                
+                console.log('💾 Saving to database:', {
+                    batchId,
+                    productCount: productsData.length,
+                    hasPrompt: !!promptText,
+                    hasRawResponse: !!rawResponseText
+                });
+                
                 await window.API.call('/generated-products/save', {
                     method: 'POST',
                     body: JSON.stringify({
                         batchId: batchId,
                         products: productsData,
+                        prompt: promptText,
+                        rawResponse: rawResponseText,
                         metadata: {
                             brand: generateForm.brand,
                             segment: generateForm.segment,

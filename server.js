@@ -1061,7 +1061,15 @@ app.post('/api/products/check-existing', async (req, res) => {
 // Generated Products endpoints
 app.post('/api/generated-products/save', async (req, res) => {
   try {
-    const { batchId, products, metadata } = req.body;
+    const { batchId, products, metadata, prompt, rawResponse } = req.body;
+    
+    console.log('📦 Saving generated products:', {
+      batchId,
+      productCount: products?.length,
+      hasPrompt: !!prompt,
+      hasRawResponse: !!rawResponse,
+      metadata
+    });
     
     if (!batchId || !products || !Array.isArray(products)) {
       return res.status(400).json({ error: 'Batch ID and products array are required' });
@@ -1072,25 +1080,31 @@ app.post('/api/generated-products/save', async (req, res) => {
     try {
       const batchResult = await pool.query('SELECT get_next_batch_number() as next_batch');
       batchNumber = batchResult.rows[0].next_batch;
+      console.log('✅ Got batch number from function:', batchNumber);
     } catch (batchErr) {
       // If the function doesn't exist, use a simple increment
       const maxBatchResult = await pool.query('SELECT COALESCE(MAX(batch), 0) + 1 as next_batch FROM generated_products');
       batchNumber = maxBatchResult.rows[0].next_batch;
+      console.log('✅ Got batch number from MAX:', batchNumber);
     }
 
     // Save each product as a separate record with the same batch number
     for (const product of products) {
       await pool.query(
-        'INSERT INTO generated_products (batch, brand, segment, num_of_products, generated_product) VALUES ($1, $2, $3, $4, $5)',
+        'INSERT INTO generated_products (batch, brand, segment, num_of_products, generated_product, prompt, raw_response) VALUES ($1, $2, $3, $4, $5, $6, $7)',
         [
           batchNumber,
           metadata?.brand || null,
           metadata?.segment || null,
           metadata?.numberOfProducts || products.length,
-          JSON.stringify(product)
+          JSON.stringify(product),
+          prompt || null,
+          rawResponse || null
         ]
       );
     }
+
+    console.log(`✅ Saved ${products.length} products to batch ${batchNumber}`);
 
     res.json({ 
       message: `Saved ${products.length} products to batch ${batchNumber}`,
@@ -1098,7 +1112,7 @@ app.post('/api/generated-products/save', async (req, res) => {
       productCount: products.length
     });
   } catch (err) {
-    console.error('Error saving generated products:', err);
+    console.error('❌ Error saving generated products:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
