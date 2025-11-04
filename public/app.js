@@ -49,6 +49,14 @@ const POSApp = () => {
 
         }
     }, [currentUser]);
+    
+    // Load orders when orders view is active
+    React.useEffect(() => {
+        if (currentView === 'orders' && selectedLocation) {
+            refreshOrders();
+        }
+    }, [currentView, selectedLocation]);
+    
     const [authLoading, setAuthLoading] = useState(true);
 
     // Enhanced state management
@@ -101,6 +109,15 @@ const POSApp = () => {
     const [loyaltySearchTerm, setLoyaltySearchTerm] = useState('');
     const [customerHistory, setCustomerHistory] = useState([]);
     const [showCustomerHistory, setShowCustomerHistory] = useState(false);
+    
+    // Orders system states
+    const [orders, setOrders] = useState([]);
+    const [ordersLoading, setOrdersLoading] = useState(false);
+    const [currentOrderNumber, setCurrentOrderNumber] = useState(null);
+    
+    // Navigation states
+    const [showOperationsDropdown, setShowOperationsDropdown] = useState(false);
+    
     const [newCustomerForm, setNewCustomerForm] = useState({
         name: '', email: '', phone: ''
     });
@@ -1163,6 +1180,63 @@ const POSApp = () => {
         }
     };
 
+    // Orders management functions
+    const refreshOrders = async () => {
+        try {
+            setOrdersLoading(true);
+            const params = new URLSearchParams();
+            if (selectedLocation) {
+                params.append('location_id', selectedLocation.id);
+            }
+            const response = await window.API.call(`/orders?${params.toString()}`);
+            setOrders(response);
+        } catch (error) {
+            console.error('Failed to load orders:', error);
+            window.NotificationManager.error('Failed to load orders', error.message);
+        } finally {
+            setOrdersLoading(false);
+        }
+    };
+
+    const handleLoadOrderToCart = async (order) => {
+        try {
+            // Clear current cart
+            setCart([]);
+            setSelectedCustomer(null);
+            setCurrentOrderNumber(order.order_number);
+            
+            // Load order items into cart
+            const cartItems = order.items.map(item => ({
+                id: item.product_id,
+                name: item.product_name,
+                price: parseFloat(item.unit_price),
+                quantity: item.quantity,
+                image: item.product_image_url,
+                sku: item.product_sku
+            }));
+            
+            setCart(cartItems);
+            
+            // Load customer if exists
+            if (order.customer_id) {
+                try {
+                    const customerData = await window.API.call(`/customers/${order.customer_id}`);
+                    setSelectedCustomer(customerData);
+                } catch (err) {
+                    console.error('Failed to load customer:', err);
+                }
+            }
+            
+            // Switch to POS view
+            setCurrentView('pos');
+            
+            window.NotificationManager.success('Order Loaded', `Order ${order.order_number} loaded to cart`);
+        } catch (error) {
+            console.error('Failed to load order to cart:', error);
+            window.NotificationManager.error('Failed to load order', error.message);
+        }
+    };
+
     const handleCloseCustomerModal = () => {
         setShowCustomerFormModal(false);
         setCurrentCustomer(null);
@@ -1248,7 +1322,7 @@ const POSApp = () => {
 
 
     // Get icons
-    const { ShoppingCart, Award, Package, BarChart3, Settings } = window.Icons;
+    const { ShoppingCart, Award, Package, BarChart3, Settings, Tag, ChevronDown, ChevronUp } = window.Icons;
 
     // Authentication loading screen
     if (authLoading) {
@@ -1365,6 +1439,7 @@ const POSApp = () => {
                         ])
                     ]),
                     React.createElement('div', { key: 'nav', className: 'flex items-center gap-4' }, [
+                        // POS Button
                         React.createElement(NavButton, { 
                             key: 'pos-nav',
                             view: 'pos', 
@@ -1373,30 +1448,94 @@ const POSApp = () => {
                             active: currentView === 'pos',
                             requiredPermission: 'pos:read'
                         }),
-                        React.createElement(NavButton, { 
-                            key: 'loyalty-nav',
-                            view: 'loyalty', 
-                            icon: Award, 
-                            label: 'Loyalty', 
-                            active: currentView === 'loyalty',
-                            requiredPermission: 'customers:read'
-                        }),
-                        React.createElement(NavButton, { 
-                            key: 'inventory-nav',
-                            view: 'inventory', 
-                            icon: Package, 
-                            label: 'Inventory', 
-                            active: currentView === 'inventory',
-                            requiredPermission: 'inventory:read'
-                        }),
-                        React.createElement(NavButton, { 
-                            key: 'sales-nav',
-                            view: 'sales', 
-                            icon: BarChart3, 
-                            label: 'Sales', 
-                            active: currentView === 'sales',
-                            requiredPermission: 'reports:read'
-                        }),
+                        
+                        // Operations Dropdown
+                        React.createElement('div', {
+                            key: 'operations-dropdown',
+                            className: 'relative'
+                        }, [
+                            React.createElement('button', {
+                                key: 'operations-btn',
+                                onClick: () => setShowOperationsDropdown(!showOperationsDropdown),
+                                className: `flex items-center gap-2 px-4 py-3 rounded-lg transition-all ${
+                                    ['loyalty', 'promotions', 'inventory', 'orders', 'sales'].includes(currentView)
+                                        ? 'bg-blue-600 text-white shadow-lg' 
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                }`
+                            }, [
+                                React.createElement(Package, { key: 'ops-icon', size: 20 }),
+                                React.createElement('span', { key: 'ops-label', className: 'font-medium' }, 'Operations'),
+                                React.createElement(ChevronDown, { key: 'ops-chevron', size: 16 })
+                            ]),
+                            
+                            // Dropdown menu
+                            showOperationsDropdown && React.createElement('div', {
+                                key: 'operations-menu',
+                                className: 'absolute top-full mt-2 right-0 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'menu-loyalty',
+                                    onClick: () => {
+                                        setCurrentView('loyalty');
+                                        setShowOperationsDropdown(false);
+                                    },
+                                    className: 'w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                }, [
+                                    React.createElement(Award, { key: 'loyalty-icon', size: 18 }),
+                                    React.createElement('span', { key: 'loyalty-text' }, 'Loyalty')
+                                ]),
+                                React.createElement('button', {
+                                    key: 'menu-promotions',
+                                    onClick: () => {
+                                        setCurrentView('promotions');
+                                        setShowOperationsDropdown(false);
+                                    },
+                                    className: 'w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                }, [
+                                    React.createElement(Tag, { key: 'promotions-icon', size: 18 }),
+                                    React.createElement('span', { key: 'promotions-text' }, 'Promotions')
+                                ]),
+                                React.createElement('button', {
+                                    key: 'menu-products',
+                                    onClick: () => {
+                                        setCurrentView('inventory');
+                                        setShowOperationsDropdown(false);
+                                    },
+                                    className: 'w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                }, [
+                                    React.createElement(Package, { key: 'products-icon', size: 18 }),
+                                    React.createElement('span', { key: 'products-text' }, 'Products')
+                                ]),
+                                React.createElement('button', {
+                                    key: 'menu-orders',
+                                    onClick: () => {
+                                        setCurrentView('orders');
+                                        setShowOperationsDropdown(false);
+                                    },
+                                    className: 'w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                }, [
+                                    React.createElement(ShoppingCart, { key: 'orders-icon', size: 18 }),
+                                    React.createElement('span', { key: 'orders-text' }, 'Orders')
+                                ]),
+                                React.createElement('div', {
+                                    key: 'menu-divider',
+                                    className: 'border-t border-gray-200 dark:border-gray-700 my-2'
+                                }),
+                                React.createElement('button', {
+                                    key: 'menu-sales',
+                                    onClick: () => {
+                                        setCurrentView('sales');
+                                        setShowOperationsDropdown(false);
+                                    },
+                                    className: 'w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                }, [
+                                    React.createElement(BarChart3, { key: 'sales-icon', size: 18 }),
+                                    React.createElement('span', { key: 'sales-text' }, 'Sales Report')
+                                ])
+                            ])
+                        ]),
+                        
+                        // Settings Button
                         React.createElement(NavButton, { 
                             key: 'settings-nav',
                             view: 'settings', 
@@ -1529,6 +1668,21 @@ const POSApp = () => {
                 loading
             }),
 
+            // Orders View
+            currentView === 'orders' && React.createElement(window.Views.OrdersView, {
+                key: 'orders-view',
+                orders,
+                loading: ordersLoading,
+                onLoadToCart: handleLoadOrderToCart,
+                onRefresh: refreshOrders,
+                selectedLocation
+            }),
+
+            // Promotions View
+            currentView === 'promotions' && React.createElement(window.Views.PromotionsView, {
+                key: 'promotions-view'
+            }),
+
             currentView === 'inventory' && React.createElement(window.Views.InventoryView, { 
                 key: 'inventory-view',
                 products: detailedProducts, filters: productFilters, loading,
@@ -1605,30 +1759,21 @@ const POSApp = () => {
                     isMobile: true
                 }),
                 React.createElement(NavButton, { 
-                    key: 'mobile-loyalty-nav',
-                    view: 'loyalty', 
-                    icon: Award, 
-                    label: 'Loyalty', 
-                    active: currentView === 'loyalty',
-                    requiredPermission: 'customers:read',
+                    key: 'mobile-orders-nav',
+                    view: 'orders', 
+                    icon: Package, 
+                    label: 'Orders', 
+                    active: currentView === 'orders',
+                    requiredPermission: 'pos:read',
                     isMobile: true
                 }),
                 React.createElement(NavButton, { 
                     key: 'mobile-inventory-nav',
                     view: 'inventory', 
                     icon: Package, 
-                    label: 'Inventory', 
+                    label: 'Products', 
                     active: currentView === 'inventory',
                     requiredPermission: 'inventory:read',
-                    isMobile: true
-                }),
-                React.createElement(NavButton, { 
-                    key: 'mobile-sales-nav',
-                    view: 'sales', 
-                    icon: BarChart3, 
-                    label: 'Sales', 
-                    active: currentView === 'sales',
-                    requiredPermission: 'reports:read',
                     isMobile: true
                 }),
                 React.createElement(NavButton, { 
