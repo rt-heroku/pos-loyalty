@@ -833,40 +833,16 @@ window.Views.SettingsView = ({
                 const apiResponse = await response.json();
                 
                 console.log('📦 MuleSoft API Response:', apiResponse);
+                console.log('✅ MuleSoft has saved the products to generated_products table');
                 
-                // Extract products and metadata from response
-                // The API might return { products: [...], prompt: "...", raw_response: "..." }
-                // or just an array of products
+                // Extract products for display
+                // The API might return { products: [...] } or just an array of products
                 const productsData = Array.isArray(apiResponse) ? apiResponse : (apiResponse.products || apiResponse);
-                const promptText = apiResponse.prompt || `Generate ${generateForm.numberOfProducts} ${generateForm.segment} products for ${generateForm.brand}`;
-                const rawResponseText = typeof apiResponse === 'string' ? apiResponse : JSON.stringify(apiResponse);
                 
-                // Save generated products to database
-                const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                console.log(`✅ Received ${productsData.length} products from MuleSoft`);
                 
-                console.log('💾 Saving to database:', {
-                    batchId,
-                    productCount: productsData.length,
-                    hasPrompt: !!promptText,
-                    hasRawResponse: !!rawResponseText
-                });
-                
-                await window.API.call('/generated-products/save', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        batchId: batchId,
-                        products: productsData,
-                        prompt: promptText,
-                        rawResponse: rawResponseText,
-                        metadata: {
-                            brand: generateForm.brand,
-                            segment: generateForm.segment,
-                            brandUrl: generateForm.brandUrl,
-                            numberOfProducts: generateForm.numberOfProducts,
-                            generatedAt: new Date().toISOString()
-                        }
-                    })
-                });
+                // NOTE: MuleSoft API already saves to generated_products table
+                // We don't need to save again - just refresh the history
                 
                 // Clear the modal and refresh the generated history
                 setShowGenerateProductsModal(false);
