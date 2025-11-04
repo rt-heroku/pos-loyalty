@@ -21,11 +21,7 @@
                 <!-- Logo -->
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
-                            <svg class="h-7 w-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                            </svg>
-                        </div>
+                        <img id="headerLogo" src="/images/logo.svg" alt="Logo" class="h-12 w-auto">
                     </div>
                     <span class="ml-3 text-xl font-bold text-gray-900">Unified System</span>
                 </div>
@@ -39,12 +35,12 @@
         <div class="mx-auto max-w-7xl px-4 pb-16 pt-20 sm:px-6 lg:px-8">
             <div class="text-center">
                 <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-                    Complete Business Solution
-                    <span class="bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent block mt-2">
+                    <span id="title1">Complete Business Solution</span>
+                    <span id="title2" class="bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent block mt-2">
                         POS & Loyalty Platform
                     </span>
                 </h1>
-                <p class="mx-auto mt-6 max-w-3xl text-lg leading-8 text-gray-600">
+                <p id="subtitle" class="mx-auto mt-6 max-w-3xl text-lg leading-8 text-gray-600">
                     Manage your entire business with our integrated Point of Sale and Customer Loyalty system. 
                     Streamline operations, boost sales, and reward your customers all in one place.
                 </p>
@@ -55,7 +51,7 @@
         <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:gap-12">
                 <!-- POS App Card -->
-                <a href="/pos" class="group relative rounded-2xl border-2 border-blue-100 bg-white p-8 shadow-sm transition-all hover:border-blue-300 hover:shadow-xl">
+                <a href="/pos" target="_blank" class="group relative rounded-2xl border-2 border-blue-100 bg-white p-8 shadow-sm transition-all hover:border-blue-300 hover:shadow-xl">
                     <div class="mb-6">
                         <div class="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-orange-600 shadow-lg">
                             <svg class="h-9 w-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,7 +75,7 @@
                 </a>
 
                 <!-- Loyalty App Card -->
-                <a href="/loyalty" class="group relative rounded-2xl border-2 border-blue-100 bg-white p-8 shadow-sm transition-all hover:border-blue-300 hover:shadow-xl">
+                <a href="/loyalty" target="_blank" class="group relative rounded-2xl border-2 border-blue-100 bg-white p-8 shadow-sm transition-all hover:border-blue-300 hover:shadow-xl">
                     <div class="mb-6">
                         <div class="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
                             <svg class="h-9 w-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,54 +100,49 @@
             </div>
         </div>
 
-        <!-- Features Section -->
+        <!-- Powered By Section -->
         <div class="bg-gradient-to-br from-blue-50 to-blue-100 py-16">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
                     <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-                        Why Choose Our Platform?
+                        Powered By
                     </h2>
                 </div>
                 <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-                    <!-- Feature 1 -->
+                    <!-- MuleSoft -->
                     <div class="text-center">
-                        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-md">
-                            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                            </svg>
+                        <div class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-lg bg-white shadow-md p-3">
+                            <img src="/images/mulesoft_logo.png" alt="MuleSoft" class="h-full w-full object-contain">
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Lightning Fast</h3>
-                        <p class="text-sm text-gray-600">Process transactions and track loyalty points in real-time</p>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">MuleSoft</h3>
+                        <p class="text-sm text-gray-600">Agents everywhere. Govern and orchestrate them with MuleSoft.</p>
                     </div>
-                    <!-- Feature 2 -->
+                    
+                    <!-- Mule AI Chain -->
                     <div class="text-center">
-                        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-md">
-                            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                            </svg>
+                        <div class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-lg bg-white shadow-md p-3">
+                            <img src="/images/mac_logo.png" alt="Mule AI Chain" class="h-full w-full object-contain">
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Secure & Reliable</h3>
-                        <p class="text-sm text-gray-600">Enterprise-grade security for your business data</p>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Mule AI Chain</h3>
+                        <p class="text-sm text-gray-600">Seamlessly integrate cutting-edge AI capabilities into your MuleSoft ecosystem, enabling smarter automation and enhanced decision-making.</p>
                     </div>
-                    <!-- Feature 3 -->
+                    
+                    <!-- Heroku -->
                     <div class="text-center">
-                        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-md">
-                            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                            </svg>
+                        <div class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-lg bg-white shadow-md p-3">
+                            <img src="/images/heroku_logo.png" alt="Heroku" class="h-full w-full object-contain">
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Analytics & Insights</h3>
-                        <p class="text-sm text-gray-600">Detailed reports and business intelligence</p>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Heroku</h3>
+                        <p class="text-sm text-gray-600">The AI PaaS For Deploying, Managing, and Scaling Apps</p>
                     </div>
-                    <!-- Feature 4 -->
+                    
+                    <!-- Loyalty Management -->
                     <div class="text-center">
-                        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-md">
-                            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                            </svg>
+                        <div class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-lg bg-white shadow-md p-3">
+                            <img src="/images/lm_logo.png" alt="Loyalty Management" class="h-full w-full object-contain">
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Mobile Ready</h3>
-                        <p class="text-sm text-gray-600">Works seamlessly on any device, anywhere</p>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Loyalty Management</h3>
+                        <p class="text-sm text-gray-600">Built on the Salesforce platform, helps organizations deliver innovative programs for customer recognition, reward, and retention</p>
                     </div>
                 </div>
             </div>
@@ -161,23 +152,6 @@
     <!-- Footer -->
     <footer class="bg-white border-t border-gray-200">
         <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-            <div class="text-center mb-8">
-                <p class="text-sm text-gray-600 mb-4">Powered by</p>
-                <div class="flex items-center justify-center gap-8 flex-wrap">
-                    <a href="https://www.mulesoft.com" target="_blank" class="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors">
-                        <div class="flex h-8 w-8 items-center justify-center rounded bg-blue-500 text-white font-bold text-sm">M</div>
-                        <span class="font-medium">MuleSoft</span>
-                    </a>
-                    <a href="https://www.heroku.com" target="_blank" class="flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-colors">
-                        <div class="flex h-8 w-8 items-center justify-center rounded bg-purple-600 text-white font-bold text-sm">H</div>
-                        <span class="font-medium">Heroku</span>
-                    </a>
-                    <a href="https://www.salesforce.com" target="_blank" class="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors">
-                        <div class="flex h-8 w-8 items-center justify-center rounded bg-blue-400 text-white font-bold text-sm">S</div>
-                        <span class="font-medium">Salesforce</span>
-                    </a>
-                </div>
-            </div>
             <div class="border-t border-gray-200 pt-8">
                 <p class="text-center text-sm text-gray-500">
                     © 2024 Unified POS & Loyalty System. All rights reserved.
@@ -185,6 +159,36 @@
             </div>
         </div>
     </footer>
+
+    <script>
+        // Load dynamic configuration from API
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/landing-config');
+                const config = await response.json();
+                
+                // Update title1
+                document.getElementById('title1').textContent = config.title1;
+                
+                // Update title2
+                document.getElementById('title2').textContent = config.title2;
+                
+                // Update subtitle
+                document.getElementById('subtitle').textContent = config.subtitle;
+                
+                // Update logo
+                const logoElement = document.getElementById('headerLogo');
+                if (config.logo) {
+                    logoElement.src = config.logo;
+                }
+            } catch (error) {
+                console.error('Failed to load landing page config:', error);
+                // Keep default values on error
+            }
+        }
+        
+        // Load config when page loads
+        document.addEventListener('DOMContentLoaded', loadConfig);
+    </script>
 </body>
 </html>
-
