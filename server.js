@@ -80,6 +80,57 @@ app.use((req, res, next) => {
 // Static file serving for images at root level (for landing page)
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
+// Landing page API - public endpoint (no auth required) - MUST BE BEFORE LOYALTY PROXY
+app.get('/api/landing-config', async (req, res) => {
+  try {
+    // Get landing page settings
+    const settingsResult = await pool.query(`
+      SELECT setting_key, setting_value 
+      FROM system_settings 
+      WHERE category = 'landing_page' AND is_active = true
+    `);
+    
+    // Get selected location logo
+    const locationResult = await pool.query(`
+      SELECT logo_base64 
+      FROM locations 
+      WHERE is_active = true 
+      ORDER BY id 
+      LIMIT 1
+    `);
+    
+    const settings = {};
+    settingsResult.rows.forEach(row => {
+      settings[row.setting_key] = row.setting_value;
+    });
+    
+    res.json({
+      systemName: settings.landing_system_name || 'Unified System',
+      title1: settings.landing_title1 || 'Complete Business Solution',
+      title2: settings.landing_title2 || 'POS & Loyalty Platform',
+      subtitle: settings.landing_subtitle || 'Manage your entire business with our integrated Point of Sale and Customer Loyalty system. Streamline operations, boost sales, and reward your customers all in one place.',
+      logo: locationResult.rows.length > 0 && locationResult.rows[0].logo_base64 
+        ? locationResult.rows[0].logo_base64 
+        : '/images/logo.svg'
+    });
+  } catch (err) {
+    console.error('Error fetching landing config:', err);
+    // Return defaults on error
+    res.json({
+      systemName: 'Unified System',
+      title1: 'Complete Business Solution',
+      title2: 'POS & Loyalty Platform',
+      subtitle: 'Manage your entire business with our integrated Point of Sale and Customer Loyalty system. Streamline operations, boost sales, and reward your customers all in one place.',
+      logo: '/images/logo.svg'
+    });
+  }
+});
+
+// Root route - serve landing page - MUST BE BEFORE LOYALTY PROXY
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+});
+
 // Static file serving for POS app at /pos path
 app.use('/pos', express.static(path.join(__dirname, 'public'), {
     setHeaders: (res, path) => {
@@ -133,57 +184,6 @@ const loyaltyProxy = createProxyMiddleware({
 
 // Route /loyalty requests to Next.js app
 app.use('/loyalty', loyaltyProxy);
-
-// Landing page API - public endpoint (no auth required)
-app.get('/api/landing-config', async (req, res) => {
-  try {
-    // Get landing page settings
-    const settingsResult = await pool.query(`
-      SELECT setting_key, setting_value 
-      FROM system_settings 
-      WHERE category = 'landing_page' AND is_active = true
-    `);
-    
-    // Get selected location logo
-    const locationResult = await pool.query(`
-      SELECT logo_base64 
-      FROM locations 
-      WHERE is_active = true 
-      ORDER BY id 
-      LIMIT 1
-    `);
-    
-    const settings = {};
-    settingsResult.rows.forEach(row => {
-      settings[row.setting_key] = row.setting_value;
-    });
-    
-    res.json({
-      systemName: settings.landing_system_name || 'Unified System',
-      title1: settings.landing_title1 || 'Complete Business Solution',
-      title2: settings.landing_title2 || 'POS & Loyalty Platform',
-      subtitle: settings.landing_subtitle || 'Manage your entire business with our integrated Point of Sale and Customer Loyalty system. Streamline operations, boost sales, and reward your customers all in one place.',
-      logo: locationResult.rows.length > 0 && locationResult.rows[0].logo_base64 
-        ? locationResult.rows[0].logo_base64 
-        : '/images/logo.svg'
-    });
-  } catch (err) {
-    console.error('Error fetching landing config:', err);
-    // Return defaults on error
-    res.json({
-      systemName: 'Unified System',
-      title1: 'Complete Business Solution',
-      title2: 'POS & Loyalty Platform',
-      subtitle: 'Manage your entire business with our integrated Point of Sale and Customer Loyalty system. Streamline operations, boost sales, and reward your customers all in one place.',
-      logo: '/images/logo.svg'
-    });
-  }
-});
-
-// Root route - serve landing page
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'landing.html'));
-});
 
 // Test database connection
 pool.connect((err, client, release) => {
