@@ -254,9 +254,9 @@ window.Views.SettingsView = ({
                     last_name: '',
                     role_id: ''
                 });
-                alert('User created successfully!');
+                window.NotificationManager.success('User Created', 'User created successfully!');
             } catch (err) {
-                alert(err.message || 'Failed to create user');
+                window.NotificationManager.error('Failed to Create User', err.message || 'Failed to create user');
             }
         };
 
@@ -279,14 +279,14 @@ window.Views.SettingsView = ({
                     role_id: '',
                     is_active: true
                 });
-                alert('User updated successfully!');
+                window.NotificationManager.success('User Updated', 'User updated successfully!');
             } catch (err) {
-                alert(err.message || 'Failed to update user');
+                window.NotificationManager.error('Failed to Update User', err.message || 'Failed to update user');
             }
         };
 
         const handleDeleteUser = async (userId, username) => {
-            if (!confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+            if (!window.confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
                 return;
             }
 
@@ -296,9 +296,9 @@ window.Views.SettingsView = ({
                 });
 
                 await loadUsers();
-                alert('User deleted successfully!');
+                window.NotificationManager.success('User Deleted', 'User deleted successfully!');
             } catch (err) {
-                alert(err.message || 'Failed to delete user');
+                window.NotificationManager.error('Failed to Delete User', err.message || 'Failed to delete user');
             }
         };
 
@@ -306,12 +306,12 @@ window.Views.SettingsView = ({
             e.preventDefault();
             
             if (passwordForm.new_password !== passwordForm.confirm_password) {
-                alert('Passwords do not match!');
+                window.NotificationManager.warning('Validation Error', 'Passwords do not match!');
                 return;
             }
 
             if (passwordForm.new_password.length < 6) {
-                alert('Password must be at least 6 characters long!');
+                window.NotificationManager.warning('Validation Error', 'Password must be at least 6 characters long!');
                 return;
             }
 
@@ -324,9 +324,9 @@ window.Views.SettingsView = ({
                 setShowPasswordModal(false);
                 setChangingPasswordFor(null);
                 setPasswordForm({ new_password: '', confirm_password: '' });
-                alert('Password changed successfully!');
+                window.NotificationManager.success('Password Changed', 'Password changed successfully!');
             } catch (err) {
-                alert(err.message || 'Failed to change password');
+                window.NotificationManager.error('Failed to Change Password', err.message || 'Failed to change password');
             }
         };
 
@@ -657,22 +657,33 @@ window.Views.SettingsView = ({
         // Members sync functions
         const loadMembers = async () => {
             if (!mulesoftConfig.endpoint) {
-                alert('Please configure the MuleSoft endpoint first');
+                window.NotificationManager.warning('Configuration Required', 'Please configure the MuleSoft endpoint first');
                 return;
             }
 
             setLoadingMembers(true);
             try {
+                console.log('🔄 Loading members from:', `${mulesoftConfig.endpoint}/members`);
                 const response = await fetch(`${mulesoftConfig.endpoint}/members`);
+                console.log('📥 Response status:', response.status);
+                
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorText = await response.text();
+                    console.error('❌ Error response:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
                 }
+                
                 const membersData = await response.json();
+                console.log('✅ Members loaded:', membersData.length || 0, 'members');
                 setMembers(membersData);
                 setShowMembersModal(true);
+                window.NotificationManager.success('Members Loaded', `Successfully loaded ${membersData.length || 0} members from Loyalty Cloud`);
             } catch (error) {
-                console.error('Failed to load members:', error);
-                alert(`Failed to load members: ${error.message}`);
+                console.error('❌ Failed to load members:', error);
+                window.NotificationManager.error(
+                    'Failed to Load Members', 
+                    `Could not load members from MuleSoft: ${error.message}. Check console for details.`
+                );
             } finally {
                 setLoadingMembers(false);
             }
@@ -680,11 +691,11 @@ window.Views.SettingsView = ({
 
         const syncMembers = async () => {
             if (!mulesoftConfig.loyaltyProgramId) {
-                alert('Please select a loyalty program first');
+                window.NotificationManager.warning('Configuration Required', 'Please select a loyalty program first');
                 return;
             }
 
-            if (!confirm('This will replace current customer data. Are you sure you want to continue?')) {
+            if (!window.confirm('This will replace current customer data. Are you sure you want to continue?')) {
                 return;
             }
 
@@ -772,7 +783,7 @@ window.Views.SettingsView = ({
         // Products Management Functions
         const loadProductsFromCloud = async () => {
             if (!mulesoftConfig.endpoint) {
-                alert('Please configure the MuleSoft endpoint first');
+                window.NotificationManager.warning('Configuration Required', 'Please configure the MuleSoft endpoint first');
                 return;
             }
 
@@ -800,17 +811,17 @@ window.Views.SettingsView = ({
 
         const generateProducts = async () => {
             if (!mulesoftConfig.endpoint) {
-                alert('Please configure the MuleSoft endpoint first');
+                window.NotificationManager.warning('Configuration Required', 'Please configure the MuleSoft endpoint first');
                 return;
             }
 
             if (!generateForm.brand.trim()) {
-                alert('Please enter a brand name');
+                window.NotificationManager.warning('Validation Error', 'Please enter a brand name');
                 return;
             }
 
             if (generateForm.numberOfProducts < 1 || generateForm.numberOfProducts > 10) {
-                alert('Number of products must be between 1 and 10');
+                window.NotificationManager.warning('Validation Error', 'Number of products must be between 1 and 10');
                 return;
             }
 
@@ -862,7 +873,7 @@ window.Views.SettingsView = ({
 
         const createSelectedProducts = async () => {
             if (selectedProducts.length === 0) {
-                alert('Please select at least one product to create');
+                window.NotificationManager.warning('Selection Required', 'Please select at least one product to create');
                 return;
             }
 
@@ -873,12 +884,12 @@ window.Views.SettingsView = ({
                     body: JSON.stringify(selectedProducts)
                 });
 
-                alert(`Successfully imported ${selectedProducts.length} products to MuleSoft!`);
+                window.NotificationManager.success('Products Imported', `Successfully imported ${selectedProducts.length} products to MuleSoft!`);
                 setSelectedProducts([]);
                 setProductsFromCloud([]);
             } catch (error) {
                 console.error('Failed to import products:', error);
-                alert(`Failed to import products: ${error.message}`);
+                window.NotificationManager.error('Failed to Import Products', `Failed to import products: ${error.message}`);
             } finally {
                 setCreatingProducts(false);
             }
@@ -1397,18 +1408,18 @@ sfdc.account=`;
             const missing = required.filter(field => !formDataRef.current[field].trim());
             
             if (missing.length > 0) {
-                alert(`Please fill in required fields: ${missing.join(', ')}`);
+                window.NotificationManager.warning('Validation Error', `Please fill in required fields: ${missing.join(', ')}`);
                 return;
             }
 
             if (!/^[A-Z0-9]{3,10}$/.test(formDataRef.current.store_code)) {
-                alert('Store code must be 3-10 uppercase letters and numbers');
+                window.NotificationManager.warning('Validation Error', 'Store code must be 3-10 uppercase letters and numbers');
                 return;
             }
 
             const taxRate = parseFloat(formDataRef.current.tax_rate);
             if (isNaN(taxRate) || taxRate < 0 || taxRate > 1) {
-                alert('Tax rate must be a decimal between 0 and 1 (e.g., 0.08 for 8%)');
+                window.NotificationManager.warning('Validation Error', 'Tax rate must be a decimal between 0 and 1 (e.g., 0.08 for 8%)');
                 return;
             }
 
@@ -1444,18 +1455,18 @@ sfdc.account=`;
             const missing = required.filter(field => !formDataRef.current[field].trim());
             
             if (missing.length > 0) {
-                alert(`Please fill in required fields: ${missing.join(', ')}`);
+                window.NotificationManager.warning('Validation Error', `Please fill in required fields: ${missing.join(', ')}`);
                 return;
             }
 
             if (!/^[A-Z0-9]{3,10}$/.test(formDataRef.current.store_code)) {
-                alert('Store code must be 3-10 uppercase letters and numbers');
+                window.NotificationManager.warning('Validation Error', 'Store code must be 3-10 uppercase letters and numbers');
                 return;
             }
 
             const taxRate = parseFloat(formDataRef.current.tax_rate);
             if (isNaN(taxRate) || taxRate < 0 || taxRate > 1) {
-                alert('Tax rate must be a decimal between 0 and 1 (e.g., 0.08 for 8%)');
+                window.NotificationManager.warning('Validation Error', 'Tax rate must be a decimal between 0 and 1 (e.g., 0.08 for 8%)');
                 return;
             }
 
@@ -2034,7 +2045,7 @@ sfdc.account=`;
                                         
                                         // Compress image using canvas with intelligent sizing
                                         const canvas = document.createElement('canvas');
-                                        const ctx = canvas.getContext('2d');
+                                        const ctx = canvas.getContext('2d', { alpha: true });
                                         
                                         // Target size in KB (aim for 512KB max)
                                         const targetSizeKB = 512;
@@ -2071,26 +2082,36 @@ sfdc.account=`;
                                         
                                         canvas.width = Math.round(width);
                                         canvas.height = Math.round(height);
+                                        
+                                        // Clear canvas with transparency
+                                        ctx.clearRect(0, 0, canvas.width, canvas.height);
                                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                                         
-                                        // Determine quality based on file size
+                                        // Determine format and quality based on file type and size
+                                        const isPNG = file.type === 'image/png' || file.name.toLowerCase().endsWith('.png');
+                                        let format = isPNG ? 'image/png' : 'image/jpeg';
                                         let quality = 0.85;
-                                        if (file.size > 1.5 * 1024 * 1024) {
-                                            quality = 0.75; // Lower quality for very large files
-                                        } else if (file.size > 1 * 1024 * 1024) {
-                                            quality = 0.80;
+                                        
+                                        if (!isPNG) {
+                                            if (file.size > 1.5 * 1024 * 1024) {
+                                                quality = 0.75; // Lower quality for very large files
+                                            } else if (file.size > 1 * 1024 * 1024) {
+                                                quality = 0.80;
+                                            }
                                         }
                                         
                                         // Convert to base64 with compression
-                                        let base64 = canvas.toDataURL('image/jpeg', quality);
+                                        let base64 = canvas.toDataURL(format, quality);
                                         
-                                        // If still too large, reduce quality further
+                                        // If JPEG is still too large, reduce quality further
                                         let attempts = 0;
-                                        while ((base64.length * 3) / 4 > targetSizeBytes && quality > 0.5 && attempts < 3) {
-                                            quality -= 0.1;
-                                            base64 = canvas.toDataURL('image/jpeg', quality);
-                                            attempts++;
-                                            console.log(`🔄 Retry ${attempts}: Reducing quality to ${(quality * 100).toFixed(0)}%`);
+                                        if (!isPNG) {
+                                            while ((base64.length * 3) / 4 > targetSizeBytes && quality > 0.5 && attempts < 3) {
+                                                quality -= 0.1;
+                                                base64 = canvas.toDataURL(format, quality);
+                                                attempts++;
+                                                console.log(`🔄 Retry ${attempts}: Reducing quality to ${(quality * 100).toFixed(0)}%`);
+                                            }
                                         }
                                         
                                         // Check final compressed size
@@ -2100,7 +2121,7 @@ sfdc.account=`;
                                         
                                         console.log(`✅ Image compressed: ${originalSizeKB.toFixed(2)}KB → ${compressedSizeKB.toFixed(2)}KB (${reductionPercent}% reduction)`);
                                         console.log(`📐 Dimensions: ${img.width}x${img.height} → ${canvas.width}x${canvas.height}`);
-                                        console.log(`🎨 Quality: ${(quality * 100).toFixed(0)}%`);
+                                        console.log(`🎨 Format: ${format}, Quality: ${isPNG ? 'N/A' : (quality * 100).toFixed(0) + '%'}`);
                                         
                                         if (compressedSize > targetSizeBytes * 1.5) {
                                             window.NotificationManager.warning(

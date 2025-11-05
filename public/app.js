@@ -549,6 +549,12 @@ const POSApp = () => {
                 document.body.classList.remove('dark');
             }
             
+            // Update React state
+            setUserSettings(prev => ({
+                ...prev,
+                theme_mode: theme
+            }));
+            
             // Save to localStorage
             localStorage.setItem('theme', theme);
             
@@ -1421,7 +1427,7 @@ const POSApp = () => {
                             key: 'location-logo',
                             src: selectedLocation.logo_base64,
                             alt: 'Store logo',
-                            className: 'w-20 h-10 object-contain'
+                            className: 'h-16 w-auto object-contain'
                         }),
                         React.createElement('div', { key: 'titles' }, [
                             React.createElement('h1', { 
@@ -1573,7 +1579,7 @@ const POSApp = () => {
                             key: 'mobile-location-logo',
                             src: selectedLocation.logo_base64,
                             alt: 'Store logo',
-                            className: 'w-8 h-8 object-contain'
+                            className: 'h-12 w-auto object-contain'
                         }),
                         React.createElement('div', { key: 'mobile-titles' }, [
                             React.createElement('h1', { 
