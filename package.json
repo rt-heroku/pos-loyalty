@@ -22,7 +22,7 @@
   },
   "scripts": {
     "start": "node server.js",
-    "start:production": "concurrently \"node server.js\" \"cd loyalty-app && node .next/standalone/server.js\"",
+    "start:production": "concurrently \"node server.js\" \"cd loyalty-app && PORT=3001 node .next/standalone/server.js\"",
     "dev": "./start-dev.sh",
     "postinstall": "cd loyalty-app && npm install",
     "build": "npm run build:loyalty && npm run build:copy-standalone",
@@ -37,7 +37,7 @@
     "precommit": "npm run check-syntax",
     "loyalty:dev": "cd loyalty-app && npm run dev",
     "loyalty:build": "cd loyalty-app && npm run build",
-    "loyalty:start": "cd loyalty-app && node .next/standalone/server.js"
+    "loyalty:start": "cd loyalty-app && PORT=3001 node .next/standalone/server.js"
   },
   "dependencies": {
     "concurrently": "^8.2.2",
