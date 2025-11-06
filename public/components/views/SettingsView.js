@@ -687,17 +687,19 @@ window.Views.SettingsView = ({
 
             setSyncingMembers(true);
             try {
-                const response = await fetch(`${mulesoftConfig.endpoint}/bulk/sync/members?program=${mulesoftConfig.loyaltyProgramId}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const results = await response.json();
+                console.log('🔄 Syncing members from MuleSoft via backend...');
+                const results = await window.API.call('/mulesoft/members/sync', {
+                    method: 'POST',
+                    body: JSON.stringify({ loyaltyProgramId: mulesoftConfig.loyaltyProgramId })
+                });
+                console.log('✅ Sync completed:', results);
                 setSyncResults(results);
                 setShowSyncResults(true);
                 setShowMembersModal(false);
+                window.NotificationManager.success('Sync Complete', 'Members synced successfully from Loyalty Cloud');
             } catch (error) {
-                console.error('Failed to sync members:', error);
-                alert(`Failed to sync members: ${error.message}`);
+                console.error('❌ Failed to sync members:', error);
+                window.NotificationManager.error('Sync Failed', `Failed to sync members: ${error.message}`);
             } finally {
                 setSyncingMembers(false);
             }

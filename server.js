@@ -4035,6 +4035,49 @@ app.get('/api/mulesoft/members', async (req, res) => {
     }
 });
 
+// Sync members from MuleSoft Loyalty Cloud to local database
+app.post('/api/mulesoft/members/sync', async (req, res) => {
+    try {
+        const { loyaltyProgramId } = req.body;
+        
+        if (!loyaltyProgramId) {
+            return res.status(400).json({ error: 'Loyalty program ID is required' });
+        }
+        
+        const result = await pool.query('SELECT setting_value FROM system_settings WHERE setting_key = $1', ['mulesoft_loyalty_sync_endpoint']);
+        const mulesoftEndpoint = result.rows[0]?.setting_value;
+        
+        if (!mulesoftEndpoint) {
+            return res.status(400).json({ error: 'MuleSoft endpoint not configured' });
+        }
+        
+        console.log('🔄 Syncing members from MuleSoft:', `${mulesoftEndpoint}/bulk/sync/members?program=${loyaltyProgramId}`);
+        
+        const response = await fetch(`${mulesoftEndpoint}/bulk/sync/members?program=${loyaltyProgramId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ MuleSoft sync API error:', response.status, errorText);
+            throw new Error(`MuleSoft API error: ${response.status} - ${errorText || response.statusText}`);
+        }
+        
+        const syncResults = await response.json();
+        console.log('✅ Members synced successfully:', syncResults);
+        res.json(syncResults);
+    } catch (err) {
+        console.error('Error syncing members from MuleSoft:', err);
+        res.status(500).json({ 
+            error: 'Failed to sync members from MuleSoft',
+            details: err.message 
+        });
+    }
+});
+
 
 // Transactions
 // app.get('/api/transactions', async (req, res) => {
