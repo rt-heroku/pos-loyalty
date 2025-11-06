@@ -656,24 +656,10 @@ window.Views.SettingsView = ({
 
         // Members sync functions
         const loadMembers = async () => {
-            if (!mulesoftConfig.endpoint) {
-                window.NotificationManager.warning('Configuration Required', 'Please configure the MuleSoft endpoint first');
-                return;
-            }
-
             setLoadingMembers(true);
             try {
-                console.log('🔄 Loading members from:', `${mulesoftConfig.endpoint}/members`);
-                const response = await fetch(`${mulesoftConfig.endpoint}/members`);
-                console.log('📥 Response status:', response.status);
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('❌ Error response:', errorText);
-                    throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
-                }
-                
-                const membersData = await response.json();
+                console.log('🔄 Loading members from MuleSoft via backend...');
+                const membersData = await window.API.call('/mulesoft/members');
                 console.log('✅ Members loaded:', membersData.length || 0, 'members');
                 setMembers(membersData);
                 setShowMembersModal(true);

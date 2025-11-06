@@ -3998,6 +3998,43 @@ app.post('/api/mulesoft/flows', async (req, res) => {
     }
 });
 
+// Get members from MuleSoft Loyalty Cloud
+app.get('/api/mulesoft/members', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT setting_value FROM system_settings WHERE setting_key = $1', ['mulesoft_loyalty_sync_endpoint']);
+        const mulesoftEndpoint = result.rows[0]?.setting_value;
+        
+        if (!mulesoftEndpoint) {
+            return res.status(400).json({ error: 'MuleSoft endpoint not configured' });
+        }
+        
+        console.log('🔄 Fetching members from MuleSoft:', `${mulesoftEndpoint}/members`);
+        
+        const response = await fetch(`${mulesoftEndpoint}/members`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ MuleSoft API error:', response.status, errorText);
+            throw new Error(`MuleSoft API error: ${response.status} - ${errorText || response.statusText}`);
+        }
+        
+        const members = await response.json();
+        console.log('✅ Members fetched successfully:', members.length || 0, 'members');
+        res.json(members);
+    } catch (err) {
+        console.error('Error fetching members from MuleSoft:', err);
+        res.status(500).json({ 
+            error: 'Failed to fetch members from MuleSoft',
+            details: err.message 
+        });
+    }
+});
+
 
 // Transactions
 // app.get('/api/transactions', async (req, res) => {
