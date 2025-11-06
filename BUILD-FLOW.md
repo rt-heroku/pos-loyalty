@@ -156,3 +156,4 @@ The `postinstall` hook handles dependency installation automatically, so the bui
 **Cause**: Next.js server not running
 **Fix**: Check Procfile uses `start:production` which starts both servers
 
+

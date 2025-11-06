@@ -238,3 +238,4 @@ const ParentComponent = () => {
 
 **The modal now works perfectly!** 🎉
 
+

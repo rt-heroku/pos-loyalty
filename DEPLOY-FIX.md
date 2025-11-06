@@ -195,3 +195,4 @@ if (!tableCheck.rows[0].exists) {
 
 The fix is already in your local `server.js`, you just need to deploy it! 🚀
 
+
