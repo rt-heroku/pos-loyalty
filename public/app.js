@@ -1269,21 +1269,36 @@ const POSApp = () => {
 
     const handleLoadOrderToCart = async (order) => {
         try {
-            // Clear current cart
-            setCart([]);
+            console.log('🛒 Loading order to cart:', order.order_number);
+            console.log('📦 Order items:', order.items);
+            
+            // Clear current cart and reset all related state
+            clearCart(); // Use the clearCart function to ensure everything is reset
             setSelectedCustomer(null);
             setCurrentOrderNumber(order.order_number);
             
             // Load order items into cart
-            const cartItems = order.items.map(item => ({
-                id: item.product_id,
-                name: item.product_name,
-                price: parseFloat(item.unit_price),
-                quantity: item.quantity,
-                image: item.product_image_url,
-                sku: item.product_sku
-            }));
+            const cartItems = order.items.map(item => {
+                console.log('📝 Mapping item:', {
+                    id: item.product_id,
+                    name: item.product_name,
+                    price: item.unit_price,
+                    quantity: item.quantity,
+                    image: item.product_image_url
+                });
+                
+                return {
+                    id: item.product_id,
+                    name: item.product_name,
+                    price: parseFloat(item.unit_price),
+                    quantity: item.quantity,
+                    image: item.product_image_url,
+                    main_image_url: item.product_image_url, // Add both for compatibility
+                    sku: item.product_sku
+                };
+            });
             
+            console.log('✅ Cart items to set:', cartItems);
             setCart(cartItems);
             
             // Load customer if exists
@@ -1291,6 +1306,7 @@ const POSApp = () => {
                 try {
                     const customerData = await window.API.call(`/customers/${order.customer_id}`);
                     setSelectedCustomer(customerData);
+                    console.log('👤 Customer loaded:', customerData.name);
                 } catch (err) {
                     console.error('Failed to load customer:', err);
                 }
@@ -1301,7 +1317,7 @@ const POSApp = () => {
             
             window.NotificationManager.success('Order Loaded', `Order ${order.order_number} loaded to cart`);
         } catch (error) {
-            console.error('Failed to load order to cart:', error);
+            console.error('❌ Failed to load order to cart:', error);
             window.NotificationManager.error('Failed to load order', error.message);
         }
     };
