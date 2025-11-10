@@ -1869,7 +1869,7 @@ BEGIN
         0,
         0,
         0
-    ) RETURNING id, order_number INTO v_order_id, v_order_number;
+    ) RETURNING orders.id, orders.order_number INTO v_order_id, v_order_number;
     
     -- Add random products to the order
     FOR v_product IN (
