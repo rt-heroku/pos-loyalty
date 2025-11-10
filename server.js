@@ -1249,7 +1249,28 @@ app.get('/api/orders', async (req, res) => {
 
         let query = `
             SELECT 
-                o.*,
+                o.id,
+                o.order_number,
+                o.customer_id,
+                o.location_id,
+                o.order_date,
+                o.status,
+                o.origin,
+                o.subtotal,
+                o.discount_amount,
+                o.tax_amount,
+                o.total_amount,
+                o.voucher_id,
+                o.voucher_discount,
+                o.coupon_code,
+                o.coupon_discount,
+                o.payment_method,
+                o.transaction_id,
+                o.notes,
+                o.sf_id,
+                o.created_by,
+                o.updated_at,
+                o.completed_at,
                 c.first_name || ' ' || c.last_name as customer_name,
                 c.loyalty_number as customer_loyalty_number,
                 c.phone as customer_phone,
@@ -1316,7 +1337,12 @@ app.get('/api/orders', async (req, res) => {
         }
 
         query += `
-            GROUP BY o.id, c.first_name, c.last_name, c.loyalty_number, c.phone, c.email, l.name
+            GROUP BY o.id, o.order_number, o.customer_id, o.location_id, o.order_date, 
+                     o.status, o.origin, o.subtotal, o.discount_amount, o.tax_amount, 
+                     o.total_amount, o.voucher_id, o.voucher_discount, o.coupon_code, 
+                     o.coupon_discount, o.payment_method, o.transaction_id, o.notes, 
+                     o.sf_id, o.created_by, o.updated_at, o.completed_at,
+                     c.first_name, c.last_name, c.loyalty_number, c.phone, c.email, l.name
             ORDER BY o.order_date DESC
         `;
 
