@@ -1348,37 +1348,47 @@ sfdc.account=`;
                 return;
             }
 
+            console.log('🎲 Starting inventory generation with options:', {
+                enableInventory,
+                enablePricing,
+                keepExistingStock,
+                priceRangeMin,
+                priceRangeMax,
+                keepExistingPrice
+            });
+
             setGeneratingInventory(true);
             try {
-                const response = await fetch('/api/products/generate-inventory', {
+                const requestBody = {
+                    enableInventory,
+                    enablePricing,
+                    keepExistingStock,
+                    priceRangeMin,
+                    priceRangeMax,
+                    keepExistingPrice
+                };
+                
+                console.log('📤 Sending request to /api/products/generate-inventory');
+                
+                const result = await window.API.call('/products/generate-inventory', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-                    },
-                    body: JSON.stringify({
-                        enableInventory,
-                        enablePricing,
-                        keepExistingStock,
-                        priceRangeMin,
-                        priceRangeMax,
-                        keepExistingPrice
-                    })
+                    body: JSON.stringify(requestBody)
                 });
                 
-                if (response.ok) {
-                    const result = await response.json();
-                    const message = [];
-                    if (enableInventory) message.push('inventory');
-                    if (enablePricing) message.push('pricing');
-                    window.NotificationManager.success('Generation Complete', `${message.join(' and ')} generated successfully`);
-                    setShowInventoryModal(false);
-                } else {
-                    throw new Error('Failed to generate data');
-                }
+                console.log('✅ Generation result:', result);
+                
+                const message = [];
+                if (enableInventory) message.push('inventory');
+                if (enablePricing) message.push('pricing');
+                
+                window.NotificationManager.success(
+                    'Generation Complete', 
+                    result.message || `${message.join(' and ')} generated successfully for ${result.updated || 0} products`
+                );
+                setShowInventoryModal(false);
             } catch (error) {
-                console.error('Error generating data:', error);
-                window.NotificationManager.error('Generation Failed', error.message);
+                console.error('❌ Error generating data:', error);
+                window.NotificationManager.error('Generation Failed', error.message || 'Unknown error occurred');
             } finally {
                 setGeneratingInventory(false);
             }
