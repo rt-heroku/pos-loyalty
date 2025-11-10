@@ -1276,7 +1276,7 @@ app.get('/api/orders', async (req, res) => {
                 c.phone as customer_phone,
                 c.email as customer_email,
                 COUNT(oi.id) as item_count,
-                l.name as location_name
+                l.store_name as location_name
             FROM orders o
             LEFT JOIN customers c ON o.customer_id = c.id
             LEFT JOIN order_items oi ON o.id = oi.order_id
@@ -1342,7 +1342,7 @@ app.get('/api/orders', async (req, res) => {
                      o.total_amount, o.voucher_id, o.voucher_discount, o.coupon_code, 
                      o.coupon_discount, o.payment_method, o.transaction_id, o.notes, 
                      o.sf_id, o.created_by, o.updated_at, o.completed_at,
-                     c.first_name, c.last_name, c.loyalty_number, c.phone, c.email, l.name
+                     c.first_name, c.last_name, c.loyalty_number, c.phone, c.email, l.store_name
             ORDER BY o.order_date DESC
         `;
 
