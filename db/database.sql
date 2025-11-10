@@ -145,9 +145,9 @@ CREATE TABLE customers (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
     created_by_user INTEGER,
-    user_id INTEGER
+    user_id INTEGER,
+    status varchar DEFAULT 'Created'::character varying NULL
 );
-
 -- Transactions table with all columns
 CREATE TABLE transactions (
     id SERIAL PRIMARY KEY,
@@ -1711,6 +1711,7 @@ CREATE TABLE IF NOT EXISTS orders (
     payment_method VARCHAR(50),
     transaction_id INTEGER REFERENCES transactions(id),
     notes TEXT,
+    sf_id VARCHAR(100),
     created_by INTEGER REFERENCES users(id),
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP
@@ -1731,6 +1732,7 @@ CREATE TABLE IF NOT EXISTS order_items (
     voucher_discount DECIMAL(10,2) DEFAULT 0.00,
     total_price DECIMAL(10,2) NOT NULL,
     notes TEXT,
+    sf_id VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

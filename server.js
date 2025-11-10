@@ -1402,6 +1402,7 @@ app.post('/api/orders', async (req, res) => {
             coupon_discount = 0,
             payment_method,
             notes,
+            sf_id,
             created_by,
             items = []
         } = req.body;
@@ -1412,14 +1413,14 @@ app.post('/api/orders', async (req, res) => {
                 customer_id, location_id, status, origin,
                 subtotal, discount_amount, tax_amount, total_amount,
                 voucher_id, voucher_discount, coupon_code, coupon_discount,
-                payment_method, notes, created_by
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                payment_method, notes, sf_id, created_by
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
             RETURNING *
         `, [
             customer_id, location_id, status, origin,
             subtotal, discount_amount, tax_amount, total_amount,
             voucher_id, voucher_discount, coupon_code, coupon_discount,
-            payment_method, notes, created_by
+            payment_method, notes, sf_id, created_by
         ]);
 
         const order = orderResult.rows[0];
@@ -1429,12 +1430,12 @@ app.post('/api/orders', async (req, res) => {
             await client.query(`
                 INSERT INTO order_items (
                     order_id, product_id, product_name, product_sku, product_image_url,
-                    quantity, unit_price, tax_amount, discount_amount, voucher_discount, total_price, notes
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                    quantity, unit_price, tax_amount, discount_amount, voucher_discount, total_price, notes, sf_id
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             `, [
                 order.id, item.product_id, item.product_name, item.product_sku, item.product_image_url,
                 item.quantity, item.unit_price, item.tax_amount || 0, item.discount_amount || 0, 
-                item.voucher_discount || 0, item.total_price, item.notes
+                item.voucher_discount || 0, item.total_price, item.notes, item.sf_id
             ]);
         }
 

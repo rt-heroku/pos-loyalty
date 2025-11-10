@@ -676,7 +676,70 @@ const POSApp = () => {
                 transactionData.paymentReference = null;
             }
 
+            // Create transaction
             const transaction = await window.API.transactions.create(transactionData);
+
+            // Handle order creation or linking
+            if (currentOrderNumber) {
+                // If there's a current order (loaded from "Move to Cart"), link the transaction to it
+                console.log('🔗 Linking transaction to existing order:', currentOrderNumber);
+                
+                // Find the order by order_number
+                const ordersResponse = await window.API.call(`/orders?search=${currentOrderNumber}`);
+                if (ordersResponse && ordersResponse.length > 0) {
+                    const existingOrder = ordersResponse[0];
+                    
+                    // Link transaction to order
+                    await window.API.call(`/orders/${existingOrder.id}/transaction`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ transaction_id: transaction.id })
+                    });
+                    
+                    console.log('✅ Transaction linked to order:', existingOrder.order_number);
+                    window.NotificationManager.success('Order Completed', `Order ${existingOrder.order_number} completed successfully`);
+                }
+                
+                // Clear the current order reference
+                setCurrentOrderNumber(null);
+            } else {
+                // Create a new order for this transaction
+                console.log('📦 Creating new order for transaction:', transaction.id);
+                
+                const orderData = {
+                    customer_id: selectedCustomer?.id || null,
+                    location_id: selectedLocation.id,
+                    status: 'completed',
+                    origin: 'pos',
+                    subtotal: subtotal,
+                    discount_amount: discount,
+                    tax_amount: tax,
+                    total_amount: total,
+                    voucher_id: appliedVouchers && appliedVouchers.length > 0 ? appliedVouchers[0].id : null,
+                    voucher_discount: voucherDiscounts || 0,
+                    payment_method: paymentMethod,
+                    transaction_id: transaction.id,
+                    created_by: currentUser?.id || null,
+                    items: cart.map(item => ({
+                        product_id: item.id,
+                        product_name: item.name,
+                        product_sku: item.sku,
+                        product_image_url: item.image || item.main_image_url,
+                        quantity: item.quantity,
+                        unit_price: item.price,
+                        tax_amount: (item.price * item.quantity * (taxRate / 100)),
+                        discount_amount: 0,
+                        voucher_discount: 0,
+                        total_price: item.price * item.quantity
+                    }))
+                };
+
+                const order = await window.API.call('/orders', {
+                    method: 'POST',
+                    body: JSON.stringify(orderData)
+                });
+                
+                console.log('✅ Order created:', order.order_number);
+            }
 
             // Refresh data
             await Promise.all([
@@ -1622,6 +1685,7 @@ const POSApp = () => {
                 products: filteredProducts,
                 cart,
                 selectedCustomer,
+                currentOrderNumber,
                 searchTerm, setSearchTerm,
                 selectedCategory, setSelectedCategory,
                 categories,

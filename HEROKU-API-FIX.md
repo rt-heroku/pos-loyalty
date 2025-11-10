@@ -181,3 +181,5 @@ heroku run npm run db:setup
 The "Data Management" section will now work without errors, even if the `generated_products` table doesn't exist yet!
 
 
+
+

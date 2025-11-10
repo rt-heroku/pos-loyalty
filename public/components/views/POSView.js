@@ -31,7 +31,8 @@ if (!window.Views) {
 window.Views.POSView = ({ 
     products, 
     cart, 
-    selectedCustomer, 
+    selectedCustomer,
+    currentOrderNumber,
     searchTerm, 
     setSearchTerm, 
     selectedCategory, 
@@ -618,6 +619,15 @@ window.Views.POSView = ({
                     )
                 ]),
 
+                // Order reference display
+                currentOrderNumber && React.createElement('div', { 
+                    key: 'order-reference',
+                    className: 'mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg'
+                }, [
+                    React.createElement('div', { key: 'order-label', className: 'text-xs text-blue-600 dark:text-blue-400 font-semibold mb-1' }, 'ORDER REFERENCE'),
+                    React.createElement('div', { key: 'order-number', className: 'text-lg font-mono font-bold text-blue-800 dark:text-blue-200' }, currentOrderNumber),
+                    React.createElement('div', { key: 'order-note', className: 'text-xs text-blue-600 dark:text-blue-400 mt-1' }, 'This order will be linked to the transaction upon payment')
+                ]),
 
                 // Enhanced cart items display
                 React.createElement(React.Fragment, { key: 'cart-items-section' }, [
