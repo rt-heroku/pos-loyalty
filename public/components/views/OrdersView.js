@@ -428,7 +428,7 @@ window.Views.OrdersView = ({
                                 className: 'flex items-center gap-2 ml-4'
                             }, [
                                 // Move to cart button for pickup status
-                                order.status === 'pickup' && React.createElement('button', {
+                                (order.status === 'pickup' || order.status === 'pending') && React.createElement('button', {
                                     key: `move-to-cart-${order.id}`,
                                     onClick: (e) => {
                                         e.stopPropagation();
