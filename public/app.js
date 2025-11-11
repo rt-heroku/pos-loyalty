@@ -1706,7 +1706,7 @@ const POSApp = () => {
         ]),
 
         // Main Content
-        React.createElement('main', { key: 'main', className: 'pos-container p-2 pb-20 lg:pb-6 pt-4 lg:pt-28 h-full' }, [
+        React.createElement('main', { key: 'main', className: 'pos-container p-2 pb-20 lg:pb-6 pt-4 lg:pt-28 min-h-screen' }, [
             currentView === 'pos' && selectedLocation && React.createElement(window.Views.POSView, { 
                 key: 'pos-view',
                 products: filteredProducts,
