@@ -39,7 +39,7 @@ window.Views.DashboardView = ({ selectedLocation }) => {
             // Create tableau-viz element
             const tableauViz = document.createElement('tableau-viz');
             tableauViz.id = 'tableau-viz';
-            tableauViz.setAttribute('src', 'https://10ax.online.tableau.com/t/rcgsepulse/views/ScottsRestaurantBar/FranchiseeExecDash');
+            tableauViz.setAttribute('src', 'https://10ax.online.tableau.com/t/rcgsepulse/views/MaxMulesRestaurantView/FranchiseeExecDash');
             // tableauViz.setAttribute('width', '100%');
             // tableauViz.setAttribute('height', '100%');
             tableauViz.setAttribute('toolbar', 'bottom');
