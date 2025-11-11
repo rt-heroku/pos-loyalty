@@ -1543,7 +1543,7 @@ const POSApp = () => {
                                 key: 'operations-btn',
                                 onClick: () => setShowOperationsDropdown(!showOperationsDropdown),
                                 className: `flex items-center gap-2 px-4 py-3 rounded-lg transition-all ${
-                                    ['loyalty', 'promotions', 'inventory', 'orders', 'sales'].includes(currentView)
+                                    ['loyalty', 'promotions', 'inventory', 'orders', 'sales', 'dashboard'].includes(currentView)
                                         ? 'bg-blue-600 text-white shadow-lg' 
                                         : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                 }`
@@ -1616,6 +1616,17 @@ const POSApp = () => {
                                 }, [
                                     React.createElement(BarChart3, { key: 'sales-icon', size: 18 }),
                                     React.createElement('span', { key: 'sales-text' }, 'Sales Report')
+                                ]),
+                                React.createElement('button', {
+                                    key: 'menu-dashboard',
+                                    onClick: () => {
+                                        setCurrentView('dashboard');
+                                        setShowOperationsDropdown(false);
+                                    },
+                                    className: 'w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                }, [
+                                    React.createElement(BarChart3, { key: 'dashboard-icon', size: 18 }),
+                                    React.createElement('span', { key: 'dashboard-text' }, 'Dashboard')
                                 ])
                             ])
                         ]),
@@ -1785,6 +1796,11 @@ const POSApp = () => {
             currentView === 'sales' && selectedLocation && React.createElement(window.Views.SalesView, { 
                 key: 'sales-view',
                 analytics, transactions
+            }),
+
+            currentView === 'dashboard' && selectedLocation && React.createElement(window.Views.DashboardView, { 
+                key: 'dashboard-view',
+                selectedLocation
             }),
 
             currentView === 'settings' && React.createElement(window.Views.SettingsView, { 
