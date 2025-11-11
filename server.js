@@ -5729,6 +5729,118 @@ app.delete('/api/transactions/:id/remove-voucher', async (req, res) => {
   }
 });
 
+// Salesforce Orders Endpoints
+
+// Get all Salesforce orders (proxy to MuleSoft)
+app.get('/api/orders/salesforce', async (req, res) => {
+  try {
+    console.log('📦 Fetching all Salesforce orders');
+    
+    // Get MuleSoft endpoint from system settings
+    const settingsResult = await pool.query(
+      'SELECT setting_value FROM system_settings WHERE setting_key = $1',
+      ['mulesoft_loyalty_sync_endpoint']
+    );
+
+    if (!settingsResult.rows.length || !settingsResult.rows[0].setting_value) {
+      return res.status(400).json({ error: 'MuleSoft endpoint not configured' });
+    }
+
+    const mulesoftEndpoint = settingsResult.rows[0].setting_value;
+    const url = `${mulesoftEndpoint}/orders/salesforce`;
+    
+    console.log('   Calling MuleSoft:', url);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.MULESOFT_ACCESS_TOKEN || 'your-token-here'}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`MuleSoft API error: ${response.status} ${response.statusText}`);
+    }
+
+    const orders = await response.json();
+    console.log(`✅ Retrieved ${Array.isArray(orders) ? orders.length : 0} Salesforce orders`);
+    
+    res.json(orders);
+  } catch (error) {
+    console.error('❌ Error fetching Salesforce orders:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch Salesforce orders',
+      details: error.message 
+    });
+  }
+});
+
+// Get Salesforce orders by customer or email (proxy to MuleSoft)
+app.get('/api/orders/salesforce/account', async (req, res) => {
+  try {
+    const { LoyaltyMemberID, email } = req.query;
+    
+    console.log('🔍 Fetching Salesforce orders by account');
+    console.log('   LoyaltyMemberID:', LoyaltyMemberID);
+    console.log('   Email:', email);
+
+    if (!LoyaltyMemberID && !email) {
+      return res.status(400).json({ error: 'Either LoyaltyMemberID or email is required' });
+    }
+
+    // Get MuleSoft endpoint from system settings
+    const settingsResult = await pool.query(
+      'SELECT setting_value FROM system_settings WHERE setting_key = $1',
+      ['mulesoft_loyalty_sync_endpoint']
+    );
+
+    if (!settingsResult.rows.length || !settingsResult.rows[0].setting_value) {
+      return res.status(400).json({ error: 'MuleSoft endpoint not configured' });
+    }
+
+    const mulesoftEndpoint = settingsResult.rows[0].setting_value;
+    
+    // Build query string
+    const queryParams = new URLSearchParams();
+    if (LoyaltyMemberID) {
+      queryParams.append('LoyaltyMemberID', LoyaltyMemberID);
+    }
+    if (email) {
+      queryParams.append('email', email);
+    }
+    
+    const url = `${mulesoftEndpoint}/orders/salesforce/account?${queryParams.toString()}`;
+    
+    console.log('   Calling MuleSoft:', url);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.MULESOFT_ACCESS_TOKEN || 'your-token-here'}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('   MuleSoft error response:', errorText);
+      throw new Error(`MuleSoft API error: ${response.status} ${response.statusText}`);
+    }
+
+    const orders = await response.json();
+    console.log(`✅ Retrieved ${Array.isArray(orders) ? orders.length : 0} Salesforce orders`);
+    
+    res.json(orders);
+  } catch (error) {
+    console.error('❌ Error fetching Salesforce orders by account:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch Salesforce orders',
+      details: error.message 
+    });
+  }
+});
+
 // Serve React app
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
