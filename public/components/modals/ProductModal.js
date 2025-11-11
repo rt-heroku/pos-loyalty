@@ -260,11 +260,19 @@ window.Modals.ProductModal = function ProductModal({
             return;
         }
 
+        console.log('📤 Sending product to Salesforce');
+        console.log('   Product ID:', product.id);
+        console.log('   Product Name:', product.name);
+        console.log('   Full URL:', `/api/loyalty/products/send?product=${product.id}`);
+
         setSalesforceLoading(true);
         setSalesforceResults(null);
 
         try {
-            const response = await fetch(`/api/loyalty/products/send?product=${product.id}`, {
+            const url = `/api/loyalty/products/send?product=${product.id}`;
+            console.log('   Calling:', url);
+            
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -273,8 +281,16 @@ window.Modals.ProductModal = function ProductModal({
 
             if (response.ok) {
                 const result = await response.json();
+                console.log('✅ Salesforce sync response:', result);
+                console.log('   Products processed:', result.statistics?.totalProcessed || 'N/A');
+                
                 setSalesforceResults(result);
                 setShowSalesforceResultsModal(true);
+                
+                window.NotificationManager.success(
+                    'Salesforce Sync Complete', 
+                    `Processed ${result.statistics?.totalProcessed || 0} product(s)`
+                );
                 
                 // Close the modal after showing the results
                 setTimeout(() => {
@@ -282,10 +298,11 @@ window.Modals.ProductModal = function ProductModal({
                 }, 3000); // Wait 3 seconds to allow user to see the results
             } else {
                 const error = await response.json();
+                console.error('❌ Salesforce sync failed:', error);
                 window.NotificationManager.error('Salesforce Sync Failed', `Failed to send product to Salesforce: ${error.error || 'Unknown error'}`);
             }
         } catch (error) {
-            console.error('Error sending product to Salesforce:', error);
+            console.error('❌ Error sending product to Salesforce:', error);
             window.NotificationManager.error('Salesforce Sync Failed', `Failed to send product to Salesforce: ${error.message}`);
         } finally {
             setSalesforceLoading(false);

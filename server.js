@@ -4928,6 +4928,11 @@ async function parseCSV(buffer) {
 app.post('/api/loyalty/products/send', async (req, res) => {
   try {
     const { product: productId } = req.query;
+    
+    console.log('📤 Send to Salesforce request received');
+    console.log('   Product ID from query:', productId);
+    console.log('   Query params:', req.query);
+    
     const client = await pool.connect();
     
     try {
@@ -4935,6 +4940,7 @@ app.post('/api/loyalty/products/send', async (req, res) => {
       
       if (productId) {
         // Send specific product
+        console.log(`   Mode: Single product (ID: ${productId})`);
         productsResult = await client.query(`
           SELECT id, name, sku, price, category, product_type, brand, collection,
                  material, color, description, dimensions, weight, warranty_info,
@@ -4944,6 +4950,7 @@ app.post('/api/loyalty/products/send', async (req, res) => {
         `, [productId]);
       } else {
         // Send all products
+        console.log('   Mode: Bulk sync (all active products)');
         productsResult = await client.query(`
           SELECT id, name, sku, price, category, product_type, brand, collection,
                  material, color, description, dimensions, weight, warranty_info,
@@ -4955,6 +4962,10 @@ app.post('/api/loyalty/products/send', async (req, res) => {
       }
       
       const products = productsResult.rows;
+      console.log(`   Products to send: ${products.length}`);
+      if (products.length > 0) {
+        console.log(`   First product: ${products[0].name} (ID: ${products[0].id})`);
+      }
       
       if (products.length === 0) {
         return res.json({
