@@ -98,7 +98,8 @@ function CheckoutContent() {
     // Load payment methods
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const pmRes = await fetch(`${origin}/api/payment-methods`);
+      const basePath = '/loyalty';
+      const pmRes = await fetch(`${origin}${basePath}/api/payment-methods`);
       if (pmRes.ok) {
         const methods = await pmRes.json();
         setPaymentMethods(methods);
@@ -113,7 +114,8 @@ function CheckoutContent() {
     // Load locations
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const locRes = await fetch(`${origin}/api/locations`);
+      const basePath = '/loyalty';
+      const locRes = await fetch(`${origin}${basePath}/api/locations`);
       if (locRes.ok) {
         const locs = await locRes.json();
         setLocations(locs);
@@ -216,7 +218,8 @@ function CheckoutContent() {
       };
 
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const response = await fetch(`${origin}/api/orders/online`, {
+      const basePath = '/loyalty';
+      const response = await fetch(`${origin}${basePath}/api/orders/online`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
