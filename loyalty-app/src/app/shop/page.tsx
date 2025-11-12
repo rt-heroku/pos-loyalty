@@ -162,14 +162,21 @@ export default function ShopPage() {
     loadShopData();
     checkAuth();
     
-    // Force light theme for shop pages
+    // Force light theme for shop pages - AGGRESSIVE ENFORCEMENT
     if (typeof document !== 'undefined') {
-      // Remove dark class from html element
+      // Remove dark class from html and body
       document.documentElement.classList.remove('dark');
-      // Also remove from body if it exists
       document.body.classList.remove('dark');
-      // Set data-theme attribute to light
+      
+      // Set light theme attribute
       document.documentElement.setAttribute('data-theme', 'light');
+      
+      // Force light colors with inline styles (overrides any CSS)
+      document.documentElement.style.backgroundColor = '#f9fafb';
+      document.documentElement.style.colorScheme = 'light';
+      document.body.style.backgroundColor = '#f9fafb';
+      document.body.style.color = '#111827';
+      
       // Override any stored theme preference for shop pages
       localStorage.setItem('shop-theme', 'light');
     }
@@ -350,16 +357,7 @@ export default function ShopPage() {
   // =====================================================
 
   return (
-    <>
-      {/* Force light theme - remove dark mode classes */}
-      <style jsx global>{`
-        html, html.dark, body, body.dark {
-          background-color: #f9fafb !important;
-          color: #111827 !important;
-        }
-      `}</style>
-      
-      <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 text-gray-900" style={{ colorScheme: 'light' }}>
         {/* Hero Section */}
       {shopSettings?.hero_enabled && (
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
@@ -1126,7 +1124,7 @@ function ProductCustomizationModal({ product, modifierGroups, onClose, onAddToCa
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
