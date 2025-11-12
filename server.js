@@ -695,13 +695,13 @@ app.get('/api/products', async (req, res) => {
         p.min_stock,
         p.max_stock,
         p.is_active,
-        p.category_id,
-        c.name as category,
+        p.category,
+        c.id as category_id,
         p.main_image_url,
         p.created_at,
         p.updated_at
       FROM products p
-      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN categories c ON p.category = c.name
       WHERE 1=1
     `;
     
@@ -713,7 +713,7 @@ app.get('/api/products', async (req, res) => {
     }
     
     if (category_id) {
-      query += ` AND p.category_id = $${paramCount}`;
+      query += ` AND c.id = $${paramCount}`;
       params.push(category_id);
       paramCount++;
     }
@@ -5970,7 +5970,7 @@ app.get('/api/categories', async (req, res) => {
         c.is_active,
         COUNT(p.id) as product_count
       FROM categories c
-      LEFT JOIN products p ON p.category_id = c.id AND p.is_active = true
+      LEFT JOIN products p ON p.category = c.name AND p.is_active = true
       WHERE c.is_active = true
       GROUP BY c.id, c.name, c.description, c.display_order, c.is_active
       ORDER BY c.display_order, c.name
