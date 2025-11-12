@@ -615,34 +615,34 @@ window.Modals.CustomerFormModal = function CustomerFormModal({
 
                         // Customer Stats (read-only display with enhanced info)
                         React.createElement('div', { key: 'stats', className: 'space-y-3' }, [
-                            React.createElement('div', { className: 'text-sm' }, [
-                                React.createElement('span', { className: 'font-medium text-gray-700 dark:text-gray-300' }, 'Total Spent: '),
-                                React.createElement('span', { className: 'text-green-600 font-bold' },
+                            React.createElement('div', { key: 'stat-total-spent', className: 'text-sm' }, [
+                                React.createElement('span', { key: 'spent-label', className: 'font-medium text-gray-700 dark:text-gray-300' }, 'Total Spent: '),
+                                React.createElement('span', { key: 'spent-value', className: 'text-green-600 font-bold' },
                                     `${parseFloat(customer.total_spent || 0).toFixed(2)}`
                                 )
                             ]),
-                            React.createElement('div', { className: 'text-sm' }, [
-                                React.createElement('span', { className: 'font-medium text-gray-700 dark:text-gray-300' }, 'Visit Count: '),
-                                React.createElement('span', { className: 'text-blue-600 font-bold' },
+                            React.createElement('div', { key: 'stat-visit-count', className: 'text-sm' }, [
+                                React.createElement('span', { key: 'visit-label', className: 'font-medium text-gray-700 dark:text-gray-300' }, 'Visit Count: '),
+                                React.createElement('span', { key: 'visit-value', className: 'text-blue-600 font-bold' },
                                     customer.visit_count || 0
                                 )
                             ]),
-                            customer.last_visit && React.createElement('div', { className: 'text-sm' }, [
-                                React.createElement('span', { className: 'font-medium text-gray-700 dark:text-gray-300' }, 'Last Visit: '),
-                                React.createElement('span', { className: 'text-purple-600 font-bold' },
+                            customer.last_visit && React.createElement('div', { key: 'stat-last-visit', className: 'text-sm' }, [
+                                React.createElement('span', { key: 'last-visit-label', className: 'font-medium text-gray-700 dark:text-gray-300' }, 'Last Visit: '),
+                                React.createElement('span', { key: 'last-visit-value', className: 'text-purple-600 font-bold' },
                                     new Date(customer.last_visit).toLocaleDateString()
                                 )
                             ]),
-                            customer.tier_calculation_number && React.createElement('div', { className: 'text-sm' }, [
-                                React.createElement('span', { className: 'font-medium text-gray-700 dark:text-gray-300' }, 'Tier Score: '),
-                                React.createElement('span', { className: 'text-indigo-600 font-bold' },
+                            customer.tier_calculation_number && React.createElement('div', { key: 'stat-tier-score', className: 'text-sm' }, [
+                                React.createElement('span', { key: 'tier-label', className: 'font-medium text-gray-700 dark:text-gray-300' }, 'Tier Score: '),
+                                React.createElement('span', { key: 'tier-value', className: 'text-indigo-600 font-bold' },
                                     parseFloat(customer.tier_calculation_number).toFixed(2)
                                 )
                             ]),
                             // Member duration
-                            customer.enrollment_date && React.createElement('div', { className: 'text-sm' }, [
-                                React.createElement('span', { className: 'font-medium text-gray-700 dark:text-gray-300' }, 'Member For: '),
-                                React.createElement('span', { className: 'text-orange-600 font-bold' },
+                            customer.enrollment_date && React.createElement('div', { key: 'stat-member-duration', className: 'text-sm' }, [
+                                React.createElement('span', { key: 'duration-label', className: 'font-medium text-gray-700 dark:text-gray-300' }, 'Member For: '),
+                                React.createElement('span', { key: 'duration-value', className: 'text-orange-600 font-bold' },
                                     (() => {
                                         const enrollDate = new Date(customer.enrollment_date);
                                         const now = new Date();
