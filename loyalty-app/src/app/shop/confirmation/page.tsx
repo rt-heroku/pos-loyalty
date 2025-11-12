@@ -14,7 +14,8 @@ function ConfirmationContent() {
 
   const loadOrderDetails = useCallback(async () => {
     try {
-      const response = await fetch(`/api/orders?order_number=${orderNumber}`);
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const response = await fetch(`${basePath}/api/orders?order_number=${orderNumber}`);
       if (response.ok) {
         const orders = await response.json();
         if (orders.length > 0) {

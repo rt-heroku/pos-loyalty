@@ -99,23 +99,24 @@ export default function ShopPage() {
   const loadShopData = useCallback(async () => {
     try {
       setLoading(true);
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
       
       // Load shop settings
-      const settingsRes = await fetch('/api/shop/settings');
+      const settingsRes = await fetch(`${basePath}/api/shop/settings`);
       if (settingsRes.ok) {
         const settings = await settingsRes.json();
         setShopSettings(settings);
       }
 
       // Load categories
-      const categoriesRes = await fetch('/api/categories');
+      const categoriesRes = await fetch(`${basePath}/api/categories`);
       if (categoriesRes.ok) {
         const cats = await categoriesRes.json();
         setCategories(cats);
       }
 
       // Load products
-      const productsRes = await fetch('/api/products?active=true');
+      const productsRes = await fetch(`${basePath}/api/products?active=true`);
       if (productsRes.ok) {
         const prods = await productsRes.json();
         setProducts(prods);
@@ -130,11 +131,17 @@ export default function ShopPage() {
   useEffect(() => {
     loadShopData();
     checkAuth();
+    
+    // Set light theme for shop by default
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.remove('dark');
+    }
   }, [loadShopData, checkAuth]);
 
   const loadProductModifiers = async (productId: number) => {
     try {
-      const res = await fetch(`/api/products/${productId}/modifiers`);
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const res = await fetch(`${basePath}/api/products/${productId}/modifiers`);
       if (res.ok) {
         const groups = await res.json();
         setModifierGroups(groups);
