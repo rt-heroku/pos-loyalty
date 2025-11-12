@@ -114,7 +114,11 @@ export default function ShopPage() {
       console.log('[Shop] Settings response status:', settingsRes.status);
       if (settingsRes.ok) {
         const settings = await settingsRes.json();
+        console.log('[Shop] Settings loaded:', settings);
         setShopSettings(settings);
+      } else {
+        const errorText = await settingsRes.text();
+        console.error('[Shop] Settings error:', errorText.substring(0, 200));
       }
 
       // Load categories
@@ -122,7 +126,11 @@ export default function ShopPage() {
       console.log('[Shop] Categories response status:', categoriesRes.status);
       if (categoriesRes.ok) {
         const cats = await categoriesRes.json();
+        console.log('[Shop] Categories loaded:', cats.length, 'categories');
         setCategories(cats);
+      } else {
+        const errorText = await categoriesRes.text();
+        console.error('[Shop] Categories error:', errorText.substring(0, 200));
       }
 
       // Load products
@@ -130,7 +138,11 @@ export default function ShopPage() {
       console.log('[Shop] Products response status:', productsRes.status);
       if (productsRes.ok) {
         const prods = await productsRes.json();
+        console.log('[Shop] Products loaded:', prods.length, 'products');
         setProducts(prods);
+      } else {
+        const errorText = await productsRes.text();
+        console.error('[Shop] Products error:', errorText.substring(0, 200));
       }
     } catch (error) {
       console.error('Error loading shop data:', error);
