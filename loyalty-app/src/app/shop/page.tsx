@@ -725,7 +725,7 @@ function MobileCartSlideup({ cart, onClose, onUpdateQuantity, onRemove, onChecko
   const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <>
+    <div>
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
@@ -787,7 +787,7 @@ function MobileCartSlideup({ cart, onClose, onUpdateQuantity, onRemove, onChecko
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -979,7 +979,7 @@ function ProductCustomizationModal({ product, modifierGroups, onClose, onAddToCa
   };
 
   return (
-    <>
+    <div>
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-black bg-opacity-50 z-50"
