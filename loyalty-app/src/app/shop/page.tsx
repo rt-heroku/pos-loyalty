@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 // =====================================================
 // TYPES & INTERFACES
@@ -79,7 +80,6 @@ export default function ShopPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [modifierGroups, setModifierGroups] = useState<ModifierGroup[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any>(null);
   
   // Refs
   const categoryRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
@@ -88,21 +88,15 @@ export default function ShopPage() {
   // DATA FETCHING
   // =====================================================
 
-  useEffect(() => {
-    loadShopData();
-    checkAuth();
-  }, []);
-
-  const checkAuth = () => {
+  const checkAuth = useCallback(() => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     if (token && userData) {
       setIsAuthenticated(true);
-      setUser(JSON.parse(userData));
     }
-  };
+  }, []);
 
-  const loadShopData = async () => {
+  const loadShopData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -131,7 +125,12 @@ export default function ShopPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadShopData();
+    checkAuth();
+  }, [loadShopData, checkAuth]);
 
   const loadProductModifiers = async (productId: number) => {
     try {
@@ -171,8 +170,11 @@ export default function ShopPage() {
 
       if (existingIndex > -1) {
         const updated = [...prev];
-        updated[existingIndex].quantity += 1;
-        updated[existingIndex].item_total = updated[existingIndex].quantity * itemTotal;
+        const existingItem = updated[existingIndex];
+        if (existingItem) {
+          existingItem.quantity += 1;
+          existingItem.item_total = existingItem.quantity * itemTotal;
+        }
         return updated;
       }
 
@@ -191,9 +193,12 @@ export default function ShopPage() {
 
     setCart(prev => {
       const updated = [...prev];
-      const basePrice = updated[index].item_total / updated[index].quantity;
-      updated[index].quantity = quantity;
-      updated[index].item_total = basePrice * quantity;
+      const item = updated[index];
+      if (item) {
+        const basePrice = item.item_total / item.quantity;
+        item.quantity = quantity;
+        item.item_total = basePrice * quantity;
+      }
       return updated;
     });
   };
@@ -297,10 +302,13 @@ export default function ShopPage() {
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
           <div className="max-w-7xl mx-auto px-4 py-12 md:py-16 text-center">
             {shopSettings.logo_url && (
-              <img 
+              <Image 
                 src={shopSettings.logo_url} 
                 alt={shopSettings.location_name}
+                width={160}
+                height={80}
                 className="h-16 md:h-20 mx-auto mb-4 object-contain"
+                priority
               />
             )}
             <h1 className="text-3xl md:text-5xl font-bold mb-3">
@@ -415,7 +423,7 @@ export default function ShopPage() {
               {productsByCategory.map(({ category, products }) => (
                 <div 
                   key={category.id}
-                  ref={el => categoryRefs.current[category.id] = el}
+                  ref={el => { categoryRefs.current[category.id] = el; }}
                   className="scroll-mt-6"
                 >
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
@@ -517,10 +525,12 @@ function ProductCard({ product, onQuickAdd }: ProductCardProps) {
       {/* Product Image */}
       <div className="relative aspect-[4/3] bg-gray-200 dark:bg-gray-700">
         {product.main_image_url ? (
-          <img
+          <Image
             src={product.main_image_url}
             alt={product.name}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 50vw, 33vw"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -735,12 +745,14 @@ function CartItemCard({ item, index, onUpdateQuantity, onRemove }: CartItemCardP
   return (
     <div className="flex space-x-3 bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
       {/* Thumbnail */}
-      <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-lg overflow-hidden flex-shrink-0">
+      <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-lg overflow-hidden flex-shrink-0 relative">
         {item.product.main_image_url ? (
-          <img
+          <Image
             src={item.product.main_image_url}
             alt={item.product.name}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            sizes="64px"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

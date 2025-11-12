@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 
 // =====================================================
 // TYPES
@@ -38,7 +39,7 @@ interface Location {
 // CHECKOUT PAGE
 // =====================================================
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isGuest = searchParams.get('guest') === 'true';
@@ -70,11 +71,7 @@ export default function CheckoutPage() {
   // LOAD DATA
   // =====================================================
 
-  useEffect(() => {
-    loadCheckoutData();
-  }, []);
-
-  const loadCheckoutData = async () => {
+  const loadCheckoutData = useCallback(async () => {
     // Load cart from session storage
     const cartData = sessionStorage.getItem('checkout_cart');
     if (cartData) {
@@ -125,7 +122,11 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error('Error loading locations:', error);
     }
-  };
+  }, [router, isGuest]);
+
+  useEffect(() => {
+    loadCheckoutData();
+  }, [loadCheckoutData]);
 
   // =====================================================
   // CALCULATIONS
@@ -513,17 +514,19 @@ export default function CheckoutPage() {
 
               {/* Cart Items */}
               <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
-                {cart.map((item, index) => (
-                  <div key={index} className="flex space-x-3">
-                    <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
-                      {item.product.main_image_url && (
-                        <img
-                          src={item.product.main_image_url}
-                          alt={item.product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                    </div>
+              {cart.map((item, index) => (
+                <div key={index} className="flex space-x-3">
+                  <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0 relative">
+                    {item.product.main_image_url && (
+                      <Image
+                        src={item.product.main_image_url}
+                        alt={item.product.name}
+                        fill
+                        className="object-cover"
+                        sizes="48px"
+                      />
+                    )}
+                  </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between">
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
@@ -582,6 +585,21 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading checkout...</p>
+        </div>
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
   );
 }
 

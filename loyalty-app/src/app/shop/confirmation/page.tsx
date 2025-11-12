@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function ConfirmationPage() {
+function ConfirmationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderNumber = searchParams.get('order');
@@ -12,15 +12,7 @@ export default function ConfirmationPage() {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (orderNumber) {
-      loadOrderDetails();
-    } else {
-      router.push('/shop');
-    }
-  }, [orderNumber]);
-
-  const loadOrderDetails = async () => {
+  const loadOrderDetails = useCallback(async () => {
     try {
       const response = await fetch(`/api/orders?order_number=${orderNumber}`);
       if (response.ok) {
@@ -34,7 +26,15 @@ export default function ConfirmationPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderNumber]);
+
+  useEffect(() => {
+    if (orderNumber) {
+      loadOrderDetails();
+    } else {
+      router.push('/shop');
+    }
+  }, [orderNumber, loadOrderDetails, router]);
 
   if (loading) {
     return (
@@ -231,6 +231,21 @@ export default function ConfirmationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ConfirmationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ConfirmationContent />
+    </Suspense>
   );
 }
 
