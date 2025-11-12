@@ -16,17 +16,13 @@ export default function ConditionalLayout({
   const publicPages = ['/', '/login', '/register', '/forgot-password'];
   const isPublicPage = publicPages.includes(pathname);
 
-  // Shop pages are accessible both ways:
-  // - If user is logged in, show inside app layout
-  // - If user is not logged in, show as public page
-  const isShopPage = pathname.startsWith('/shop');
-
-  // If it's a public page (not shop), render children directly
+  // If it's a public page, render children directly
   if (isPublicPage) {
     return <>{children}</>;
   }
 
   // For shop pages and protected pages, use AppLayout
-  // AppLayout will handle authentication redirect if needed
+  // AppLayout will handle authentication redirect if needed for protected pages
+  // Shop pages are accessible both with and without authentication
   return <AppLayout>{children}</AppLayout>;
 }
