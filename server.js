@@ -677,10 +677,50 @@ app.delete('/api/users/:id', authenticateToken, requirePermission('users', 'writ
 
 // API Routes
 
-// Products
-app.get('/api/products', authenticateToken, requirePermission('inventory', 'read'), async (req, res) => {
+// Products (public endpoint - no auth required for shop)
+app.get('/api/products', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM products ORDER BY name');
+    const { active, category_id } = req.query;
+    
+    let query = `
+      SELECT 
+        p.id,
+        p.name,
+        p.description,
+        p.price,
+        p.cost,
+        p.sku,
+        p.barcode,
+        p.stock,
+        p.min_stock,
+        p.max_stock,
+        p.is_active,
+        p.category_id,
+        c.name as category,
+        p.main_image_url,
+        p.created_at,
+        p.updated_at
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      WHERE 1=1
+    `;
+    
+    const params = [];
+    let paramCount = 1;
+    
+    if (active === 'true') {
+      query += ` AND p.is_active = true`;
+    }
+    
+    if (category_id) {
+      query += ` AND p.category_id = $${paramCount}`;
+      params.push(category_id);
+      paramCount++;
+    }
+    
+    query += ` ORDER BY p.name`;
+    
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
     console.error('Error fetching products:', err);
@@ -5915,6 +5955,31 @@ app.get('/api/shop/settings', async (req, res) => {
   } catch (error) {
     console.error('Error fetching shop settings:', error);
     res.status(500).json({ error: 'Failed to fetch shop settings' });
+  }
+});
+
+// Get categories (public endpoint for shop)
+app.get('/api/categories', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        c.id,
+        c.name,
+        c.description,
+        c.display_order,
+        c.is_active,
+        COUNT(p.id) as product_count
+      FROM categories c
+      LEFT JOIN products p ON p.category_id = c.id AND p.is_active = true
+      WHERE c.is_active = true
+      GROUP BY c.id, c.name, c.description, c.display_order, c.is_active
+      ORDER BY c.display_order, c.name
+    `);
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ error: 'Failed to fetch categories' });
   }
 });
 
