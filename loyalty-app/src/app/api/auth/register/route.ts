@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
 import { query } from '@/lib/db';
 import { z } from 'zod';
 import { getSystemSetting } from '@/lib/system-settings';
@@ -60,9 +59,12 @@ export async function POST(request: NextRequest) {
       [email]
     );
 
-    // Hash password
-    const saltRounds = 12;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
+    // Hash password using PostgreSQL function (same as POS)
+    const passwordHashResult = await query(
+      'SELECT hash_password($1) as hash',
+      [password]
+    );
+    const passwordHash = passwordHashResult.rows[0].hash;
 
     try {
       // Create user

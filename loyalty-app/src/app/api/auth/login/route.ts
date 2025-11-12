@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { query } from '@/lib/db';
 import { z } from 'zod';
@@ -79,8 +78,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    // Verify password using PostgreSQL function (same as POS)
+    const passwordVerification = await query(
+      'SELECT verify_password($1, $2) as is_valid',
+      [password, user.password_hash]
+    );
+    
+    const isValidPassword = passwordVerification.rows[0]?.is_valid;
     if (!isValidPassword) {
       attempts.count++;
       attempts.lastAttempt = now;
