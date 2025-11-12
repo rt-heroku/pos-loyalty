@@ -136,7 +136,16 @@ export default function ShopPage() {
     if (typeof document !== 'undefined') {
       document.documentElement.classList.remove('dark');
     }
-  }, [loadShopData, checkAuth]);
+    
+    // Collapse sidebar when shop is opened (for authenticated users)
+    // This gives more space for the shop layout
+    const sidebarToggle = document.querySelector('[data-sidebar-toggle]');
+    if (sidebarToggle && isAuthenticated) {
+      // Close sidebar on mount if authenticated
+      const event = new CustomEvent('closeSidebar');
+      window.dispatchEvent(event);
+    }
+  }, [loadShopData, checkAuth, isAuthenticated]);
 
   const loadProductModifiers = async (productId: number) => {
     try {

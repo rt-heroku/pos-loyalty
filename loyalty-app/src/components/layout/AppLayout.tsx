@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import Sidebar from './Sidebar';
 import TopNav from './TopNav';
@@ -16,7 +16,11 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  // Check if current page is shop (public access allowed)
+  const isShopPage = pathname.startsWith('/shop');
 
   // Close sidebar on escape key
   useEffect(() => {
@@ -42,12 +46,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
     console.log('AppLayout isSidebarOpen state:', isSidebarOpen);
   }, [isSidebarOpen]);
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (except for shop pages)
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !isShopPage) {
       router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isShopPage]);
 
   if (loading) {
     return (
@@ -60,7 +64,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
     );
   }
 
-  if (!user) {
+  // For shop pages, allow access even without authentication
+  if (!user && !isShopPage) {
     return null;
   }
 
