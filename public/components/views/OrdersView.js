@@ -986,7 +986,7 @@ window.Views.OrdersView = ({
                                     key: `sf-order-info-${order.id}`,
                                     className: 'flex-1 grid grid-cols-2 md:grid-cols-4 gap-4'
                                 }, [
-                                    // Order number
+                                    // Order numbers (both POS and SF)
                                     React.createElement('div', {
                                         key: `sf-order-num-${order.id}`
                                     }, [
@@ -997,7 +997,11 @@ window.Views.OrdersView = ({
                                         React.createElement('div', {
                                             key: `sf-order-num-value-${order.id}`,
                                             className: 'font-medium text-gray-900 dark:text-white'
-                                        }, order.order_number)
+                                        }, order.order_number || order.order_number_sf),
+                                        order.order_number && order.order_number_sf && React.createElement('div', {
+                                            key: `sf-order-num-sf-${order.id}`,
+                                            className: 'text-xs text-gray-500 dark:text-gray-400 mt-1'
+                                        }, `SF: ${order.order_number_sf}`)
                                     ]),
                                     // Status
                                     React.createElement('div', {
@@ -1053,6 +1057,44 @@ window.Views.OrdersView = ({
                             key: `sf-order-details-${order.id}`,
                             className: 'border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-900'
                         }, [
+                            // Customer info (if available)
+                            order.customer && (order.customer.name || order.customer.email) && React.createElement('div', {
+                                key: `sf-customer-${order.id}`,
+                                className: 'mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg'
+                            }, [
+                                React.createElement('h4', {
+                                    key: `sf-customer-title-${order.id}`,
+                                    className: 'text-xs font-semibold text-blue-600 dark:text-blue-400 mb-2'
+                                }, 'CUSTOMER'),
+                                order.customer.name && React.createElement('div', {
+                                    key: `sf-customer-name-${order.id}`,
+                                    className: 'text-sm font-medium text-gray-900 dark:text-white'
+                                }, order.customer.name),
+                                order.customer.email && React.createElement('div', {
+                                    key: `sf-customer-email-${order.id}`,
+                                    className: 'text-sm text-gray-600 dark:text-gray-400'
+                                }, order.customer.email),
+                                order.customer.billing_address && React.createElement('div', {
+                                    key: `sf-customer-address-${order.id}`,
+                                    className: 'text-xs text-gray-500 dark:text-gray-400 mt-1'
+                                }, order.customer.billing_address)
+                            ]),
+                            
+                            // Description (if available)
+                            order.description && React.createElement('div', {
+                                key: `sf-description-${order.id}`,
+                                className: 'mb-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg'
+                            }, [
+                                React.createElement('div', {
+                                    key: `sf-description-label-${order.id}`,
+                                    className: 'text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1'
+                                }, 'DESCRIPTION'),
+                                React.createElement('div', {
+                                    key: `sf-description-text-${order.id}`,
+                                    className: 'text-sm text-gray-700 dark:text-gray-300'
+                                }, order.description)
+                            ]),
+                            
                             // Order items
                             React.createElement('h4', {
                                 key: `sf-items-title-${order.id}`,
@@ -1060,49 +1102,90 @@ window.Views.OrdersView = ({
                             }, 'Order Items'),
                             React.createElement('div', {
                                 key: `sf-items-list-${order.id}`,
-                                className: 'space-y-2'
+                                className: 'space-y-3'
                             }, (order.order_items || []).map((item, idx) =>
                                 React.createElement('div', {
                                     key: `sf-item-${order.id}-${idx}`,
-                                    className: 'flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg'
+                                    className: 'flex items-start gap-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700'
                                 }, [
+                                    // Product image
+                                    item.product && item.product.DisplayUrl && React.createElement('img', {
+                                        key: `sf-item-img-${order.id}-${idx}`,
+                                        src: item.product.DisplayUrl,
+                                        alt: item.product.Name || 'Product',
+                                        className: 'w-20 h-20 object-cover rounded-lg flex-shrink-0',
+                                        onError: (e) => { e.target.style.display = 'none'; }
+                                    }),
+                                    
+                                    // Product info
                                     React.createElement('div', {
                                         key: `sf-item-info-${order.id}-${idx}`,
-                                        className: 'flex-1'
+                                        className: 'flex-1 min-w-0'
                                     }, [
+                                        // Product name
                                         React.createElement('div', {
-                                            key: `sf-item-num-${order.id}-${idx}`,
-                                            className: 'font-medium text-gray-900 dark:text-white'
-                                        }, `Item #${item.order_item_number}`),
-                                        React.createElement('div', {
-                                            key: `sf-item-product-${order.id}-${idx}`,
-                                            className: 'text-sm text-gray-600 dark:text-gray-400'
-                                        }, `Product ID: ${item.product_id}`)
+                                            key: `sf-item-name-${order.id}-${idx}`,
+                                            className: 'font-medium text-gray-900 dark:text-white mb-1'
+                                        }, item.product ? item.product.Name : `Item #${item.order_item_number}`),
+                                        
+                                        // Product details
+                                        item.product && React.createElement('div', {
+                                            key: `sf-item-details-${order.id}-${idx}`,
+                                            className: 'space-y-1'
+                                        }, [
+                                            // SKU
+                                            item.product.StockKeepingUnit && React.createElement('div', {
+                                                key: `sf-item-sku-${order.id}-${idx}`,
+                                                className: 'text-xs text-gray-600 dark:text-gray-400'
+                                            }, `SKU: ${item.product.StockKeepingUnit}`),
+                                            
+                                            // Family/Category
+                                            item.product.Family && React.createElement('div', {
+                                                key: `sf-item-family-${order.id}-${idx}`,
+                                                className: 'text-xs text-gray-600 dark:text-gray-400'
+                                            }, `Category: ${item.product.Family}`),
+                                            
+                                            // External ID (local DB ID)
+                                            item.product.External_ID__c && React.createElement('div', {
+                                                key: `sf-item-external-${order.id}-${idx}`,
+                                                className: 'text-xs text-blue-600 dark:text-blue-400'
+                                            }, `Local ID: ${item.product.External_ID__c}`),
+                                            
+                                            // Salesforce Product ID
+                                            item.product.Id && React.createElement('div', {
+                                                key: `sf-item-sf-id-${order.id}-${idx}`,
+                                                className: 'text-xs text-gray-500 dark:text-gray-500 font-mono'
+                                            }, `SF: ${item.product.Id}`)
+                                        ])
                                     ]),
+                                    
+                                    // Quantity
                                     React.createElement('div', {
                                         key: `sf-item-qty-${order.id}-${idx}`,
-                                        className: 'text-center px-4'
+                                        className: 'text-center px-3'
                                     }, [
                                         React.createElement('div', {
                                             key: `sf-item-qty-label-${order.id}-${idx}`,
-                                            className: 'text-xs text-gray-500 dark:text-gray-400'
+                                            className: 'text-xs text-gray-500 dark:text-gray-400 mb-1'
                                         }, 'Qty'),
                                         React.createElement('div', {
                                             key: `sf-item-qty-value-${order.id}-${idx}`,
-                                            className: 'font-medium text-gray-900 dark:text-white'
+                                            className: 'font-bold text-lg text-gray-900 dark:text-white'
                                         }, parseFloat(item.quantity))
                                     ]),
+                                    
+                                    // Pricing
                                     React.createElement('div', {
                                         key: `sf-item-price-${order.id}-${idx}`,
                                         className: 'text-right'
                                     }, [
                                         React.createElement('div', {
                                             key: `sf-item-unit-${order.id}-${idx}`,
-                                            className: 'text-xs text-gray-500 dark:text-gray-400'
+                                            className: 'text-xs text-gray-500 dark:text-gray-400 mb-1'
                                         }, `@ ${formatCurrency(parseFloat(item.unit_price))}`),
                                         React.createElement('div', {
                                             key: `sf-item-total-${order.id}-${idx}`,
-                                            className: 'font-medium text-gray-900 dark:text-white'
+                                            className: 'font-bold text-lg text-gray-900 dark:text-white'
                                         }, formatCurrency(parseFloat(item.total_price)))
                                     ])
                                 ])
