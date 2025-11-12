@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendUrl } from '@/lib/backend';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+    const backendUrl = getBackendUrl();
     
     const response = await fetch(`${backendUrl}/api/orders/online`, {
       method: 'POST',

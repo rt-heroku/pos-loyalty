@@ -97,8 +97,7 @@ function CheckoutContent() {
 
     // Load payment methods
     try {
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      const pmRes = await fetch(`${basePath}/api/payment-methods`);
+      const pmRes = await fetch('/api/payment-methods');
       if (pmRes.ok) {
         const methods = await pmRes.json();
         setPaymentMethods(methods);
@@ -112,8 +111,7 @@ function CheckoutContent() {
 
     // Load locations
     try {
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      const locRes = await fetch(`${basePath}/api/locations`);
+      const locRes = await fetch('/api/locations');
       if (locRes.ok) {
         const locs = await locRes.json();
         setLocations(locs);
@@ -215,8 +213,7 @@ function CheckoutContent() {
         total_amount: calculateTotal()
       };
 
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      const response = await fetch(`${basePath}/api/orders/online`, {
+      const response = await fetch('/api/orders/online', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

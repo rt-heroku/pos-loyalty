@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
+import { fetchBackend } from '@/lib/backend';
 
 export async function GET() {
   try {
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
-    const response = await fetch(`${backendUrl}/api/payment-methods`);
+    const response = await fetchBackend('/api/payment-methods');
     
     if (!response.ok) {
       throw new Error(`Backend returned ${response.status}`);

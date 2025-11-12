@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendUrl } from '@/lib/backend';
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const queryString = searchParams.toString();
     
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+    const backendUrl = getBackendUrl();
     const url = queryString 
       ? `${backendUrl}/api/products?${queryString}`
       : `${backendUrl}/api/products`;

@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
+import { getBackendUrl } from '@/lib/backend';
 
 export async function GET(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+    const backendUrl = getBackendUrl();
     const response = await fetch(`${backendUrl}/api/products/${params.id}/modifiers`);
     
     if (!response.ok) {
