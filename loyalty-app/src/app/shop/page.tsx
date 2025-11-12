@@ -100,7 +100,8 @@ export default function ShopPage() {
     try {
       setLoading(true);
       
-      // Load shop settings (API routes are at /api/*, not /loyalty/api/*)
+      // API routes are served at /loyalty/api/* due to basePath in next.config.js
+      // But we call them as /api/* and Next.js handles the routing
       const settingsRes = await fetch('/api/shop/settings');
       if (settingsRes.ok) {
         const settings = await settingsRes.json();
@@ -131,9 +132,16 @@ export default function ShopPage() {
     loadShopData();
     checkAuth();
     
-    // Set light theme for shop by default
+    // Force light theme for shop pages
     if (typeof document !== 'undefined') {
+      // Remove dark class from html element
       document.documentElement.classList.remove('dark');
+      // Also remove from body if it exists
+      document.body.classList.remove('dark');
+      // Set data-theme attribute to light
+      document.documentElement.setAttribute('data-theme', 'light');
+      // Override any stored theme preference for shop pages
+      localStorage.setItem('shop-theme', 'light');
     }
     
     // Collapse sidebar when shop is opened (for authenticated users)

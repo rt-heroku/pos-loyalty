@@ -128,6 +128,20 @@ const nextConfig = {
     ];
   },
 
+  // Rewrites to handle API routes without basePath
+  async rewrites() {
+    return {
+      beforeFiles: [
+        // API routes should NOT have the /loyalty prefix
+        // Rewrite /loyalty/api/* to /api/*
+        {
+          source: '/api/:path*',
+          destination: '/api/:path*',
+        },
+      ],
+    };
+  },
+
   // Redirects for PWA
   async redirects() {
     return [
