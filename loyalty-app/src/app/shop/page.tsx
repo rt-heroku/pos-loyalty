@@ -100,23 +100,34 @@ export default function ShopPage() {
     try {
       setLoading(true);
       
-      // API routes are served at /loyalty/api/* due to basePath in next.config.js
-      // But we call them as /api/* and Next.js handles the routing
-      const settingsRes = await fetch('/api/shop/settings');
+      // In local dev: Next.js is on localhost:3001, Express on localhost:3000
+      // In production: Both on same domain
+      // We need to call Next.js API routes, not Express directly
+      
+      // Get the current origin (will be localhost:3001 in dev, or heroku URL in prod)
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      console.log('[Shop] Current origin:', origin);
+      console.log('[Shop] Calling API routes on same origin');
+      
+      // Load shop settings - call Next.js API route which will proxy to Express
+      const settingsRes = await fetch(`${origin}/api/shop/settings`);
+      console.log('[Shop] Settings response status:', settingsRes.status);
       if (settingsRes.ok) {
         const settings = await settingsRes.json();
         setShopSettings(settings);
       }
 
       // Load categories
-      const categoriesRes = await fetch('/api/categories');
+      const categoriesRes = await fetch(`${origin}/api/categories`);
+      console.log('[Shop] Categories response status:', categoriesRes.status);
       if (categoriesRes.ok) {
         const cats = await categoriesRes.json();
         setCategories(cats);
       }
 
       // Load products
-      const productsRes = await fetch('/api/products?active=true');
+      const productsRes = await fetch(`${origin}/api/products?active=true`);
+      console.log('[Shop] Products response status:', productsRes.status);
       if (productsRes.ok) {
         const prods = await productsRes.json();
         setProducts(prods);
@@ -156,7 +167,8 @@ export default function ShopPage() {
 
   const loadProductModifiers = async (productId: number) => {
     try {
-      const res = await fetch(`/api/products/${productId}/modifiers`);
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const res = await fetch(`${origin}/api/products/${productId}/modifiers`);
       if (res.ok) {
         const groups = await res.json();
         setModifierGroups(groups);

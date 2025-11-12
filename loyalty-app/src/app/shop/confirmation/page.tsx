@@ -14,7 +14,8 @@ function ConfirmationContent() {
 
   const loadOrderDetails = useCallback(async () => {
     try {
-      const response = await fetch(`/api/orders?order_number=${orderNumber}`);
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const response = await fetch(`${origin}/api/orders?order_number=${orderNumber}`);
       if (response.ok) {
         const orders = await response.json();
         if (orders.length > 0) {
