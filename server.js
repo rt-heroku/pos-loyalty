@@ -126,6 +126,41 @@ app.get('/api/landing-config', async (req, res) => {
   }
 });
 
+// Dashboard configuration API - public endpoint (no auth required)
+app.get('/api/dashboard-config', async (req, res) => {
+  try {
+    console.log('📊 Fetching dashboard configuration');
+    
+    // Get dashboard settings
+    const settingsResult = await pool.query(`
+      SELECT setting_key, setting_value 
+      FROM system_settings 
+      WHERE category = 'dashboard' AND is_active = true
+    `);
+    
+    const config = {
+      tableau_api_url: 'https://10ax.online.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js',
+      tableau_dashboard_url: 'https://10ax.online.tableau.com/t/rcgsepulse/views/MaxMulesRestaurantView/FranchiseeExecDash'
+    };
+    
+    // Override with database values if they exist
+    settingsResult.rows.forEach(row => {
+      config[row.setting_key] = row.setting_value;
+    });
+    
+    console.log('✅ Dashboard config:', config);
+    
+    res.json(config);
+  } catch (error) {
+    console.error('❌ Error fetching dashboard config:', error);
+    // Return defaults on error
+    res.json({
+      tableau_api_url: 'https://10ax.online.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js',
+      tableau_dashboard_url: 'https://10ax.online.tableau.com/t/rcgsepulse/views/MaxMulesRestaurantView/FranchiseeExecDash'
+    });
+  }
+});
+
 // Root route - serve landing page - MUST BE BEFORE LOYALTY PROXY
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'landing.html'));

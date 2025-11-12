@@ -5,19 +5,48 @@ if (!window.Views) {
 
 window.Views.DashboardView = ({ selectedLocation }) => {
     const [scriptLoaded, setScriptLoaded] = React.useState(false);
+    const [dashboardConfig, setDashboardConfig] = React.useState(null);
+    const [loading, setLoading] = React.useState(true);
     const containerRef = React.useRef(null);
 
+    // Load dashboard configuration from system settings
     React.useEffect(() => {
+        const loadDashboardConfig = async () => {
+            try {
+                console.log('📊 Loading dashboard configuration...');
+                const config = await window.API.call('/dashboard-config');
+                console.log('✅ Dashboard config loaded:', config);
+                setDashboardConfig(config);
+            } catch (error) {
+                console.error('❌ Failed to load dashboard config:', error);
+                window.NotificationManager.error('Configuration Error', 'Failed to load dashboard settings');
+                // Set defaults as fallback
+                setDashboardConfig({
+                    tableau_api_url: 'https://10ax.online.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js',
+                    tableau_dashboard_url: 'https://10ax.online.tableau.com/t/rcgsepulse/views/MaxMulesRestaurantView/FranchiseeExecDash'
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadDashboardConfig();
+    }, []);
+
+    React.useEffect(() => {
+        if (!dashboardConfig) return;
+
         // Load Tableau Embedding API script
         const script = document.createElement('script');
         script.type = 'module';
-        script.src = 'https://10ax.online.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js';
+        script.src = dashboardConfig.tableau_api_url;
         script.onload = () => {
-            console.log('✅ Tableau Embedding API loaded');
+            console.log('✅ Tableau Embedding API loaded from:', dashboardConfig.tableau_api_url);
             setScriptLoaded(true);
         };
         script.onerror = () => {
             console.error('❌ Failed to load Tableau Embedding API');
+            window.NotificationManager.error('Dashboard Error', 'Failed to load Tableau API');
         };
         document.head.appendChild(script);
 
@@ -27,11 +56,12 @@ window.Views.DashboardView = ({ selectedLocation }) => {
                 script.parentNode.removeChild(script);
             }
         };
-    }, []);
+    }, [dashboardConfig]);
 
     React.useEffect(() => {
-        if (scriptLoaded && containerRef.current) {
+        if (scriptLoaded && containerRef.current && dashboardConfig) {
             console.log('📊 Initializing Tableau visualization');
+            console.log('   Dashboard URL:', dashboardConfig.tableau_dashboard_url);
             
             // Clear any existing content
             containerRef.current.innerHTML = '';
@@ -39,14 +69,14 @@ window.Views.DashboardView = ({ selectedLocation }) => {
             // Create tableau-viz element
             const tableauViz = document.createElement('tableau-viz');
             tableauViz.id = 'tableau-viz';
-            tableauViz.setAttribute('src', 'https://10ax.online.tableau.com/t/rcgsepulse/views/MaxMulesRestaurantView/FranchiseeExecDash');
-            // tableauViz.setAttribute('width', '100%');
-            // tableauViz.setAttribute('height', '100%');
+            tableauViz.setAttribute('src', dashboardConfig.tableau_dashboard_url);
+            tableauViz.setAttribute('width', '100%');
+            tableauViz.setAttribute('height', '100%');
             tableauViz.setAttribute('toolbar', 'bottom');
             
             containerRef.current.appendChild(tableauViz);
         }
-    }, [scriptLoaded]);
+    }, [scriptLoaded, dashboardConfig]);
 
     return React.createElement('div', { 
         className: 'h-full flex flex-col bg-white dark:bg-gray-900'
@@ -88,7 +118,7 @@ window.Views.DashboardView = ({ selectedLocation }) => {
             ref: containerRef,
             className: 'flex-1 p-6 overflow-hidden'
         }, [
-            !scriptLoaded && React.createElement('div', {
+            (loading || !scriptLoaded) && React.createElement('div', {
                 key: 'loading',
                 className: 'flex items-center justify-center h-full'
             }, [
@@ -103,7 +133,7 @@ window.Views.DashboardView = ({ selectedLocation }) => {
                     React.createElement('p', {
                         key: 'loading-text',
                         className: 'text-gray-600 dark:text-gray-400'
-                    }, 'Loading Tableau Dashboard...')
+                    }, loading ? 'Loading dashboard configuration...' : 'Loading Tableau Dashboard...')
                 ])
             ])
         ])
