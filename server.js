@@ -696,12 +696,10 @@ app.get('/api/products', async (req, res) => {
         p.max_stock,
         p.is_active,
         p.category,
-        c.id as category_id,
         p.main_image_url,
         p.created_at,
         p.updated_at
       FROM products p
-      LEFT JOIN categories c ON p.category = c.name
       WHERE 1=1
     `;
     
@@ -713,7 +711,18 @@ app.get('/api/products', async (req, res) => {
     }
     
     if (category_id) {
-      query += ` AND c.id = $${paramCount}`;
+      // Filter by category name (since category_id is just a row number)
+      // We need to get the category name first
+      query += ` AND p.category = (
+        SELECT category 
+        FROM (
+          SELECT category, ROW_NUMBER() OVER (ORDER BY category) as rn
+          FROM products
+          WHERE category IS NOT NULL AND category != ''
+          GROUP BY category
+        ) cat_list
+        WHERE rn = $${paramCount}
+      )`;
       params.push(category_id);
       paramCount++;
     }
@@ -5959,21 +5968,23 @@ app.get('/api/shop/settings', async (req, res) => {
 });
 
 // Get categories (public endpoint for shop)
+// Dynamically generates categories from products.category column
 app.get('/api/categories', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        c.id,
-        c.name,
-        c.description,
-        c.display_order,
-        c.is_active,
-        COUNT(p.id) as product_count
-      FROM categories c
-      LEFT JOIN products p ON p.category = c.name AND p.is_active = true
-      WHERE c.is_active = true
-      GROUP BY c.id, c.name, c.description, c.display_order, c.is_active
-      ORDER BY c.display_order, c.name
+        ROW_NUMBER() OVER (ORDER BY category) as id,
+        category as name,
+        NULL as description,
+        ROW_NUMBER() OVER (ORDER BY category) as display_order,
+        true as is_active,
+        COUNT(*) as product_count
+      FROM products
+      WHERE category IS NOT NULL 
+        AND category != '' 
+        AND is_active = true
+      GROUP BY category
+      ORDER BY category
     `);
     
     res.json(result.rows);
