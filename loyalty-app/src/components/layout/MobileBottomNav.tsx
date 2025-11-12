@@ -100,11 +100,11 @@ export default function MobileBottomNav() {
       isActive: pathname.startsWith('/stores'),
     },
     {
-      id: 'wishlist',
-      label: 'Wishlist',
-      icon: Heart,
-      href: '/wishlist',
-      isActive: pathname === '/wishlist',
+      id: 'shop',
+      label: 'Shop',
+      icon: ShoppingBag,
+      href: '/shop',
+      isActive: pathname.startsWith('/shop'),
       badge: 0,
     },
     {

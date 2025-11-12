@@ -14,7 +14,7 @@ export default function ConditionalLayout({
 
   // Pages that don't require authentication
   const publicPages = ['/', '/login', '/register', '/forgot-password'];
-  const isPublicPage = publicPages.includes(pathname);
+  const isPublicPage = publicPages.includes(pathname) || pathname.startsWith('/shop');
 
   // If it's a public page, render children directly
   if (isPublicPage) {

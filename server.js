@@ -5876,6 +5876,244 @@ app.delete('/api/transactions/:id/remove-voucher', async (req, res) => {
   }
 });
 
+// =====================================================
+// SHOP SYSTEM API ENDPOINTS
+// =====================================================
+
+// Get shop settings
+app.get('/api/shop/settings', async (req, res) => {
+  try {
+    const settingsResult = await pool.query(`
+      SELECT setting_key, setting_value 
+      FROM system_settings 
+      WHERE category = 'shop' AND is_active = true
+    `);
+    
+    const locationResult = await pool.query(`
+      SELECT logo_base64, store_name 
+      FROM locations 
+      WHERE is_active = true 
+      ORDER BY id 
+      LIMIT 1
+    `);
+    
+    const settings = {};
+    settingsResult.rows.forEach(row => {
+      const key = row.setting_key.replace('shop_', '');
+      settings[key] = row.setting_value;
+    });
+    
+    const location = locationResult.rows[0] || {};
+    
+    res.json({
+      hero_enabled: settings.hero_enabled === 'true',
+      hero_title: settings.hero_title || 'Order Your Favorites',
+      hero_subtitle: settings.hero_subtitle || 'Fresh, delicious, delivered to your door',
+      logo_url: location.logo_base64 || '/images/logo.svg',
+      location_name: location.store_name || 'Our Store'
+    });
+  } catch (error) {
+    console.error('Error fetching shop settings:', error);
+    res.status(500).json({ error: 'Failed to fetch shop settings' });
+  }
+});
+
+// Get payment methods
+app.get('/api/payment-methods', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, name, code, description, icon, requires_online_payment
+      FROM payment_methods
+      WHERE is_active = true
+      ORDER BY display_order, name
+    `);
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching payment methods:', error);
+    res.status(500).json({ error: 'Failed to fetch payment methods' });
+  }
+});
+
+// Get product modifiers for a specific product
+app.get('/api/products/:id/modifiers', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Get modifier groups linked to this product
+    const groupsResult = await pool.query(`
+      SELECT 
+        pmg.id,
+        pmg.name,
+        pmg.description,
+        pmg.is_required,
+        pmg.min_selections,
+        pmg.max_selections
+      FROM product_modifier_groups pmg
+      INNER JOIN product_modifier_group_links pmgl ON pmg.id = pmgl.modifier_group_id
+      WHERE pmgl.product_id = $1 AND pmg.is_active = true
+      ORDER BY pmgl.display_order, pmg.display_order
+    `, [id]);
+    
+    // Get modifiers for each group
+    const groups = await Promise.all(groupsResult.rows.map(async (group) => {
+      const modifiersResult = await pool.query(`
+        SELECT id, name, price_adjustment, is_default
+        FROM product_modifiers
+        WHERE group_id = $1 AND is_active = true
+        ORDER BY display_order, name
+      `, [group.id]);
+      
+      return {
+        ...group,
+        modifiers: modifiersResult.rows
+      };
+    }));
+    
+    res.json(groups);
+  } catch (error) {
+    console.error('Error fetching product modifiers:', error);
+    res.status(500).json({ error: 'Failed to fetch product modifiers' });
+  }
+});
+
+// Create online order (supports guest checkout)
+app.post('/api/orders/online', async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    const {
+      customer_id,
+      location_id,
+      order_type,
+      origin,
+      status,
+      payment_method_id,
+      scheduled_time,
+      special_instructions,
+      guest_name,
+      guest_phone,
+      guest_email,
+      delivery_address,
+      delivery_instructions,
+      items,
+      subtotal,
+      tax_amount,
+      total_amount
+    } = req.body;
+    
+    // Generate order number
+    const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    const countResult = await client.query(
+      'SELECT COUNT(*) as count FROM orders WHERE order_date::date = CURRENT_DATE'
+    );
+    const orderCount = parseInt(countResult.rows[0].count) + 1;
+    const order_number = `ORD-${today}-${orderCount.toString().padStart(4, '0')}`;
+    
+    // Insert order
+    const orderResult = await client.query(`
+      INSERT INTO orders (
+        order_number, customer_id, location_id, order_type, origin, status,
+        payment_method_id, scheduled_time, special_instructions,
+        guest_name, guest_phone, guest_email,
+        delivery_address, delivery_instructions,
+        subtotal, tax_amount, total_amount
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      RETURNING id, order_number
+    `, [
+      order_number, customer_id, location_id, order_type, origin || 'mobile', status || 'pending',
+      payment_method_id, scheduled_time, special_instructions,
+      guest_name, guest_phone, guest_email,
+      delivery_address, delivery_instructions,
+      subtotal, tax_amount, total_amount
+    ]);
+    
+    const order = orderResult.rows[0];
+    
+    // Insert order items
+    for (const item of items) {
+      await client.query(`
+        INSERT INTO order_items (
+          order_id, product_id, product_name, product_sku, product_image_url,
+          quantity, unit_price, tax_amount, total_price,
+          modifiers, special_instructions
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      `, [
+        order.id,
+        item.product_id,
+        item.product_name || (await client.query('SELECT name FROM products WHERE id = $1', [item.product_id])).rows[0]?.name,
+        item.product_sku || (await client.query('SELECT sku FROM products WHERE id = $1', [item.product_id])).rows[0]?.sku,
+        item.product_image_url || (await client.query('SELECT main_image_url FROM products WHERE id = $1', [item.product_id])).rows[0]?.main_image_url,
+        item.quantity,
+        item.unit_price,
+        item.tax_amount || 0,
+        item.total_price || (item.quantity * item.unit_price),
+        JSON.stringify(item.modifiers || []),
+        item.special_instructions
+      ]);
+    }
+    
+    // Insert order status history
+    await client.query(`
+      INSERT INTO order_status_history (order_id, status, notes)
+      VALUES ($1, $2, $3)
+    `, [order.id, status || 'pending', 'Order created via online shop']);
+    
+    await client.query('COMMIT');
+    
+    res.json({
+      success: true,
+      order_id: order.id,
+      order_number: order.order_number
+    });
+    
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error creating online order:', error);
+    res.status(500).json({ error: 'Failed to create order' });
+  } finally {
+    client.release();
+  }
+});
+
+// Get customer's previous orders with modifiers
+app.get('/api/customers/:id/orders/history', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query(`
+      SELECT 
+        o.id,
+        o.order_number,
+        o.order_date,
+        o.total_amount,
+        o.status,
+        json_agg(
+          json_build_object(
+            'product_id', oi.product_id,
+            'product_name', oi.product_name,
+            'product_image_url', oi.product_image_url,
+            'quantity', oi.quantity,
+            'modifiers', oi.modifiers
+          )
+        ) as items
+      FROM orders o
+      INNER JOIN order_items oi ON o.id = oi.order_id
+      WHERE o.customer_id = $1 AND o.status = 'completed'
+      GROUP BY o.id, o.order_number, o.order_date, o.total_amount, o.status
+      ORDER BY o.order_date DESC
+      LIMIT 10
+    `, [id]);
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching customer order history:', error);
+    res.status(500).json({ error: 'Failed to fetch order history' });
+  }
+});
+
 // Serve React app
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
