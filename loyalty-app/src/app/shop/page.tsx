@@ -68,6 +68,13 @@ interface ShopSettings {
 export default function ShopPage() {
   const router = useRouter();
   
+  // Force light theme IMMEDIATELY (before any rendering)
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.remove('dark');
+    document.body.classList.remove('dark');
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+  
   // State Management
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -343,8 +350,17 @@ export default function ShopPage() {
   // =====================================================
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Hero Section */}
+    <>
+      {/* Force light theme - remove dark mode classes */}
+      <style jsx global>{`
+        html, html.dark, body, body.dark {
+          background-color: #f9fafb !important;
+          color: #111827 !important;
+        }
+      `}</style>
+      
+      <div className="min-h-screen bg-gray-50">
+        {/* Hero Section */}
       {shopSettings?.hero_enabled && (
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
           <div className="max-w-7xl mx-auto px-4 py-12 md:py-16 text-center">

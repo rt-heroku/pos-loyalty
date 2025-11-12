@@ -34,11 +34,25 @@ export default function AppLayout({ children }: AppLayoutProps) {
     return () => document.removeEventListener('keydown', handleEscape);
   }, []);
 
-  // Set initial sidebar state based on screen size
+  // Set initial sidebar state based on screen size and page type
   useEffect(() => {
-    if (window.innerWidth >= 1024) {
+    // For shop pages, start with sidebar closed
+    if (isShopPage) {
+      setIsSidebarOpen(false);
+    } else if (window.innerWidth >= 1024) {
       setIsSidebarOpen(true);
     }
+  }, [isShopPage]);
+
+  // Listen for closeSidebar event from shop page
+  useEffect(() => {
+    const handleCloseSidebar = () => {
+      console.log('AppLayout: Received closeSidebar event');
+      setIsSidebarOpen(false);
+    };
+
+    window.addEventListener('closeSidebar', handleCloseSidebar);
+    return () => window.removeEventListener('closeSidebar', handleCloseSidebar);
   }, []);
 
   // Debug logging
