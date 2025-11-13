@@ -726,10 +726,13 @@ app.get('/api/products', async (req, res) => {
     query += ` ORDER BY p.name`;
     
     const result = await pool.query(query, params);
+    console.log(`[Products API] Found ${result.rows.length} products`);
     res.json(result.rows);
   } catch (err) {
     console.error('Error fetching products:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Query:', query);
+    console.error('Params:', params);
+    res.status(500).json({ error: 'Failed to fetch products', details: err.message });
   }
 });
 
