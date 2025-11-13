@@ -112,7 +112,6 @@ export default function ShopPage() {
     voucher?: any;
     requiredProductId?: number;
   } | null>(null);
-  const [user, setUser] = useState<any>(null);
   
   // Refs
   const categoryRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
@@ -325,7 +324,6 @@ export default function ShopPage() {
         
         console.log('[Vouchers] Loaded:', activeVouchers.length, 'active vouchers');
         setVouchers(activeVouchers);
-        setUser(user);
       }
     } catch (error) {
       console.error('[Vouchers] Error loading vouchers:', error);
