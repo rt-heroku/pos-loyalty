@@ -100,7 +100,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      await fetch(`${basePath}/api/auth/logout`, {
         method: 'POST',
       });
       setUser(null);
@@ -117,7 +118,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (userData: RegisterData) => {
     try {
-      const response = await fetch('/api/auth/register', {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const response = await fetch(`${basePath}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

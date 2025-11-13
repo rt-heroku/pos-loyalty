@@ -5639,15 +5639,22 @@ app.post('/api/customers/:id/vouchers/refresh', async (req, res) => {
     });
     
     if (!mulesoftResponse.ok) {
-      if (mulesoftResponse.status === 404) {
-        // MuleSoft endpoint not found - return empty vouchers for demo
-        console.log('MuleSoft API endpoint ' + vouchersUrl + ' not found (404) - returning empty vouchers for demo');
-        return res.json({ 
-          message: 'MuleSoft API endpoint ' + vouchersUrl + ' not available - no vouchers refreshed',
-          vouchers: []
-        });
+      // Handle all MuleSoft API errors gracefully for demo
+      console.log(`MuleSoft API error (${mulesoftResponse.status}) for ${vouchersUrl} - returning empty vouchers for demo`);
+      let errorMessage = `MuleSoft API returned ${mulesoftResponse.status}`;
+      
+      try {
+        const errorData = await mulesoftResponse.json();
+        console.log('MuleSoft error details:', errorData);
+        errorMessage += `: ${errorData.message || JSON.stringify(errorData)}`;
+      } catch (e) {
+        console.log('Could not parse MuleSoft error response');
       }
-      throw new Error(`MuleSoft API error: ${mulesoftResponse.status}`);
+      
+      return res.json({ 
+        message: errorMessage + ' - no vouchers refreshed',
+        vouchers: []
+      });
     }
     
     const mulesoftData = await mulesoftResponse.json();
@@ -5696,7 +5703,12 @@ app.post('/api/customers/:id/vouchers/refresh', async (req, res) => {
     
   } catch (error) {
     console.error('Error refreshing vouchers from MuleSoft:', error);
-    res.status(500).json({ error: 'Failed to refresh vouchers from MuleSoft' });
+    // Return graceful response for demo/development
+    res.json({ 
+      message: `Could not refresh vouchers: ${error.message}`,
+      vouchers: [],
+      error: error.message
+    });
   }
 });
 

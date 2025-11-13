@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import VoucherSelector from '@/components/shop/VoucherSelector';
 
 // =====================================================
 // TYPES
@@ -67,6 +68,11 @@ function CheckoutContent() {
 
  // Order instructions
  const [orderInstructions, setOrderInstructions] = useState('');
+
+ // Voucher state
+ const [vouchers, setVouchers] = useState<any[]>([]);
+ const [appliedVouchers, setAppliedVouchers] = useState<any[]>([]);
+ const [voucherLoading, setVoucherLoading] = useState(false);
 
  // =====================================================
  // LOAD DATA
@@ -196,6 +202,156 @@ function CheckoutContent() {
  }, [loadCheckoutData]);
 
  // =====================================================
+ // VOUCHER LOGIC
+ // =====================================================
+
+ const loadVouchers = useCallback(async () => {
+ if (isGuest) {
+ console.log('[Checkout] Guest mode, skipping voucher load');
+ return;
+ }
+
+ const userData = localStorage.getItem('user');
+ if (!userData) {
+ console.log('[Checkout] No user data, skipping voucher load');
+ return;
+ }
+
+ try {
+ const user = JSON.parse(userData);
+ const customerId = user.id;
+ 
+ if (!customerId) {
+ console.log('[Checkout] No customer ID found');
+ return;
+ }
+
+ setVoucherLoading(true);
+ console.log('[Checkout] Loading vouchers for customer:', customerId);
+ 
+ const origin = typeof window !== 'undefined' ? window.location.origin : '';
+ const basePath = '/loyalty';
+ const response = await fetch(`${origin}${basePath}/api/customers/${customerId}/vouchers`);
+ const data = await response.json();
+
+ if (data.success) {
+ // Filter out expired vouchers
+ const now = new Date();
+ const activeVouchers = (data.vouchers || []).filter((v: any) => {
+ if (!v.expiration_date) return true;
+ return new Date(v.expiration_date) > now;
+ });
+ 
+ console.log('[Checkout] Loaded:', activeVouchers.length, 'active vouchers');
+ setVouchers(activeVouchers);
+
+ // Restore applied vouchers from sessionStorage
+ const savedAppliedVouchers = sessionStorage.getItem('checkout_applied_vouchers');
+ if (savedAppliedVouchers) {
+ const appliedIds = JSON.parse(savedAppliedVouchers);
+ const restoredVouchers = activeVouchers.filter((v: any) => appliedIds.includes(v.id));
+ console.log('[Checkout] Restored:', restoredVouchers.length, 'applied vouchers');
+ setAppliedVouchers(restoredVouchers);
+ }
+ }
+ } catch (error) {
+ console.error('[Checkout] Error loading vouchers:', error);
+ } finally {
+ setVoucherLoading(false);
+ }
+ }, [isGuest]);
+
+ useEffect(() => {
+ if (!isGuest) {
+ loadVouchers();
+ }
+ }, [isGuest, loadVouchers]);
+
+ const handleApplyVoucher = (voucher: any) => {
+ console.log('[Checkout] Applying voucher:', voucher.voucher_code);
+ 
+ if (appliedVouchers.find(v => v.id === voucher.id)) {
+ console.log('[Checkout] Voucher already applied');
+ return;
+ }
+
+ // For product-specific vouchers, check if the product is in cart
+ if (voucher.voucher_type === 'ProductSpecific' && voucher.product_id) {
+ const productInCart = cart.find(item => item.product.id === voucher.product_id);
+ if (!productInCart) {
+ alert(`This voucher requires "${voucher.product_name || 'the specified product'}" to be in your cart.`);
+ return;
+ }
+ }
+
+ const updated = [...appliedVouchers, voucher];
+ setAppliedVouchers(updated);
+ 
+ // Save to sessionStorage
+ sessionStorage.setItem('checkout_applied_vouchers', JSON.stringify(updated.map(v => v.id)));
+ console.log('[Checkout] ✅ Voucher applied successfully');
+ };
+
+ const handleRemoveVoucher = (voucher: any) => {
+ console.log('[Checkout] Removing voucher:', voucher.voucher_code);
+ const updated = appliedVouchers.filter(v => v.id !== voucher.id);
+ setAppliedVouchers(updated);
+ 
+ // Update sessionStorage
+ if (updated.length > 0) {
+ sessionStorage.setItem('checkout_applied_vouchers', JSON.stringify(updated.map(v => v.id)));
+ } else {
+ sessionStorage.removeItem('checkout_applied_vouchers');
+ }
+ };
+
+ const calculateVoucherDiscount = () => {
+ if (appliedVouchers.length === 0) return 0;
+ 
+ const subtotal = calculateSubtotal();
+ let totalDiscount = 0;
+
+ appliedVouchers.forEach(voucher => {
+ switch (voucher.voucher_type) {
+ case 'Value':
+ const valueAmount = voucher.remaining_value || voucher.face_value || 0;
+ const sortedCart = [...cart].sort((a, b) => a.item_total - b.item_total);
+ let remainingValue = parseFloat(valueAmount.toString());
+ let voucherDiscount = 0;
+
+ for (const item of sortedCart) {
+ if (remainingValue <= 0) break;
+ const itemTotal = item.item_total * item.quantity;
+ const discountForItem = Math.min(remainingValue, itemTotal);
+ voucherDiscount += discountForItem;
+ remainingValue -= discountForItem;
+ }
+
+ totalDiscount += voucherDiscount;
+ break;
+
+ case 'Discount':
+ totalDiscount += subtotal * (voucher.discount_percent / 100);
+ break;
+
+ case 'ProductSpecific':
+ const productItems = cart.filter(item => item.product.id === voucher.product_id);
+ const productSubtotal = productItems.reduce((sum, item) => sum + (item.item_total * item.quantity), 0);
+ 
+ if (voucher.discount_percent) {
+ totalDiscount += productSubtotal * (voucher.discount_percent / 100);
+ } else if (voucher.face_value) {
+ totalDiscount += Math.min(parseFloat(voucher.face_value.toString()), productSubtotal);
+ }
+ break;
+ }
+ });
+
+ console.log('[Checkout] Total voucher discount:', totalDiscount);
+ return totalDiscount;
+ };
+
+ // =====================================================
  // CALCULATIONS
  // =====================================================
 
@@ -209,11 +365,15 @@ function CheckoutContent() {
 
  const calculateTax = () => {
  const subtotal = calculateSubtotal();
- return subtotal * 0.085; // 8.5% tax
+ const voucherDiscount = calculateVoucherDiscount();
+ const subtotalAfterVouchers = subtotal - voucherDiscount;
+ return subtotalAfterVouchers * 0.085; // 8.5% tax
  };
 
  const calculateTotal = () => {
- return calculateSubtotal() + calculateDeliveryFee() + calculateTax();
+ const subtotal = calculateSubtotal();
+ const voucherDiscount = calculateVoucherDiscount();
+ return subtotal - voucherDiscount + calculateDeliveryFee() + calculateTax();
  };
 
  // =====================================================
@@ -245,6 +405,8 @@ function CheckoutContent() {
  setLoading(true);
 
  try {
+ const voucherDiscount = calculateVoucherDiscount();
+ 
  const orderData = {
  customer_id: user?.id || null,
  location_id: selectedLocation,
@@ -273,8 +435,14 @@ function CheckoutContent() {
  special_instructions: item.special_instructions || null
  })),
  
+ // Vouchers
+ voucher_id: appliedVouchers.length > 0 ? appliedVouchers[0].id : null,
+ voucher_discount: voucherDiscount > 0 ? voucherDiscount : 0,
+ applied_voucher_ids: appliedVouchers.map(v => v.id),
+ 
  // Totals
  subtotal: calculateSubtotal(),
+ discount_amount: voucherDiscount,
  tax_amount: calculateTax(),
  total_amount: calculateTotal()
  };
@@ -292,8 +460,9 @@ function CheckoutContent() {
  if (response.ok) {
  const order = await response.json();
  
- // Clear cart
+ // Clear cart and vouchers
  sessionStorage.removeItem('checkout_cart');
+ sessionStorage.removeItem('checkout_applied_vouchers');
  
  // Redirect to confirmation
  router.push(`/shop/confirmation?order=${order.order_number}`);
@@ -704,12 +873,36 @@ function CheckoutContent() {
  ))}
  </div>
 
+ {/* Vouchers Section */}
+ {!isGuest && vouchers.length > 0 && (
+ <div className="border-t border-gray-200 pt-4 mt-4">
+ <VoucherSelector
+ vouchers={vouchers}
+ appliedVouchers={appliedVouchers}
+ onApplyVoucher={handleApplyVoucher}
+ onRemoveVoucher={handleRemoveVoucher}
+ loading={voucherLoading}
+ />
+ </div>
+ )}
+
  {/* Totals */}
- <div className="border-t border-gray-200 pt-4 space-y-2">
+ <div className="border-t border-gray-200 pt-4 space-y-2 mt-4">
  <div className="flex justify-between text-gray-600">
  <span>Subtotal</span>
  <span>${calculateSubtotal().toFixed(2)}</span>
  </div>
+ {calculateVoucherDiscount() > 0 && (
+ <div className="flex justify-between text-green-600">
+ <span className="flex items-center">
+ <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+ </svg>
+ Voucher Discount
+ </span>
+ <span className="font-medium">-${calculateVoucherDiscount().toFixed(2)}</span>
+ </div>
+ )}
  {orderType === 'delivery' && (
  <div className="flex justify-between text-gray-600">
  <span>Delivery Fee</span>
