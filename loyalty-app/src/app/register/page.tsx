@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,7 +14,6 @@ import {
   Lock,
   User,
   Phone,
-  Star,
   ArrowRight,
   Check,
 } from 'lucide-react';
@@ -41,6 +41,7 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const router = useRouter();
   const { register: registerUser } = useAuth();
 
@@ -54,6 +55,31 @@ export default function RegisterPage() {
   });
 
   const password = watch('password', '');
+
+  useEffect(() => {
+    const loadCompanyLogo = async () => {
+      try {
+        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+        const response = await fetch(`${basePath}/api/locations/current`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.location && data.location.logo_base64) {
+            setCompanyLogo(data.location.logo_base64);
+          } else {
+            // Fallback to MuleSoft logo
+            setCompanyLogo('/images/logo.svg');
+          }
+        } else {
+          setCompanyLogo('/images/logo.svg');
+        }
+      } catch (error) {
+        console.error('Error loading company logo:', error);
+        setCompanyLogo('/images/logo.svg');
+      }
+    };
+
+    loadCompanyLogo();
+  }, []);
 
   // Password strength indicator
   const getPasswordStrength = (password: string) => {
@@ -111,21 +137,25 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50 p-4">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="animate-blob absolute -right-40 -top-40 h-80 w-80 rounded-full bg-primary-200 opacity-70 mix-blend-multiply blur-xl filter"></div>
-        <div className="animate-blob animation-delay-2000 absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-secondary-200 opacity-70 mix-blend-multiply blur-xl filter"></div>
-        <div className="animate-blob animation-delay-4000 absolute left-40 top-40 h-80 w-80 rounded-full bg-loyalty-gold opacity-70 mix-blend-multiply blur-xl filter"></div>
-      </div>
-
+    <div className="flex min-h-screen items-center justify-center bg-white p-4">
       <div className="relative z-10 w-full max-w-lg">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-lg">
-            <Star className="h-8 w-8 text-white" />
+          <div className="mb-4 inline-flex h-24 w-max items-center justify-center">
+            {companyLogo ? (
+              <div className="relative h-24 w-96">
+                <Image
+                  src={companyLogo}
+                  alt="Logo"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+            ) : (
+              <div className="h-24 w-96 animate-pulse rounded bg-gray-200"></div>
+            )}
           </div>
-          <h1 className="mb-2 text-3xl font-bold text-gray-900">
+          <h1 className="mb-2 text-2xl font-bold text-gray-900">
             Join Our Loyalty Program
           </h1>
           <p className="text-gray-600">
@@ -134,7 +164,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Registration Form */}
-        <div className="glass-card rounded-3xl border border-white/20 p-8 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
           <form onSubmit={handleSubmit(onSubmit)} method="post" className="space-y-6">
             {/* Name Fields */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -153,7 +183,7 @@ export default function RegisterPage() {
                     {...register('firstName')}
                     type="text"
                     id="firstName"
-                    className="input-field pl-10"
+                    className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="First name"
                   />
                 </div>
@@ -179,7 +209,7 @@ export default function RegisterPage() {
                     {...register('lastName')}
                     type="text"
                     id="lastName"
-                    className="input-field pl-10"
+                    className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Last name"
                   />
                 </div>
@@ -207,7 +237,7 @@ export default function RegisterPage() {
                   {...register('email')}
                   type="email"
                   id="email"
-                  className="input-field pl-10"
+                  className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter your email"
                 />
               </div>
@@ -234,7 +264,7 @@ export default function RegisterPage() {
                   {...register('phone')}
                   type="tel"
                   id="phone"
-                  className="input-field pl-10"
+                  className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter your phone number"
                 />
               </div>
@@ -256,7 +286,7 @@ export default function RegisterPage() {
                   {...register('password')}
                   type={showPassword ? 'text' : 'password'}
                   id="password"
-                  className="input-field pl-10 pr-10"
+                  className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-10 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Create a password"
                 />
                 <button
@@ -323,7 +353,7 @@ export default function RegisterPage() {
                   {...register('confirmPassword')}
                   type={showConfirmPassword ? 'text' : 'password'}
                   id="confirmPassword"
-                  className="input-field pl-10 pr-10"
+                  className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-10 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Confirm your password"
                 />
                 <button
@@ -373,14 +403,17 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="btn-primary btn-lg flex w-full items-center justify-center space-x-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full items-center justify-center space-x-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isLoading ? (
-                <div className="spinner h-5 w-5 rounded-full border-2 border-white border-t-transparent"></div>
+                <>
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  <span>Creating Account...</span>
+                </>
               ) : (
                 <>
                   <span>Create Account</span>
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-5 w-5" />
                 </>
               )}
             </button>
@@ -404,9 +437,9 @@ export default function RegisterPage() {
               Already have an account?{' '}
               <Link
                 href="/login"
-                className="font-medium text-primary-600 transition-colors hover:text-primary-500"
+                className="font-medium text-blue-600 hover:text-blue-700"
               >
-                Sign in here
+                Sign in
               </Link>
             </p>
           </div>
@@ -414,9 +447,9 @@ export default function RegisterPage() {
 
         {/* Benefits */}
         <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="rounded-xl bg-white/50 p-4 text-center backdrop-blur-sm">
-            <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-loyalty-gold">
-              <Check className="h-4 w-4 text-white" />
+          <div className="rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm">
+            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+              <Check className="h-5 w-5 text-blue-600" />
             </div>
             <h3 className="text-sm font-medium text-gray-900">
               Instant Rewards
@@ -425,9 +458,9 @@ export default function RegisterPage() {
               Start earning points immediately
             </p>
           </div>
-          <div className="rounded-xl bg-white/50 p-4 text-center backdrop-blur-sm">
-            <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-loyalty-silver">
-              <Check className="h-4 w-4 text-white" />
+          <div className="rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm">
+            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+              <Check className="h-5 w-5 text-blue-600" />
             </div>
             <h3 className="text-sm font-medium text-gray-900">
               Exclusive Offers
@@ -436,9 +469,9 @@ export default function RegisterPage() {
               Member-only discounts & deals
             </p>
           </div>
-          <div className="rounded-xl bg-white/50 p-4 text-center backdrop-blur-sm">
-            <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-loyalty-platinum">
-              <Check className="h-4 w-4 text-white" />
+          <div className="rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm">
+            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+              <Check className="h-5 w-5 text-blue-600" />
             </div>
             <h3 className="text-sm font-medium text-gray-900">
               Track Everything

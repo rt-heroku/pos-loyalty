@@ -5541,6 +5541,24 @@ app.get('/api/customers/:id/vouchers', async (req, res) => {
   try {
     const { id } = req.params;
     
+    // First, check if we need to convert user_id to customer_id
+    // The ID could be either a user_id or customer_id
+    let customerId = id;
+    
+    // Try to find customer by user_id first (for authenticated users)
+    const customerLookup = await pool.query(
+      'SELECT id FROM customers WHERE user_id = $1',
+      [id]
+    );
+    
+    if (customerLookup.rows.length > 0) {
+      customerId = customerLookup.rows[0].id;
+      console.log(`[Vouchers] Converted user_id ${id} to customer_id ${customerId}`);
+    } else {
+      // If not found, assume ID is already a customer_id
+      console.log(`[Vouchers] Using ID ${id} as customer_id`);
+    }
+    
     const result = await pool.query(`
       SELECT 
         cv.*,
@@ -5554,7 +5572,9 @@ app.get('/api/customers/:id/vouchers', async (req, res) => {
         AND (cv.expiration_date IS NULL OR cv.expiration_date >= CURRENT_DATE)
         AND (cv.voucher_type != 'Value' OR cv.remaining_value > 0)
       ORDER BY cv.created_date DESC
-    `, [id]);
+    `, [customerId]);
+    
+    console.log(`[Vouchers] Found ${result.rows.length} vouchers for customer ${customerId}`);
     
     res.json({
       success: true,
@@ -6097,15 +6117,34 @@ async function syncOrderToSalesforce(orderId) {
       [orderId]
     );
     
+    // Get MuleSoft endpoint from system settings
+    const settingsResult = await client.query(
+      'SELECT setting_value FROM system_settings WHERE setting_key = $1',
+      ['mulesoft_loyalty_sync_endpoint']
+    );
+    
+    if (!settingsResult.rows.length || !settingsResult.rows[0].setting_value) {
+      console.log(`[Salesforce Sync] MuleSoft endpoint not configured - skipping sync for order ${orderId}`);
+      await client.query(
+        `UPDATE orders 
+         SET sync_status = false, 
+             sync_message = $1
+         WHERE id = $2`,
+        [JSON.stringify({ error: 'MuleSoft endpoint not configured in system settings' }), orderId]
+      );
+      return;
+    }
+    
+    const mulesoftEndpoint = settingsResult.rows[0].setting_value;
+    console.log(`[Salesforce Sync] Using MuleSoft endpoint: ${mulesoftEndpoint}`);
+    
     // Call MuleSoft API
-    const mulesoftUrl = process.env.MULESOFT_API_URL || 'http://localhost:8081';
-    const response = await fetch(`${mulesoftUrl}/orders/salesforce/create`, {
+    const response = await fetch(`${mulesoftEndpoint}/orders/salesforce/create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ id: orderId }),
-      timeout: 30000 // 30 second timeout
+      body: JSON.stringify({ id: orderId })
     });
     
     const responseData = await response.json();

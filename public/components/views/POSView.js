@@ -541,6 +541,9 @@ window.Views.POSView = ({
                             placeholder: 'Search products...',
                             value: searchTerm,
                             onChange: (e) => setSearchTerm(e.target.value),
+                            autoComplete: 'off',
+                            'data-1p-ignore': 'true',
+                            'data-lpignore': 'true',
                             className: 'w-full pl-10 pr-4 py-2 border dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white'
                         })
                     ]),
@@ -913,6 +916,9 @@ window.Views.POSView = ({
                                     value: taxRate,
                                     onChange: (e) => setTaxRate(e.target.value),
                                     placeholder: '0.08',
+                                    autoComplete: 'off',
+                                    'data-1p-ignore': 'true',
+                                    'data-lpignore': 'true',
                                     className: 'w-16 px-2 py-1 text-sm border dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white'
                                 }),
                                 React.createElement('span', { key: 'tax-percent', className: 'text-sm text-gray-500 dark:text-gray-400' }, '%')
@@ -967,6 +973,9 @@ window.Views.POSView = ({
                                 value: amountReceived,
                                 onChange: (e) => setAmountReceived(e.target.value),
                                 placeholder: total.toFixed(2),
+                                autoComplete: 'off',
+                                'data-1p-ignore': 'true',
+                                'data-lpignore': 'true',
                                 className: 'w-full p-3 border dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white'
                             }),
                             amountReceived && parseFloat(amountReceived) >= total && React.createElement('div', {
@@ -987,6 +996,9 @@ window.Views.POSView = ({
                                         value: creditCardForm.cardholderName,
                                         onChange: (e) => handleCreditCardChange('cardholderName', e.target.value),
                                         placeholder: 'John Doe',
+                                        autoComplete: 'off',
+                                        'data-1p-ignore': 'true',
+                                        'data-lpignore': 'true',
                                         className: 'w-full p-3 border dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white'
                                     })
                                 ]),
@@ -1001,6 +1013,9 @@ window.Views.POSView = ({
                                             value: creditCardForm.cardNumber,
                                             onChange: (e) => handleCreditCardChange('cardNumber', e.target.value),
                                             placeholder: '1234 5678 9012 3456',
+                                            autoComplete: 'off',
+                                            'data-1p-ignore': 'true',
+                                            'data-lpignore': 'true',
                                             className: `w-full p-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 dark:bg-gray-700 dark:text-white ${
                                                 cardValidation.errors.cardNumber 
                                                     ? 'border-red-500 focus:ring-red-500' 
@@ -1034,6 +1049,9 @@ window.Views.POSView = ({
                                             value: creditCardForm.expiryDate,
                                             onChange: (e) => handleCreditCardChange('expiryDate', e.target.value),
                                             placeholder: 'MM/YY',
+                                            autoComplete: 'off',
+                                            'data-1p-ignore': 'true',
+                                            'data-lpignore': 'true',
                                             className: 'w-full p-3 border dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white'
                                         })
                                     ]),
@@ -1045,6 +1063,9 @@ window.Views.POSView = ({
                                             value: creditCardForm.cvv,
                                             onChange: (e) => handleCreditCardChange('cvv', e.target.value),
                                             placeholder: '123',
+                                            autoComplete: 'off',
+                                            'data-1p-ignore': 'true',
+                                            'data-lpignore': 'true',
                                             className: 'w-full p-3 border dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white'
                                         })
                                     ])

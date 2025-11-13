@@ -1274,7 +1274,6 @@ const POSApp = () => {
             
             // Clear current cart and reset all related state
             clearCart(); // Use the clearCart function to ensure everything is reset
-            setSelectedCustomer(null);
             setCurrentOrderNumber(order.order_number);
             
             // Load order items into cart
@@ -1301,15 +1300,55 @@ const POSApp = () => {
             console.log('✅ Cart items to set:', cartItems);
             setCart(cartItems);
             
-            // Load customer if exists
+            // Load customer if exists - try multiple methods to find the customer
+            let customerLoaded = false;
+            
+            // Method 1: Try to load customer by customer_id
             if (order.customer_id) {
                 try {
                     const customerData = await window.API.call(`/customers/${order.customer_id}`);
                     setSelectedCustomer(customerData);
-                    console.log('👤 Customer loaded:', customerData.name);
+                    setLoyaltyNumber(customerData.loyalty_number || '');
+                    console.log('👤 Customer loaded by ID:', customerData.name);
+                    customerLoaded = true;
                 } catch (err) {
-                    console.error('Failed to load customer:', err);
+                    console.error('Failed to load customer by ID:', err);
                 }
+            }
+            
+            // Method 2: If customer not loaded by ID, try to find by loyalty number
+            if (!customerLoaded && order.customer_loyalty_number && order.customer_loyalty_number !== 'GUEST') {
+                try {
+                    console.log('🔍 Attempting to find customer by loyalty number:', order.customer_loyalty_number);
+                    const customerData = await window.API.customers.getByLoyalty(order.customer_loyalty_number);
+                    setSelectedCustomer(customerData);
+                    setLoyaltyNumber(customerData.loyalty_number || '');
+                    console.log('👤 Customer loaded by loyalty number:', customerData.name);
+                    customerLoaded = true;
+                } catch (err) {
+                    console.error('Failed to load customer by loyalty number:', err);
+                }
+            }
+            
+            // Method 3: If still no customer but we have email, try to find by email
+            if (!customerLoaded && order.customer_email && order.customer_email !== 'GUEST') {
+                try {
+                    console.log('🔍 Attempting to find customer by email:', order.customer_email);
+                    // Search for customer by email
+                    const searchResults = await window.API.call(`/customers/search?email=${encodeURIComponent(order.customer_email)}`);
+                    if (searchResults && searchResults.length > 0) {
+                        setSelectedCustomer(searchResults[0]);
+                        setLoyaltyNumber(searchResults[0].loyalty_number || '');
+                        console.log('👤 Customer loaded by email:', searchResults[0].name);
+                        customerLoaded = true;
+                    }
+                } catch (err) {
+                    console.error('Failed to load customer by email:', err);
+                }
+            }
+            
+            if (!customerLoaded) {
+                console.log('⚠️ No customer could be loaded for this order');
             }
             
             // Switch to POS view

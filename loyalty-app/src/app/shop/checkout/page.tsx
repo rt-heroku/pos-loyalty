@@ -55,6 +55,7 @@ function CheckoutContent() {
  const [scheduledTime, setScheduledTime] = useState('');
  const [loading, setLoading] = useState(false);
  const [user, setUser] = useState<any>(null);
+ const [customerId, setCustomerId] = useState<number | null>(null);
 
  // Guest checkout fields
  const [guestName, setGuestName] = useState('');
@@ -127,6 +128,12 @@ function CheckoutContent() {
  console.log('[Checkout] Profile data received:', profileData);
  
  const profile = profileData.customer || profileData;
+ 
+ // Store customer ID for order creation
+ if (profile.id) {
+ console.log('[Checkout] ✅ Storing customer ID:', profile.id);
+ setCustomerId(profile.id);
+ }
  
  // Pre-fill user information from profile
  const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
@@ -226,13 +233,19 @@ function CheckoutContent() {
  return;
  }
 
- setVoucherLoading(true);
- console.log('[Checkout] Loading vouchers for customer:', customerId);
- 
- const origin = typeof window !== 'undefined' ? window.location.origin : '';
- const basePath = '/loyalty';
- const response = await fetch(`${origin}${basePath}/api/customers/${customerId}/vouchers`);
- const data = await response.json();
+    setVoucherLoading(true);
+    console.log('[Checkout] Loading vouchers for customer:', customerId);
+    
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+    const response = await fetch(`${basePath}/api/customers/${customerId}/vouchers`);
+    
+    if (!response.ok) {
+      console.error('[Checkout] Failed to fetch vouchers:', response.status, response.statusText);
+      setVoucherLoading(false);
+      return;
+    }
+    
+    const data = await response.json();
 
  if (data.success) {
  // Filter out expired vouchers
@@ -407,8 +420,10 @@ function CheckoutContent() {
  try {
  const voucherDiscount = calculateVoucherDiscount();
  
+ console.log('[Checkout] Creating order with customer_id:', customerId);
+ 
  const orderData = {
- customer_id: user?.id || null,
+ customer_id: customerId || null,
  location_id: selectedLocation,
  order_type: orderType,
  origin: 'mobile',
