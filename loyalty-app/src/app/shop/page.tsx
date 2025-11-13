@@ -294,7 +294,7 @@ export default function ShopPage() {
 
   const productsByCategory = categories.map(category => ({
     category,
-    products: filteredProducts.filter(p => p.category_id === category.id)
+    products: filteredProducts.filter(p => p.category === category.name)
   })).filter(group => group.products.length > 0);
 
   // =====================================================
@@ -427,7 +427,7 @@ export default function ShopPage() {
                       <div className="flex justify-between items-center">
                         <span>{category.name}</span>
                         <span className="text-sm opacity-75">
-                          {filteredProducts.filter(p => p.category_id === category.id).length}
+                          {filteredProducts.filter(p => p.category === category.name).length}
                         </span>
                       </div>
                     </button>
