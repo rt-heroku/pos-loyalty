@@ -211,7 +211,8 @@ export default function ShopPage() {
 
   const addToCart = (product: Product, modifiers: any[] = [], instructions: string = '') => {
     const modifierTotal = modifiers.reduce((sum, m) => sum + m.price, 0);
-    const itemTotal = (product.price + modifierTotal);
+    const productPrice = typeof product.price === 'number' ? product.price : parseFloat(product.price || '0');
+    const itemTotal = (productPrice + modifierTotal);
     
     const cartItem: CartItem = {
       product,
@@ -620,7 +621,7 @@ function ProductCard({ product, onQuickAdd }: ProductCardProps) {
         
         <div className="flex items-center justify-between">
           <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
-            ${product.price?.toFixed(2) || '0.00'}
+            ${typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(product.price || '0').toFixed(2)}
           </span>
           
           <button
@@ -933,7 +934,8 @@ function ProductCustomizationModal({ product, modifierGroups, onClose, onAddToCa
   };
 
   const calculateTotal = () => {
-    let total = product.price;
+    const productPrice = typeof product.price === 'number' ? product.price : parseFloat(product.price || '0');
+    let total = productPrice;
     Object.entries(selectedModifiers).forEach(([groupId, modifierIds]) => {
       const group = modifierGroups.find(g => g.id === parseInt(groupId));
       if (group) {
@@ -999,7 +1001,7 @@ function ProductCustomizationModal({ product, modifierGroups, onClose, onAddToCa
                 {product.description}
               </p>
               <p className="text-lg font-semibold text-blue-600 dark:text-blue-400 mt-2">
-                ${product.price?.toFixed(2) || '0.00'}
+                ${typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(product.price || '0').toFixed(2)}
               </p>
             </div>
             <button
