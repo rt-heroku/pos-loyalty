@@ -620,7 +620,7 @@ function ProductCard({ product, onQuickAdd }: ProductCardProps) {
         
         <div className="flex items-center justify-between">
           <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
-            ${product.price.toFixed(2)}
+            ${product.price?.toFixed(2) || '0.00'}
           </span>
           
           <button
@@ -999,7 +999,7 @@ function ProductCustomizationModal({ product, modifierGroups, onClose, onAddToCa
                 {product.description}
               </p>
               <p className="text-lg font-semibold text-blue-600 dark:text-blue-400 mt-2">
-                ${product.price.toFixed(2)}
+                ${product.price?.toFixed(2) || '0.00'}
               </p>
             </div>
             <button
