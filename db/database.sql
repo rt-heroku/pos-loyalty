@@ -1984,8 +1984,113 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- This completes the simplified database schema
--- All tables are created with complete column definitions
--- All indexes, functions, triggers, and views are included
--- Sample data is inserted for testing
--- The database is ready for use
+CREATE OR REPLACE FUNCTION generate_unique_email(
+    p_first_name VARCHAR,
+    p_last_name VARCHAR
+) RETURNS VARCHAR AS $$
+DECLARE
+    v_base_email VARCHAR;
+    v_final_email VARCHAR;
+    v_counter INTEGER := 1;
+    v_exists BOOLEAN;
+BEGIN
+    -- Clean and create base email from first and last name
+    v_base_email := LOWER(
+        REGEXP_REPLACE(COALESCE(p_first_name, ''), '[^a-zA-Z0-9]', '', 'g') || '.' ||
+        REGEXP_REPLACE(COALESCE(p_last_name, ''), '[^a-zA-Z0-9]', '', 'g')
+    ) || '@demo.com';
+    
+    -- Handle empty names
+    IF v_base_email = '.@demo.com' OR v_base_email = '@demo.com' THEN
+        v_base_email := 'user@demo.com';
+    END IF;
+    
+    v_final_email := v_base_email;
+    
+    -- Check if email exists and increment counter if needed
+    LOOP
+        SELECT EXISTS(
+            SELECT 1 FROM customers WHERE email = v_final_email
+        ) INTO v_exists;
+        
+        EXIT WHEN NOT v_exists;
+        
+        -- Email exists, try with counter
+        v_final_email := REGEXP_REPLACE(v_base_email, '@demo\.com$', '') || v_counter || '@demo.com';
+        v_counter := v_counter + 1;
+    END LOOP;
+    
+    RETURN v_final_email;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION ensure_unique_email_simple()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Only generate if email is empty or null
+    IF NEW.email IS NULL OR NEW.email = '' THEN
+        NEW.email := generate_unique_email(NEW.first_name, NEW.last_name);
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Drop old triggers if they exist
+DROP TRIGGER IF EXISTS trigger_ensure_unique_email_insert ON customers;
+DROP TRIGGER IF EXISTS trigger_ensure_unique_email_update ON customers;
+
+/* -- Remove comments to enable simple email generation
+-- Create new triggers
+CREATE TRIGGER trigger_ensure_unique_email_insert
+BEFORE INSERT ON customers
+FOR EACH ROW
+EXECUTE FUNCTION ensure_unique_email_simple();
+
+CREATE TRIGGER trigger_ensure_unique_email_update
+BEFORE UPDATE ON customers
+FOR EACH ROW
+WHEN (NEW.email IS NULL OR NEW.email = '')
+EXECUTE FUNCTION ensure_unique_email_simple();
+*/
+
+-- Or disable temporarily
+-- ALTER TABLE customers DISABLE TRIGGER trigger_ensure_unique_email_insert;
+--ALTER TABLE customers DISABLE TRIGGER trigger_ensure_unique_email_update;
+
+-- Re-enable
+--ALTER TABLE customers ENABLE TRIGGER trigger_ensure_unique_email_insert;
+--ALTER TABLE customers ENABLE TRIGGER trigger_ensure_unique_email_update;
+
+CREATE OR REPLACE FUNCTION ensure_unique_email()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_new_email VARCHAR;
+BEGIN
+    -- Check if email is empty, null, or already exists (for updates, exclude current record)
+    IF NEW.email IS NULL OR NEW.email = '' OR 
+       EXISTS (
+           SELECT 1 FROM customers 
+           WHERE email = NEW.email 
+           AND id != COALESCE(NEW.id, -1)
+       ) THEN
+        -- Generate unique email
+        NEW.email := generate_unique_email(NEW.first_name, NEW.last_name);
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create the trigger for INSERT
+CREATE TRIGGER trigger_ensure_unique_email_insert
+BEFORE INSERT ON customers
+FOR EACH ROW
+EXECUTE FUNCTION ensure_unique_email();
+
+-- Create the trigger for UPDATE
+CREATE TRIGGER trigger_ensure_unique_email_update
+BEFORE UPDATE ON customers
+FOR EACH ROW
+WHEN (NEW.email IS DISTINCT FROM OLD.email OR NEW.first_name IS DISTINCT FROM OLD.first_name OR NEW.last_name IS DISTINCT FROM OLD.last_name)
+EXECUTE FUNCTION ensure_unique_email();

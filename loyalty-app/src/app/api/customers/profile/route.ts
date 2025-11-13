@@ -137,6 +137,10 @@ export async function PUT(request: NextRequest) {
       marketing_consent
     } = await request.json();
 
+    // Convert empty strings to null for optional fields
+    const cleanedDateOfBirth = date_of_birth === '' || date_of_birth === undefined ? null : date_of_birth;
+    const cleanedAddressLine2 = address_line2 === '' || address_line2 === undefined ? null : address_line2;
+
     // Update customer profile
     const result = await query(
       `UPDATE customers SET 
@@ -160,9 +164,9 @@ export async function PUT(request: NextRequest) {
         first_name,
         last_name,
         phone,
-        date_of_birth,
+        cleanedDateOfBirth,
         address_line1,
-        address_line2,
+        cleanedAddressLine2,
         city,
         state,
         zip_code,

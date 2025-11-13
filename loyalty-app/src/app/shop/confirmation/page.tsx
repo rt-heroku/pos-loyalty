@@ -12,6 +12,21 @@ function ConfirmationContent() {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // Force light theme
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  }, []);
+
+  // Helper function to safely format currency values (handles string/number from DB)
+  const formatPrice = (value: any): string => {
+    const num = typeof value === 'number' ? value : parseFloat(value || '0');
+    return num.toFixed(2);
+  };
+
   const loadOrderDetails = useCallback(async () => {
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -164,7 +179,7 @@ function ConfirmationContent() {
                     )}
                   </div>
                   <span className="font-medium text-gray-900 dark:text-white">
-                    ${item.total_price.toFixed(2)}
+                    ${formatPrice(item.total_price)}
                   </span>
                 </div>
               ))}
@@ -175,21 +190,21 @@ function ConfirmationContent() {
           <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
             <div className="flex justify-between text-gray-600 dark:text-gray-400">
               <span>Subtotal</span>
-              <span>${order.subtotal.toFixed(2)}</span>
+              <span>${formatPrice(order.subtotal)}</span>
             </div>
-            {order.discount_amount > 0 && (
+            {parseFloat(order.discount_amount || '0') > 0 && (
               <div className="flex justify-between text-green-600 dark:text-green-400">
                 <span>Discount</span>
-                <span>-${order.discount_amount.toFixed(2)}</span>
+                <span>-${formatPrice(order.discount_amount)}</span>
               </div>
             )}
             <div className="flex justify-between text-gray-600 dark:text-gray-400">
               <span>Tax</span>
-              <span>${order.tax_amount.toFixed(2)}</span>
+              <span>${formatPrice(order.tax_amount)}</span>
             </div>
             <div className="flex justify-between text-xl font-bold text-gray-900 dark:text-white pt-2 border-t border-gray-200 dark:border-gray-700">
               <span>Total</span>
-              <span>${order.total_amount.toFixed(2)}</span>
+              <span>${formatPrice(order.total_amount)}</span>
             </div>
           </div>
 

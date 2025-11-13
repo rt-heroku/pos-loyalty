@@ -219,7 +219,7 @@ export default function LoyaltyPage() {
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50">
         <div className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-primary-600"></div>
-          <p className="text-gray-600">Loading loyalty program...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -233,6 +233,7 @@ export default function LoyaltyPage() {
     { id: 'overview', label: 'Overview', icon: Star },
     { id: 'rewards', label: 'Rewards', icon: Gift },
     { id: 'vouchers', label: 'Vouchers', icon: Percent },
+    { id: 'orders', label: 'Orders', icon: ShoppingBag },
     { id: 'history', label: 'History', icon: Calendar },
     { id: 'referrals', label: 'Referrals', icon: Users },
   ];
@@ -790,6 +791,33 @@ export default function LoyaltyPage() {
                   </p>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Orders Tab */}
+          {activeTab === 'orders' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Your Orders
+                </h2>
+                <button
+                  onClick={() => router.push('/orders')}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+                >
+                  View All Orders
+                </button>
+              </div>
+
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <ShoppingBag className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-4 text-lg font-medium text-gray-900">
+                  View Your Order History
+                </h3>
+                <p className="mt-2 text-gray-600">
+                  Click the "View All Orders" button above to see all your past orders with full details.
+                </p>
+              </div>
             </div>
           )}
 

@@ -21,7 +21,8 @@
         const { X } = window.Icons;
 
         return React.createElement('div', {
-            className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'
+            key: 'modal-container',
+            className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 lg:pt-28'
         }, [
             React.createElement('div', { key: 'modal', className: 'bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full border border-gray-200 dark:border-gray-700 shadow-lg' }, [
                 React.createElement('div', { key: 'header', className: 'flex justify-between items-center mb-6' }, [

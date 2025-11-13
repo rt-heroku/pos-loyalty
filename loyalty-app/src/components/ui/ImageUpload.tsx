@@ -74,8 +74,11 @@ export default function ImageUpload({
           canvas.height = height;
 
           if (ctx) {
+            // Clear canvas to transparent (important for PNG transparency!)
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, width, height);
-            const resizedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+            // Use PNG to preserve transparency (like location logo)
+            const resizedBase64 = canvas.toDataURL('image/png');
             resolve({
               base64: resizedBase64,
               width,

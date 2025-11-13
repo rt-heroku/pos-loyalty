@@ -11,7 +11,8 @@ window.Modals.ReceiptModal = function ReceiptModal({
     console.log('ReceiptModal props:', { subtotal, tax, total, appliedVouchers, voucherDiscounts });
 
     return React.createElement('div', {
-        className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'
+        key: 'modal-container',
+        className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 lg:pt-28'
     }, [
         React.createElement('div', { key: 'modal', className: 'bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full' }, [
             React.createElement('div', { key: 'header', className: 'text-center mb-6' }, [

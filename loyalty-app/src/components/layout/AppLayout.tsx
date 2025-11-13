@@ -18,6 +18,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
   // Check if current page is shop (public access allowed)
   const isShopPage = pathname.startsWith('/shop');
@@ -36,29 +37,33 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   // Set initial sidebar state based on screen size and page type
   useEffect(() => {
-    // For shop pages, start with sidebar closed
-    if (isShopPage) {
+    // For shop pages, start with sidebar closed on mobile
+    if (window.innerWidth < 1024 && isShopPage) {
       setIsSidebarOpen(false);
     } else if (window.innerWidth >= 1024) {
       setIsSidebarOpen(true);
     }
+
+    // Load collapsed state from localStorage
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState !== null) {
+      setIsSidebarCollapsed(JSON.parse(savedState));
+    }
   }, [isShopPage]);
 
-  // Listen for closeSidebar event from shop page
+  // Listen for localStorage changes (sidebar collapse state)
   useEffect(() => {
-    const handleCloseSidebar = () => {
-      console.log('AppLayout: Received closeSidebar event');
-      setIsSidebarOpen(false);
+    const handleStorageChange = () => {
+      const savedState = localStorage.getItem('sidebarCollapsed');
+      if (savedState !== null) {
+        setIsSidebarCollapsed(JSON.parse(savedState));
+      }
     };
 
-    window.addEventListener('closeSidebar', handleCloseSidebar);
-    return () => window.removeEventListener('closeSidebar', handleCloseSidebar);
+    // Poll localStorage every 100ms (since localStorage events don't fire in same window)
+    const interval = setInterval(handleStorageChange, 100);
+    return () => clearInterval(interval);
   }, []);
-
-  // Debug logging
-  useEffect(() => {
-    console.log('AppLayout isSidebarOpen state:', isSidebarOpen);
-  }, [isSidebarOpen]);
 
   // Redirect to login if not authenticated (except for shop pages)
   useEffect(() => {
@@ -91,7 +96,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {/* Main content area */}
       <div className={cn(
         'transition-all duration-300',
-        isSidebarOpen ? 'lg:ml-80' : 'lg:ml-0'
+        // On mobile: no margin (sidebar overlays)
+        // On desktop: always have margin based on collapsed state (sidebar is always visible)
+        isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       )}>
         {/* Top navigation */}
         <TopNav

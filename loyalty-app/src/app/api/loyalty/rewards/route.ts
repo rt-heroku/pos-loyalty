@@ -44,11 +44,11 @@ export async function GET(request: NextRequest) {
 
     // Get user's redeemed rewards
     const redeemedRewardsResult = await query(
-      `SELECT reward_id, earned_at, status
+      `SELECT cr.reward_id, cr.earned_at, cr.status
        FROM customer_rewards cr
        JOIN customers c ON cr.customer_id = c.id
        WHERE c.user_id = $1
-       ORDER BY earned_at DESC`,
+       ORDER BY cr.earned_at DESC`,
       [user.id]
     );
 

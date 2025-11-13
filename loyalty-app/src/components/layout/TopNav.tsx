@@ -27,6 +27,7 @@ export default function TopNav({ onMenuToggle, isMenuOpen }: TopNavProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [customerImage, setCustomerImage] = useState<string | null>(null);
+  const [locationLogo, setLocationLogo] = useState<string | null>(null);
 
   // Load customer image
   useEffect(() => {
@@ -102,6 +103,26 @@ export default function TopNav({ onMenuToggle, isMenuOpen }: TopNavProps) {
     console.log('TopNav user changed:', user);
   }, [user]);
 
+  // Load location logo
+  useEffect(() => {
+    const loadLocationLogo = async () => {
+      try {
+        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+        const locationResponse = await fetch(`${basePath}/api/locations/current`);
+        if (locationResponse.ok) {
+          const locationData = await locationResponse.json();
+          if (locationData.success && locationData.location) {
+            setLocationLogo(locationData.location.logo_base64 || locationData.location.logo_url);
+          }
+        }
+      } catch (error) {
+        console.error('TopNav: Error loading location logo:', error);
+      }
+    };
+
+    loadLocationLogo();
+  }, []);
+
   if (!user) return null;
 
   const handleMenuToggle = () => {
@@ -112,8 +133,8 @@ export default function TopNav({ onMenuToggle, isMenuOpen }: TopNavProps) {
   return (
     <header className="sticky top-0 z-30 border-b border-gray-200 bg-white">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Left side - Menu button and search */}
-        <div className="flex items-center space-x-4">
+        {/* Left side - Menu button and Logo */}
+        <div className="flex items-center space-x-3">
           <button
             onClick={handleMenuToggle}
             className={cn(
@@ -122,31 +143,37 @@ export default function TopNav({ onMenuToggle, isMenuOpen }: TopNavProps) {
             )}
             aria-label="Toggle menu"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-6 w-6" />
           </button>
 
-          {/* Search bar - hidden on mobile */}
-          <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
+          {/* Logo */}
+          {locationLogo && (
+            <div className="flex h-10 w-24 items-center justify-center overflow-hidden relative">
+              <Image
+                src={locationLogo}
+                alt="Company Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Center - Search bar */}
+        <div className="hidden md:block flex-1 max-w-2xl mx-8">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
             <input
               type="text"
               placeholder="Search..."
-              className="w-64 rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-transparent focus:ring-2 focus:ring-primary-500"
+              className="w-full rounded-xl border border-gray-300 py-2.5 pl-11 pr-4 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
         </div>
 
-        {/* Right side - User actions */}
-        <div className="flex items-center space-x-4">
-          {/* Chat Button - Desktop only */}
-          <button
-            onClick={() => router.push('/chat')}
-            className="hidden md:flex items-center space-x-2 rounded-lg bg-blue-500 px-4 py-2 text-white transition-colors hover:bg-blue-600"
-          >
-            <Bot className="h-4 w-4" />
-            <span className="text-sm font-medium">AI Assistant</span>
-          </button>
-
+        {/* Right side - Notifications and User */}
+        <div className="flex items-center space-x-2">
           {/* Notifications */}
           <div className="relative">
             <button
@@ -155,7 +182,7 @@ export default function TopNav({ onMenuToggle, isMenuOpen }: TopNavProps) {
             >
               <Bell className="h-5 w-5" />
               {/* Notification badge */}
-              <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-red-500"></span>
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500"></span>
             </button>
 
             {/* Notifications dropdown */}
@@ -211,29 +238,20 @@ export default function TopNav({ onMenuToggle, isMenuOpen }: TopNavProps) {
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-3 rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+              className="flex items-center rounded-lg p-1 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 text-sm font-bold text-white overflow-hidden">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-sm font-bold text-white overflow-hidden">
                 {customerImage ? (
                   <Image
                     src={customerImage}
                     alt="Profile"
-                    width={32}
-                    height={32}
+                    width={36}
+                    height={36}
                     className="object-cover rounded-full"
                   />
                 ) : (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
+                  <User className="h-5 w-5 text-white" />
                 )}
-              </div>
-              <div className="hidden text-left md:block">
-                <div className="text-sm font-medium text-gray-900">
-                  {user.firstName} {user.lastName}
-                </div>
-                <div className="text-xs text-gray-500">{user.email}</div>
               </div>
             </button>
 
@@ -309,20 +327,6 @@ export default function TopNav({ onMenuToggle, isMenuOpen }: TopNavProps) {
           </div>
         </div>
       </div>
-
-      {/* Mobile search - shown when menu is closed */}
-      {!isMenuOpen && (
-        <div className="px-4 pb-4 md:hidden">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search..."
-              className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-transparent focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-        </div>
-      )}
     </header>
   );
 }

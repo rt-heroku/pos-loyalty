@@ -403,7 +403,7 @@ window.Modals.ProductModal = function ProductModal({
 
     return React.createElement('div', {
         key: 'modal-container',
-        className: 'fixed inset-0 bg-black/50 dark:bg-black/80 flex items-center justify-center z-50 p-4'
+        className: 'fixed inset-0 bg-black/50 dark:bg-black/80 flex items-center justify-center z-50 p-4 lg:pt-28'
     }, [
         React.createElement('div', {
             key: 'modal',

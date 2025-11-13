@@ -1354,10 +1354,23 @@ app.get('/api/orders', async (req, res) => {
                 o.created_by,
                 o.updated_at,
                 o.completed_at,
-                c.first_name || ' ' || c.last_name as customer_name,
-                c.loyalty_number as customer_loyalty_number,
-                c.phone as customer_phone,
-                c.email as customer_email,
+                o.guest_name,
+                o.guest_phone,
+                o.guest_email,
+                o.delivery_address,
+                o.delivery_instructions,
+                o.scheduled_time,
+                o.special_instructions,
+                o.order_type,
+                o.payment_method_id,
+                o.sync_status,
+                o.sync_message,
+                o.salesforce_order_id,
+                o.sync_attempted_at,
+                COALESCE(c.first_name || ' ' || c.last_name, o.guest_name) as customer_name,
+                COALESCE(c.loyalty_number, 'GUEST') as customer_loyalty_number,
+                COALESCE(c.phone, o.guest_phone) as customer_phone,
+                COALESCE(c.email, o.guest_email) as customer_email,
                 COUNT(oi.id) as item_count,
                 l.store_name as location_name
             FROM orders o
@@ -1409,11 +1422,14 @@ app.get('/api/orders', async (req, res) => {
         if (search) {
             query += ` AND (
                 o.order_number ILIKE $${paramCount} OR
+                o.guest_name ILIKE $${paramCount} OR
                 c.first_name ILIKE $${paramCount} OR
                 c.last_name ILIKE $${paramCount} OR
                 c.loyalty_number ILIKE $${paramCount} OR
                 c.phone ILIKE $${paramCount} OR
-                c.email ILIKE $${paramCount}
+                c.email ILIKE $${paramCount} OR
+                o.guest_phone ILIKE $${paramCount} OR
+                o.guest_email ILIKE $${paramCount}
             )`;
             params.push(`%${search}%`);
             paramCount++;
@@ -1425,6 +1441,10 @@ app.get('/api/orders', async (req, res) => {
                      o.total_amount, o.voucher_id, o.voucher_discount, o.coupon_code, 
                      o.coupon_discount, o.payment_method, o.transaction_id, o.notes, 
                      o.sf_id, o.created_by, o.updated_at, o.completed_at,
+                     o.guest_name, o.guest_phone, o.guest_email, o.delivery_address,
+                     o.delivery_instructions, o.scheduled_time, o.special_instructions,
+                     o.order_type, o.payment_method_id,
+                     o.sync_status, o.sync_message, o.salesforce_order_id, o.sync_attempted_at,
                      c.first_name, c.last_name, c.loyalty_number, c.phone, c.email, l.store_name
             ORDER BY o.order_date DESC
         `;
@@ -5433,7 +5453,7 @@ app.post('/api/customers/:id/avatar', async (req, res) => {
     // Insert new avatar
     const result = await pool.query(
       'INSERT INTO customer_images (customer_id, filename, image_data, file_size, width, height) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-      [id, filename || 'avatar.jpg', image_data, file_size || 0, width || 0, height || 0]
+      [id, filename || 'avatar.png', image_data, file_size || 0, width || 0, height || 0]
     );
     
     // console.log(`Avatar uploaded successfully for customer ${id}, avatar_id: ${result.rows[0].id}`);
@@ -6052,6 +6072,72 @@ app.get('/api/products/:id/modifiers', async (req, res) => {
   }
 });
 
+// Salesforce sync function
+async function syncOrderToSalesforce(orderId) {
+  const client = await pool.connect();
+  
+  try {
+    console.log(`[Salesforce Sync] Starting sync for order ${orderId}`);
+    
+    // Update sync attempted timestamp
+    await client.query(
+      'UPDATE orders SET sync_attempted_at = CURRENT_TIMESTAMP WHERE id = $1',
+      [orderId]
+    );
+    
+    // Call MuleSoft API
+    const mulesoftUrl = process.env.MULESOFT_API_URL || 'http://localhost:8081';
+    const response = await fetch(`${mulesoftUrl}/orders/salesforce/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id: orderId }),
+      timeout: 30000 // 30 second timeout
+    });
+    
+    const responseData = await response.json();
+    
+    if (response.ok && responseData.success) {
+      // Sync successful
+      console.log(`[Salesforce Sync] ✓ Success for order ${orderId}:`, responseData);
+      
+      await client.query(
+        `UPDATE orders 
+         SET sync_status = true, 
+             sync_message = $1,
+             salesforce_order_id = $2
+         WHERE id = $3`,
+        [JSON.stringify(responseData), responseData.salesforce_order_id, orderId]
+      );
+    } else {
+      // Sync failed
+      console.error(`[Salesforce Sync] ✗ Failed for order ${orderId}:`, responseData);
+      
+      await client.query(
+        `UPDATE orders 
+         SET sync_status = false, 
+             sync_message = $1
+         WHERE id = $2`,
+        [JSON.stringify(responseData), orderId]
+      );
+    }
+  } catch (error) {
+    // Network or other error
+    console.error(`[Salesforce Sync] ✗ Error for order ${orderId}:`, error);
+    
+    await client.query(
+      `UPDATE orders 
+       SET sync_status = false, 
+           sync_message = $1
+       WHERE id = $2`,
+      [JSON.stringify({ error: error.message, stack: error.stack }), orderId]
+    );
+  } finally {
+    client.release();
+  }
+}
+
 // Create online order (supports guest checkout)
 app.post('/api/orders/online', async (req, res) => {
   const client = await pool.connect();
@@ -6130,13 +6216,15 @@ app.post('/api/orders/online', async (req, res) => {
       ]);
     }
     
-    // Insert order status history
-    await client.query(`
-      INSERT INTO order_status_history (order_id, status, notes)
-      VALUES ($1, $2, $3)
-    `, [order.id, status || 'pending', 'Order created via online shop']);
+    // Order status is already tracked in the orders table
+    // No need for separate status history table
     
     await client.query('COMMIT');
+    
+    // Sync to Salesforce asynchronously (don't block response)
+    syncOrderToSalesforce(order.id).catch(err => {
+      console.error(`[Salesforce Sync] Failed for order ${order.id}:`, err.message);
+    });
     
     res.json({
       success: true,

@@ -45,13 +45,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = await response.json();
         console.log('AuthContext - Setting user from /api/auth/me:', data.user);
         setUser(data.user);
+        
+        // Store user in localStorage for shop page
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+          console.log('AuthContext - ✅ Stored user in localStorage');
+        }
       } else {
         console.log('AuthContext - No user found, setting to null');
         setUser(null);
+        localStorage.removeItem('user');
       }
     } catch (error) {
       console.error('Auth check failed:', error);
       setUser(null);
+      localStorage.removeItem('user');
     } finally {
       setLoading(false);
     }
@@ -73,6 +81,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         console.log('AuthContext - Setting user from login:', data.user);
         setUser(data.user);
+        
+        // Store user in localStorage for shop page
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+          console.log('AuthContext - ✅ Stored user in localStorage after login');
+        }
+        
         return { success: true };
       } else {
         return { success: false, error: data.error || 'Login failed' };
@@ -89,11 +104,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         method: 'POST',
       });
       setUser(null);
+      localStorage.removeItem('user');
+      console.log('AuthContext - ✅ Cleared user from localStorage on logout');
       // Let ConditionalLayout handle the routing
     } catch (error) {
       console.error('Logout error:', error);
       // Still clear user state even if API call fails
       setUser(null);
+      localStorage.removeItem('user');
     }
   };
 
@@ -111,6 +129,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         setUser(data.user);
+        
+        // Store user in localStorage for shop page
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+          console.log('AuthContext - ✅ Stored user in localStorage after registration');
+        }
+        
         return { success: true };
       } else {
         // Handle user already exists case with redirect

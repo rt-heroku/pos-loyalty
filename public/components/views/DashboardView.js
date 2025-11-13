@@ -71,8 +71,8 @@ window.Views.DashboardView = ({ selectedLocation }) => {
             tableauViz.id = 'tableau-viz';
             tableauViz.setAttribute('src', dashboardConfig.tableau_dashboard_url);
             tableauViz.setAttribute('width', '100%');
-            tableauViz.setAttribute('height', '100%');
             tableauViz.setAttribute('toolbar', 'bottom');
+            tableauViz.setAttribute('class', 'h-full flex-1');
             
             containerRef.current.appendChild(tableauViz);
         }
