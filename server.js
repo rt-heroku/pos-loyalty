@@ -328,12 +328,17 @@ app.get('/api/setup/status', async (req, res) => {
 
 // Initialize Setup - Create first admin user
 app.post('/api/setup/initialize', async (req, res) => {
+  const client = await pool.connect();
+  
   try {
+    await client.query('BEGIN');
+    
     // Check if setup is still required
-    const userCountResult = await pool.query('SELECT COUNT(*) as count FROM users');
+    const userCountResult = await client.query('SELECT COUNT(*) as count FROM users');
     const userCount = parseInt(userCountResult.rows[0].count);
 
     if (userCount > 0) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ error: 'Setup has already been completed' });
     }
 
@@ -350,33 +355,51 @@ app.post('/api/setup/initialize', async (req, res) => {
       state,
       zipCode,
       country = 'US',
+      // Location data
+      locationId,
+      createNewLocation,
+      storeCode,
+      storeName,
+      locationAddress,
+      locationCity,
+      locationState,
+      locationZipCode,
+      taxRate,
     } = req.body;
 
     // Validation
     if (!username || !email || !password || !firstName || !lastName) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ error: 'Required fields missing' });
     }
 
+    // Company name is required
+    if (!companyName) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Company name is required' });
+    }
+
     // Get admin role ID
-    const roleResult = await pool.query(
+    const roleResult = await client.query(
       "SELECT id FROM roles WHERE name = 'admin' OR name = 'Admin' LIMIT 1"
     );
 
     if (roleResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(500).json({ error: 'Admin role not found in database' });
     }
 
     const adminRoleId = roleResult.rows[0].id;
 
     // Hash password using database function (bcrypt)
-    const passwordHashResult = await pool.query(
+    const passwordHashResult = await client.query(
       'SELECT hash_password($1) as hash',
       [password]
     );
     const passwordHash = passwordHashResult.rows[0].hash;
 
     // Create user
-    const userResult = await pool.query(
+    const userResult = await client.query(
       `INSERT INTO users (
         username, email, password_hash, first_name, last_name,
         phone, role_id, role, is_active, created_at, updated_at
@@ -398,11 +421,11 @@ app.post('/api/setup/initialize', async (req, res) => {
     const user = userResult.rows[0];
 
     // Generate loyalty number
-    const loyaltyResult = await pool.query('SELECT generate_loyalty_number() as number');
+    const loyaltyResult = await client.query('SELECT generate_loyalty_number() as number');
     const loyaltyNumber = loyaltyResult.rows[0].number;
 
     // Create customer record
-    await pool.query(
+    await client.query(
       `INSERT INTO customers (
         user_id, loyalty_number, first_name, last_name, name,
         email, phone, points, total_spent, visit_count,
@@ -434,16 +457,67 @@ app.post('/api/setup/initialize', async (req, res) => {
       ]
     );
 
-    // Update system settings if company name provided
-    if (companyName) {
-      await pool.query(
-        `INSERT INTO system_settings (setting_key, setting_value, category, description)
-         VALUES ('company_name', $1, 'general', 'Company name displayed on receipts and reports')
-         ON CONFLICT (setting_key)
-         DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = NOW()`,
-        [companyName]
+    // Update system settings with company name
+    await client.query(
+      `INSERT INTO system_settings (setting_key, setting_value, category, description)
+       VALUES ('company_name', $1, 'general', 'Company name displayed on receipts and reports')
+       ON CONFLICT (setting_key)
+       DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = NOW()`,
+      [companyName]
+    );
+
+    // **IMPORTANT: Update all existing locations' brand with company name**
+    const updateBrandResult = await client.query(
+      `UPDATE locations SET brand = $1, updated_at = NOW() WHERE brand IS NULL OR brand = ''`,
+      [companyName]
+    );
+    console.log(`✅ Updated ${updateBrandResult.rowCount} location(s) with brand: ${companyName}`);
+
+    // Handle location setup
+    let selectedLocationId = locationId;
+    
+    if (createNewLocation || (!locationId && storeCode && storeName)) {
+      // Create new location
+      if (!storeCode || !storeName) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Store code and name are required for new location' });
+      }
+
+      const locationResult = await client.query(
+        `INSERT INTO locations (
+          store_code, store_name, brand, address_line1, city, state, zip_code,
+          tax_rate, is_active, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, NOW(), NOW())
+        RETURNING id`,
+        [
+          storeCode,
+          storeName,
+          companyName, // Use company name as brand
+          locationAddress || null,
+          locationCity || null,
+          locationState || null,
+          locationZipCode || null,
+          taxRate ? parseFloat(taxRate) : 0.08,
+        ]
       );
+      
+      selectedLocationId = locationResult.rows[0].id;
+      console.log(`✅ Created new location: ${storeName} (ID: ${selectedLocationId})`);
     }
+
+    // Create user_settings record with selected location
+    if (selectedLocationId) {
+      await client.query(
+        `INSERT INTO user_settings (user_id, selected_location_id, created_at, updated_at)
+         VALUES ($1, $2, NOW(), NOW())
+         ON CONFLICT (user_id)
+         DO UPDATE SET selected_location_id = $2, updated_at = NOW()`,
+        [user.id, selectedLocationId]
+      );
+      console.log(`✅ Set user's default location to ID: ${selectedLocationId}`);
+    }
+
+    await client.query('COMMIT');
 
     console.log(`✅ Setup complete! Admin user created: ${email}`);
 
@@ -460,11 +534,14 @@ app.post('/api/setup/initialize', async (req, res) => {
       },
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error during setup:', error);
     res.status(500).json({
       error: 'Setup failed',
       details: error.message,
     });
+  } finally {
+    client.release();
   }
 });
 

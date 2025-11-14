@@ -1607,8 +1607,8 @@ const POSApp = () => {
                             requiredPermission: 'pos:read'
                         }),
                         
-                        // Operations Dropdown
-                        React.createElement('div', {
+                        // Operations Dropdown - Only show if location is selected
+                        selectedLocation && React.createElement('div', {
                             key: 'operations-dropdown',
                             className: 'relative'
                         }, [
