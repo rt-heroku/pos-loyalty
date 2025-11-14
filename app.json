@@ -18,6 +18,6 @@
     }
   },
   "scripts": {
-    "postdeploy": "psql $DATABASE_URL -f db/temp/database.sql"
+    "postdeploy": "psql $DATABASE_URL -f db/database.sql"
   }
 }
