@@ -64,11 +64,16 @@ export default function ProductsPage() {
       const response = await fetch(`/loyalty/api/products?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setProducts(data.products);
-        setTotalProducts(data.total);
+        setProducts(data.products || []); // Ensure products is always an array
+        setTotalProducts(data.total || 0);
+      } else {
+        setProducts([]); // Set empty array on error
+        setTotalProducts(0);
       }
     } catch (error) {
       console.error('Error loading products:', error);
+      setProducts([]); // Ensure products is always an array on error
+      setTotalProducts(0);
     } finally {
       setLoading(false);
     }
@@ -300,7 +305,7 @@ export default function ProductsPage() {
                     )}
                   </div>
                 </div>
-              ) : products.length > 0 ? (
+              ) : products?.length > 0 ? (
                 <>
                   {viewMode === 'grid' ? (
                     <ProductGrid products={products} />
