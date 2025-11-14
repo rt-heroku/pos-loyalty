@@ -1,3 +1,40 @@
+-- =============================================================================
+-- SAMPLE DATA FOR POS-LOYALTY SYSTEM
+-- =============================================================================
+-- This file contains sample data for testing and demonstration
+-- Run this AFTER database.sql has been executed
+--
+-- Includes:
+-- - Sample products
+-- - Sample customers
+-- - Sample transactions
+-- - Sample orders
+-- - Sample loyalty data
+-- =============================================================================
+
+-- SAMPLE DATA
+-- =============================================================================
+
+-- Insert sample locations
+
+-- Insert default user settings
+INSERT INTO user_settings (user_identifier, theme_mode) VALUES ('default_user', 'light')
+
+-- Insert default tier rules
+
+-- Insert system settings
+
+
+-- Insert default roles
+
+-- Insert default admin user (password: P@$$word1)
+INSERT INTO users (username, email, password_hash, first_name, last_name, role_id, is_active) 
+
+-- =============================================================================
+
+-- =============================================================================
+-- ADDITIONAL SAMPLE DATA
+-- =============================================================================
 
 \echo Updating existing products with enhanced data (sample data based on Tumi examples)
 INSERT INTO public.products ("name",price,category,stock,image,created_at,updated_at,sku,product_type,brand,collection,material,color,description,dimensions,weight,warranty_info,care_instructions,main_image_url,is_active,featured,sort_order,sf_id) VALUES
@@ -140,3 +177,9 @@ ON CONFLICT (customer_id, preference_key) DO NOTHING;
 
 \echo Recalculating all customer tiers for existing customers
 SELECT recalculate_all_customer_tiers() as updated_customers;
+
+-- =============================================================================
+-- SAMPLE DATA LOADING COMPLETE
+-- =============================================================================
+-- Your system now has sample data for testing and demonstration
+-- =============================================================================

@@ -157,14 +157,6 @@ window.Auth = {
                         }`
                     }, loading ? 'Signing in...' : 'Sign In')
                 ]),
-                
-                React.createElement('div', { 
-                    key: 'footer',
-                    className: 'mt-6 text-center text-sm text-gray-600 dark:text-gray-400' 
-                }, [
-                    React.createElement('p', { key: 'text' }, 'Default admin credentials:'),
-                    React.createElement('p', { key: 'credentials' }, 'Username: admin | Password: P@$$word1')
-                ])
             ])
         ]);
     },

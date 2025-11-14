@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
 import { getUserFromRequest } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { z } from 'zod';
@@ -36,23 +35,17 @@ export async function PUT(request: NextRequest) {
     const clientIp =
       request.headers.get('x-forwarded-for') || request.ip || 'unknown';
 
-    // Get current password hash
-    const userResult = await query(
-      'SELECT password_hash FROM users WHERE id = $1',
-      [user.id]
+    // Verify current password using database function
+    const passwordVerification = await query(
+      'SELECT verify_password($1, password_hash) as is_valid FROM users WHERE id = $2',
+      [currentPassword, user.id]
     );
 
-    if (userResult.rows.length === 0) {
+    if (passwordVerification.rows.length === 0) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const currentPasswordHash = userResult.rows[0].password_hash;
-
-    // Verify current password
-    const isCurrentPasswordValid = await bcrypt.compare(
-      currentPassword,
-      currentPasswordHash
-    );
+    const isCurrentPasswordValid = passwordVerification.rows[0].is_valid;
     if (!isCurrentPasswordValid) {
       return NextResponse.json(
         { error: 'Current password is incorrect' },
@@ -60,9 +53,12 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Hash new password
-    const saltRounds = 12;
-    const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
+    // Hash new password using database function (bcrypt)
+    const passwordHashResult = await query(
+      'SELECT hash_password($1) as hash',
+      [newPassword]
+    );
+    const newPasswordHash = passwordHashResult.rows[0].hash;
 
     // Update password
     await query(
