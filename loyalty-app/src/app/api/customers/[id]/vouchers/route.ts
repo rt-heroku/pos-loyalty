@@ -6,7 +6,7 @@ import { fetchBackend } from '@/lib/backend';
  * Proxy to Express backend voucher API
  */
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
