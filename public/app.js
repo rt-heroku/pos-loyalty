@@ -143,13 +143,21 @@ const POSApp = () => {
 
     // Generate user identifier for settings
     const getUserId = () => {
-        let userId = localStorage.getItem('pos_user_id');
-        if (!userId) {
-            //userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            throw new Error('User ID not found');
-            localStorage.setItem('pos_user_id', userId);
+        // Get the actual user ID from stored user data
+        const userData = localStorage.getItem('user_data');
+        if (!userData) {
+            throw new Error('User data not found');
         }
-        return userId;
+        try {
+            const user = JSON.parse(userData);
+            if (!user || !user.id) {
+                throw new Error('User ID not found in user data');
+            }
+            return user.id; // Return numeric user ID, not username
+        } catch (error) {
+            console.error('Error parsing user data:', error);
+            throw new Error('Invalid user data');
+        }
     };
 
     // Check authentication on app load

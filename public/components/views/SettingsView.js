@@ -1397,10 +1397,11 @@ sfdc.consumer_secret=`;
         };
 
         // FIX: Optimized input change handler that updates ref first
-        const handleInputChange = (field, value) => {
+        // Use React.useCallback to prevent recreation on every render (which causes focus loss)
+        const handleInputChange = React.useCallback((field, value) => {
             formDataRef.current[field] = value;
             setNewLocationForm({...formDataRef.current});
-        };
+        }, []); // Empty deps array - function never changes
 
         // Handle create new location
         const handleCreateLocation = () => {
