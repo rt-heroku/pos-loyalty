@@ -12,12 +12,24 @@ function ConfirmationContent() {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Force light theme
+  // Force light theme - AGGRESSIVE ENFORCEMENT
   useEffect(() => {
     if (typeof document !== 'undefined') {
+      // Remove dark class from html and body
       document.documentElement.classList.remove('dark');
       document.body.classList.remove('dark');
+      
+      // Set light theme attribute
       document.documentElement.setAttribute('data-theme', 'light');
+      
+      // Force light colors with inline styles (overrides any CSS)
+      document.documentElement.style.backgroundColor = '#f9fafb';
+      document.documentElement.style.colorScheme = 'light';
+      document.body.style.backgroundColor = '#ffffff';
+      document.body.style.color = '#111827';
+      
+      // Override any stored theme preference
+      localStorage.setItem('theme', 'light');
     }
   }, []);
 
@@ -55,10 +67,10 @@ function ConfirmationContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading order details...</p>
+          <p className="mt-4 text-gray-600">Loading order details...</p>
         </div>
       </div>
     );
@@ -66,9 +78,9 @@ function ConfirmationContent() {
 
   if (!order) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400 mb-4">Order not found</p>
+          <p className="text-gray-600 mb-4">Order not found</p>
           <Link href="/shop" className="text-blue-600 hover:text-blue-700">
             Back to Shop
           </Link>
@@ -78,41 +90,41 @@ function ConfirmationContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
+    <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-3xl mx-auto px-4">
         {/* Success Icon */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full mb-4">
-            <svg className="w-10 h-10 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
+            <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Order Confirmed!
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600">
             Thank you for your order. We'll get started on it right away.
           </p>
         </div>
 
         {/* Order Details Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
-          <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-200">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              <h2 className="text-xl font-semibold text-gray-900">
                 Order #{order.order_number}
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm text-gray-600 mt-1">
                 {new Date(order.order_date).toLocaleString()}
               </p>
             </div>
             <div className="text-right">
               <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                order.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                order.status === 'confirmed' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                order.status === 'preparing' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
-                order.status === 'ready' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                order.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                order.status === 'preparing' ? 'bg-purple-100 text-purple-800' :
+                order.status === 'ready' ? 'bg-green-100 text-green-800' :
+                'bg-gray-100 text-gray-800'
               }`}>
                 {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
               </span>
@@ -130,10 +142,10 @@ function ConfirmationContent() {
                 )}
               </svg>
               <div>
-                <p className="font-medium text-gray-900 dark:text-white">
+                <p className="font-medium text-gray-900">
                   {order.order_type === 'delivery' ? 'Delivery' : 'Pickup'}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-600">
                   {order.order_type === 'delivery' ? order.delivery_address : order.location_name}
                 </p>
               </div>
@@ -144,10 +156,10 @@ function ConfirmationContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div>
-                <p className="font-medium text-gray-900 dark:text-white">
+                <p className="font-medium text-gray-900">
                   Estimated Time
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-600">
                   {order.scheduled_time 
                     ? new Date(order.scheduled_time).toLocaleString()
                     : '30-45 minutes'
@@ -159,26 +171,26 @@ function ConfirmationContent() {
 
           {/* Order Items */}
           <div className="mb-6">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Order Items</h3>
+            <h3 className="font-semibold text-gray-900 mb-3">Order Items</h3>
             <div className="space-y-3">
               {order.order_items?.map((item: any, index: number) => (
                 <div key={index} className="flex justify-between items-start">
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900 dark:text-white">
+                    <p className="font-medium text-gray-900">
                       {item.quantity}x {item.product_name}
                     </p>
                     {item.modifiers && item.modifiers.length > 0 && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-gray-600">
                         {item.modifiers.map((m: any) => m.name).join(', ')}
                       </p>
                     )}
                     {item.special_instructions && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400 italic">
+                      <p className="text-sm text-gray-600 italic">
                         Note: {item.special_instructions}
                       </p>
                     )}
                   </div>
-                  <span className="font-medium text-gray-900 dark:text-white">
+                  <span className="font-medium text-gray-900">
                     ${formatPrice(item.total_price)}
                   </span>
                 </div>
@@ -187,22 +199,22 @@ function ConfirmationContent() {
           </div>
 
           {/* Order Totals */}
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
-            <div className="flex justify-between text-gray-600 dark:text-gray-400">
+          <div className="border-t border-gray-200 pt-4 space-y-2">
+            <div className="flex justify-between text-gray-600">
               <span>Subtotal</span>
               <span>${formatPrice(order.subtotal)}</span>
             </div>
             {parseFloat(order.discount_amount || '0') > 0 && (
-              <div className="flex justify-between text-green-600 dark:text-green-400">
+              <div className="flex justify-between text-green-600">
                 <span>Discount</span>
                 <span>-${formatPrice(order.discount_amount)}</span>
               </div>
             )}
-            <div className="flex justify-between text-gray-600 dark:text-gray-400">
+            <div className="flex justify-between text-gray-600">
               <span>Tax</span>
               <span>${formatPrice(order.tax_amount)}</span>
             </div>
-            <div className="flex justify-between text-xl font-bold text-gray-900 dark:text-white pt-2 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between text-xl font-bold text-gray-900 pt-2 border-t border-gray-200">
               <span>Total</span>
               <span>${formatPrice(order.total_amount)}</span>
             </div>
@@ -210,11 +222,11 @@ function ConfirmationContent() {
 
           {/* Special Instructions */}
           {order.special_instructions && (
-            <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm font-medium text-gray-900 mb-1">
                 Special Instructions
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600">
                 {order.special_instructions}
               </p>
             </div>
@@ -222,11 +234,11 @@ function ConfirmationContent() {
         </div>
 
         {/* Contact Info */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 mb-6">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+        <div className="bg-blue-50 rounded-xl p-6 mb-6">
+          <h3 className="font-semibold text-gray-900 mb-2">
             Need Help?
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600">
             If you have any questions about your order, please contact us or visit the location.
           </p>
         </div>
@@ -241,7 +253,7 @@ function ConfirmationContent() {
           </Link>
           <Link
             href="/dashboard"
-            className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 py-3 rounded-xl font-semibold text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="flex-1 bg-white text-gray-900 border border-gray-300 py-3 rounded-xl font-semibold text-center hover:bg-gray-50 transition-colors"
           >
             View My Orders
           </Link>
@@ -254,10 +266,10 @@ function ConfirmationContent() {
 export default function ConfirmationPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     }>
