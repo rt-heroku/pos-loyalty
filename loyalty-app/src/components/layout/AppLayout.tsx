@@ -65,12 +65,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Redirect to login if not authenticated (except for shop pages)
+  // Redirect to login if not authenticated (except for shop pages and setup wizard)
+  const isSetupWizard = pathname.includes('/setup-wizard');
   useEffect(() => {
-    if (!loading && !user && !isShopPage) {
+    if (!loading && !user && !isShopPage && !isSetupWizard) {
       router.push('/login');
     }
-  }, [user, loading, router, isShopPage]);
+  }, [user, loading, router, isShopPage, isSetupWizard, pathname]);
 
   if (loading) {
     return (

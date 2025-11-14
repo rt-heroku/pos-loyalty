@@ -5,8 +5,9 @@ window.Auth = window.Auth || {};
 window.Auth.SetupView = ({ onSetupComplete }) => {
     React.useEffect(() => {
         // Redirect to the loyalty app's multi-step setup wizard
+        // Pass returnTo parameter so wizard knows to return to POS after setup
         console.log('🔄 Redirecting to setup wizard...');
-        window.location.href = '/loyalty/setup-wizard';
+        window.location.href = '/loyalty/setup-wizard?returnTo=/pos';
     }, []);
 
     // Show loading state while redirecting

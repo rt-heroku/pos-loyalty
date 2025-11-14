@@ -1,10 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { ChatProvider } from '@/contexts/ChatContext';
-import { SystemSettingsProvider } from '@/contexts/SystemSettingsContext';
-import ConditionalLayout from '@/components/layout/ConditionalLayout';
+import LayoutProviders from '@/components/layout/LayoutProviders';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -141,13 +138,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="//fonts.gstatic.com" />
       </head>
       <body className={inter.className}>
-        <AuthProvider>
-          <SystemSettingsProvider>
-            <ChatProvider>
-              <ConditionalLayout>{children}</ConditionalLayout>
-            </ChatProvider>
-          </SystemSettingsProvider>
-        </AuthProvider>
+        <LayoutProviders>{children}</LayoutProviders>
 
         {/* PWA Installation Script */}
         <script

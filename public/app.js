@@ -286,14 +286,34 @@ const POSApp = () => {
                 // If not first-time setup, load location-specific data
                 if (!setupStatus.setupRequired) {
                     const userSettings = await loadUserSettings();
+                    let locationToSelect = null;
+                    
+                    // Try to get location from user settings first
                     if (userSettings.selected_location_id) {
                         const locations = await loadLocations();
-                        const selectedLoc = locations.find(l => l.id === userSettings.selected_location_id);
-                        if (selectedLoc) {
-                            setSelectedLocation(selectedLoc);
-                            await loadLocationSpecificData(selectedLoc.id);
-                            setCurrentView('pos'); // Switch to POS view after setup
+                        locationToSelect = locations.find(l => l.id === userSettings.selected_location_id);
+                    }
+                    
+                    // If not in user settings, check system settings for current_location_id
+                    if (!locationToSelect) {
+                        try {
+                            const systemSettings = await window.API.call('/system-settings');
+                            const currentLocationId = systemSettings.find(s => s.setting_key === 'current_location_id')?.setting_value;
+                            if (currentLocationId) {
+                                const locations = await loadLocations();
+                                locationToSelect = locations.find(l => l.id === parseInt(currentLocationId));
+                                console.log(`🏢 Loaded current location from system settings: ${locationToSelect?.store_name}`);
+                            }
+                        } catch (error) {
+                            console.error('Failed to load system settings:', error);
                         }
+                    }
+                    
+                    // Set the location if found
+                    if (locationToSelect) {
+                        setSelectedLocation(locationToSelect);
+                        await loadLocationSpecificData(locationToSelect.id);
+                        setCurrentView('pos'); // Switch to POS view after setup
                     }
                 }
             }
@@ -1106,9 +1126,14 @@ const POSApp = () => {
     const NavButton = ({ view, icon: Icon, label, active, requiredPermission, isMobile = false }) => {
         // Check if user has permission for this view
         if (requiredPermission && currentUser) {
-            const [module, action] = requiredPermission.split(':');
-            if (!currentUser.permissions[module] || !currentUser.permissions[module][action]) {
-                return null; // Don't render button if no permission
+            // Admin users with "all" permission have access to everything
+            if (currentUser.permissions && currentUser.permissions.all === true) {
+                // Admin has all permissions
+            } else {
+                const [module, action] = requiredPermission.split(':');
+                if (!currentUser.permissions[module] || !currentUser.permissions[module][action]) {
+                    return null; // Don't render button if no permission
+                }
             }
         }
 

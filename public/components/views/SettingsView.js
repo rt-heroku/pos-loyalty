@@ -208,9 +208,20 @@ window.Views.SettingsView = ({
         });
         const [changingPasswordFor, setChangingPasswordFor] = React.useState(null);
 
+        // Helper function to check if user is admin (case-insensitive role or permissions)
+        const isAdmin = () => {
+            if (!currentUser) return false;
+            // Check role (case-insensitive)
+            if (currentUser.role && currentUser.role.toLowerCase() === 'admin') return true;
+            // Check permissions
+            if (currentUser.permissions?.all === true) return true;
+            if (currentUser.permissions?.settings?.write) return true;
+            return false;
+        };
+
         // Load users when users tab is active
         React.useEffect(() => {
-            if (activeTab === 'users' && currentUser?.permissions?.users?.read) {
+            if (activeTab === 'users' && (currentUser?.permissions?.users?.read || isAdmin())) {
                 loadUsers();
                 loadRoles();
             }
@@ -777,7 +788,7 @@ window.Views.SettingsView = ({
 
             setLoadingProducts(true);
             try {
-                const response = await fetch(`${mulesoftConfig.endpoint}/products/loyalty`);
+                const response = await fetch(`${mulesoftConfig.endpoint}/loyalty/products`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -1707,47 +1718,55 @@ sfdc.consumer_secret=`;
                             React.createElement('div', { key: 'store-code' }, [
                                 React.createElement('label', { key: 'store-code-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Store Code *'),
                                 React.createElement('input', {
-                                    key: 'store-code-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'store-code-input',
                                     type: 'text',
                                     value: newLocationForm.store_code,
                                     onChange: (e) => handleInputChange('store_code', e.target.value.toUpperCase()),
                                     className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
                                     placeholder: 'NYC001',
-                                    maxLength: 10
-                                })
+                                    maxLength: 10})
                             ]),
                             React.createElement('div', { key: 'store-name' }, [
                                 React.createElement('label', { key: 'store-name-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Store Name *'),
                                 React.createElement('input', {
-                                    key: 'store-name-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'store-name-input',
                                     type: 'text',
                                     value: newLocationForm.store_name,
                                     onChange: (e) => handleInputChange('store_name', e.target.value),
                                     className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
-                                    placeholder: 'Manhattan Flagship'
-                                })
+                                    placeholder: 'Manhattan Flagship'})
                             ]),
                             React.createElement('div', { key: 'brand' }, [
                                 React.createElement('label', { key: 'brand-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Brand *'),
                                 React.createElement('input', {
-                                    key: 'brand-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'brand-input',
                                     type: 'text',
                                     value: newLocationForm.brand,
                                     onChange: (e) => handleInputChange('brand', e.target.value),
                                     className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
-                                    placeholder: 'TUMI'
-                                })
+                                    placeholder: 'TUMI'})
                             ]),
                             React.createElement('div', { key: 'manager' }, [
                                 React.createElement('label', { key: 'manager-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Manager Name'),
                                 React.createElement('input', {
-                                    key: 'manager-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'manager-input',
                                     type: 'text',
                                     value: newLocationForm.manager_name,
                                     onChange: (e) => handleInputChange('manager_name', e.target.value),
                                     className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
-                                    placeholder: 'John Manager'
-                                })
+                                    placeholder: 'John Manager'})
                             ])
                         ]),
 
@@ -1811,29 +1830,36 @@ sfdc.consumer_secret=`;
                             React.createElement('div', { key: 'phone' }, [
                                 React.createElement('label', { key: 'phone-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Phone'),
                                 React.createElement('input', {
-                                    key: 'phone-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'phone-input',
                                     type: 'tel',
                                     value: newLocationForm.phone,
                                     onChange: (e) => handleInputChange('phone', e.target.value),
                                     className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
-                                    placeholder: '(555) 123-4567'
-                                })
+                                    placeholder: '(555) 123-4567'})
                             ]),
                             React.createElement('div', { key: 'email' }, [
                                 React.createElement('label', { key: 'email-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Email'),
                                 React.createElement('input', {
-                                    key: 'email-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'email-input',
                                     type: 'email',
                                     value: newLocationForm.email,
                                     onChange: (e) => handleInputChange('email', e.target.value),
                                     className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
-                                    placeholder: 'store@company.com'
-                                })
+                                    placeholder: 'store@company.com'})
                             ]),
                             React.createElement('div', { key: 'tax-rate', className: 'md:col-span-2' }, [
                                 React.createElement('label', { key: 'tax-rate-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Tax Rate (decimal) *'),
                                 React.createElement('input', {
-                                    key: 'tax-rate-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'tax-rate-input',
                                     type: 'number',
                                     step: '0.0001',
                                     min: '0',
@@ -1841,8 +1867,7 @@ sfdc.consumer_secret=`;
                                     value: newLocationForm.tax_rate,
                                     onChange: (e) => handleInputChange('tax_rate', e.target.value),
                                     className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
-                                    placeholder: '0.08'
-                                }),
+                                    placeholder: '0.08'}),
                                 React.createElement('p', { key: 'tax-rate-subtext', className: 'text-xs text-gray-500 dark:text-gray-400 mt-1' }, 
                                     'Enter as decimal: 0.08 for 8%, 0.10 for 10%'
                                 )
@@ -1899,7 +1924,6 @@ sfdc.consumer_secret=`;
             ]);
         });
 
-
         return React.createElement('div', { key: 'settings-container', className: 'space-y-6 dark:text-white' }, [
             // Header
             React.createElement('div', { key: 'header', className: 'bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6' }, [
@@ -1941,21 +1965,21 @@ sfdc.consumer_secret=`;
                         icon: MapPin,
                         active: activeTab === 'locations' 
                     }),
-                    currentUser?.role === 'admin' && React.createElement(TabButton, { 
+                    isAdmin() && React.createElement(TabButton, { 
                         key: 'system-tab',
                         tab: 'system', 
                         label: 'System Settings', 
                         icon: Settings,
                         active: activeTab === 'system' 
                     }),
-                    currentUser?.permissions?.users?.read && React.createElement(TabButton, { 
+                    (currentUser?.permissions?.users?.read || isAdmin()) && React.createElement(TabButton, { 
                         key: 'users-tab',
                         tab: 'users', 
                         label: 'Users', 
                         icon: Users,
                         active: activeTab === 'users' 
                     }),
-                    currentUser?.role === 'admin' && React.createElement(TabButton, { 
+                    isAdmin() && React.createElement(TabButton, { 
                         key: 'products-tab',
                         tab: 'products', 
                         label: 'Data Management', 
@@ -2207,7 +2231,7 @@ sfdc.consumer_secret=`;
             ]),
 
             // System Settings Tab
-            activeTab === 'system' && currentUser?.role === 'admin' && React.createElement('div', { key: 'system-content', className: 'space-y-6' }, [
+            activeTab === 'system' && isAdmin() && React.createElement('div', { key: 'system-content', className: 'space-y-6' }, [
                 // MuleSoft Loyalty Sync Configuration
                 React.createElement('div', { key: 'mulesoft-config', className: 'bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6' }, [
                     React.createElement('div', { key: 'section-header', className: 'flex items-center gap-2 mb-6' }, [
@@ -2231,13 +2255,15 @@ sfdc.consumer_secret=`;
                                 'MuleSoft Loyalty Sync Endpoint URL'
                             ),
                             React.createElement('input', {
-                                key: 'endpoint-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'endpoint-input',
                                 type: 'url',
                                 value: mulesoftConfig.endpoint,
                                 onChange: (e) => handleEndpointChange(e.target.value),
                                 className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
-                                placeholder: 'https://your-mulesoft-instance.cloudhub.io/api/loyalty'
-                            }),
+                                placeholder: 'https://your-mulesoft-instance.cloudhub.io/api/loyalty'}),
                             React.createElement('p', { key: 'endpoint-help', className: 'text-xs text-gray-500 dark:text-gray-400 mt-1' }, 
                                 'Enter the base URL for your MuleSoft loyalty sync API'
                             )
@@ -2747,12 +2773,14 @@ sfdc.consumer_secret=`;
                            ),
                            React.createElement('div', { key: 'postgres-url-container', className: 'flex gap-2' }, [
                                React.createElement('input', {
-                                   key: 'postgres-url-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'postgres-url-input',
                                    type: 'text',
                                    value: databaseInfo.database_url,
                                    readOnly: true,
-                                   className: 'flex-1 p-3 font-mono text-sm bg-gray-100 dark:bg-gray-700 border dark:border-gray-600 rounded-lg dark:text-white'
-                               }),
+                                   className: 'flex-1 p-3 font-mono text-sm bg-gray-100 dark:bg-gray-700 border dark:border-gray-600 rounded-lg dark:text-white'}),
                                React.createElement('button', {
                                    key: 'postgres-url-copy-btn',
                                    onClick: () => copyToClipboard(databaseInfo.database_url, 'postgres'),
@@ -2773,12 +2801,14 @@ sfdc.consumer_secret=`;
                            ),
                            React.createElement('div', { key: 'jdbc-url-container', className: 'flex gap-2' }, [
                                React.createElement('input', {
-                                   key: 'jdbc-url-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'jdbc-url-input',
                                    type: 'text',
                                    value: databaseInfo.jdbc_format,
                                    readOnly: true,
-                                   className: 'flex-1 p-3 font-mono text-sm bg-gray-100 dark:bg-gray-700 border dark:border-gray-600 rounded-lg dark:text-white'
-                               }),
+                                   className: 'flex-1 p-3 font-mono text-sm bg-gray-100 dark:bg-gray-700 border dark:border-gray-600 rounded-lg dark:text-white'}),
                                React.createElement('button', {
                                    key: 'jdbc-url-copy-btn',
                                    onClick: () => copyToClipboard(databaseInfo.jdbc_format, 'jdbc'),
@@ -3013,10 +3043,13 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'username' }, [
                            React.createElement('label', { key: 'username-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Username'),
                            React.createElement('input', {
-                               key: 'username-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'username-input',
                                type: 'text',
                                value: createUserForm.username,
-                               onChange: (e) => setCreateUserForm(prev => ({ ...prev, username: e.target.value })),
+                               onChange: (e) => setCreateUserForm(prev => ({ ...prev, username: e.target.value})),
                                required: true,
                                className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'
                            })
@@ -3024,10 +3057,13 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'email' }, [
                            React.createElement('label', { key: 'email-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Email'),
                            React.createElement('input', {
-                               key: 'email-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'email-input',
                                type: 'email',
                                value: createUserForm.email,
-                               onChange: (e) => setCreateUserForm(prev => ({ ...prev, email: e.target.value })),
+                               onChange: (e) => setCreateUserForm(prev => ({ ...prev, email: e.target.value})),
                                required: true,
                                className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'
                            })
@@ -3035,10 +3071,13 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'password' }, [
                            React.createElement('label', { key: 'password-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Password'),
                            React.createElement('input', {
-                               key: 'password-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'password-input',
                                type: 'password',
                                value: createUserForm.password,
-                               onChange: (e) => setCreateUserForm(prev => ({ ...prev, password: e.target.value })),
+                               onChange: (e) => setCreateUserForm(prev => ({ ...prev, password: e.target.value})),
                                required: true,
                                className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'
                            })
@@ -3046,10 +3085,13 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'first-name' }, [
                            React.createElement('label', { key: 'first-name-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'First Name'),
                            React.createElement('input', {
-                               key: 'first-name-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'first-name-input',
                                type: 'text',
                                value: createUserForm.first_name,
-                               onChange: (e) => setCreateUserForm(prev => ({ ...prev, first_name: e.target.value })),
+                               onChange: (e) => setCreateUserForm(prev => ({ ...prev, first_name: e.target.value})),
                                required: true,
                                className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'
                            })
@@ -3057,10 +3099,13 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'last-name' }, [
                            React.createElement('label', { key: 'last-name-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Last Name'),
                            React.createElement('input', {
-                               key: 'last-name-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'last-name-input',
                                type: 'text',
                                value: createUserForm.last_name,
-                               onChange: (e) => setCreateUserForm(prev => ({ ...prev, last_name: e.target.value })),
+                               onChange: (e) => setCreateUserForm(prev => ({ ...prev, last_name: e.target.value})),
                                required: true,
                                className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'
                            })
@@ -3125,10 +3170,13 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'username' }, [
                            React.createElement('label', { key: 'username-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Username'),
                            React.createElement('input', {
-                               key: 'username-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'username-input',
                                type: 'text',
                                value: editUserForm.username,
-                               onChange: (e) => setEditUserForm(prev => ({ ...prev, username: e.target.value })),
+                               onChange: (e) => setEditUserForm(prev => ({ ...prev, username: e.target.value})),
                                required: true,
                                className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'
                            })
@@ -3136,10 +3184,13 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'email' }, [
                            React.createElement('label', { key: 'email-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Email'),
                            React.createElement('input', {
-                               key: 'email-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'email-input',
                                type: 'email',
                                value: editUserForm.email,
-                               onChange: (e) => setEditUserForm(prev => ({ ...prev, email: e.target.value })),
+                               onChange: (e) => setEditUserForm(prev => ({ ...prev, email: e.target.value})),
                                required: true,
                                className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'
                            })
@@ -3147,10 +3198,13 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'first-name' }, [
                            React.createElement('label', { key: 'first-name-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'First Name'),
                            React.createElement('input', {
-                               key: 'first-name-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'first-name-input',
                                type: 'text',
                                value: editUserForm.first_name,
-                               onChange: (e) => setEditUserForm(prev => ({ ...prev, first_name: e.target.value })),
+                               onChange: (e) => setEditUserForm(prev => ({ ...prev, first_name: e.target.value})),
                                required: true,
                                className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'
                            })
@@ -3158,10 +3212,13 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'last-name' }, [
                            React.createElement('label', { key: 'last-name-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Last Name'),
                            React.createElement('input', {
-                               key: 'last-name-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'last-name-input',
                                type: 'text',
                                value: editUserForm.last_name,
-                               onChange: (e) => setEditUserForm(prev => ({ ...prev, last_name: e.target.value })),
+                               onChange: (e) => setEditUserForm(prev => ({ ...prev, last_name: e.target.value})),
                                required: true,
                                className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'
                            })
@@ -3184,10 +3241,13 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'active-status' }, [
                            React.createElement('label', { key: 'active-status-label', className: 'flex items-center gap-2 dark:text-white' }, [
                                React.createElement('input', {
-                                   key: 'active-status-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'active-status-input',
                                    type: 'checkbox',
                                    checked: editUserForm.is_active,
-                                   onChange: (e) => setEditUserForm(prev => ({ ...prev, is_active: e.target.checked })),
+                                   onChange: (e) => setEditUserForm(prev => ({ ...prev, is_active: e.target.checked})),
                                    className: 'rounded border-gray-300 text-blue-600 focus:ring-blue-500'
                                }),
                                React.createElement('span', { className: 'text-sm font-medium' }, 'Active Account')
@@ -3240,10 +3300,13 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'new-password' }, [
                            React.createElement('label', { key: 'new-password-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'New Password'),
                            React.createElement('input', {
-                               key: 'new-password-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'new-password-input',
                                type: 'password',
                                value: passwordForm.new_password,
-                               onChange: (e) => setPasswordForm(prev => ({ ...prev, new_password: e.target.value })),
+                               onChange: (e) => setPasswordForm(prev => ({ ...prev, new_password: e.target.value})),
                                required: true,
                                minLength: 6,
                                className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'
@@ -3252,10 +3315,13 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'confirm-password' }, [
                            React.createElement('label', { key: 'confirm-password-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Confirm Password'),
                            React.createElement('input', {
-                               key: 'confirm-password-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'confirm-password-input',
                                type: 'password',
                                value: passwordForm.confirm_password,
-                               onChange: (e) => setPasswordForm(prev => ({ ...prev, confirm_password: e.target.value })),
+                               onChange: (e) => setPasswordForm(prev => ({ ...prev, confirm_password: e.target.value})),
                                required: true,
                                minLength: 6,
                                className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'
@@ -3324,7 +3390,7 @@ sfdc.consumer_secret=`;
            }),
 
            // Product Management Tab Content
-           activeTab === 'products' && currentUser?.role === 'admin' && React.createElement('div', { key: 'products-content', className: 'space-y-6' }, [
+           activeTab === 'products' && isAdmin() && React.createElement('div', { key: 'products-content', className: 'space-y-6' }, [
                // Modern Product Management Section
                React.createElement('div', { key: 'product-management-section', className: 'bg-white dark:bg-gray-800 rounded-2xl shadow-lg border dark:border-gray-700 p-8' }, [
                    React.createElement('div', { key: 'section-header', className: 'flex items-center gap-3 mb-8' }, [
@@ -3496,13 +3562,15 @@ sfdc.consumer_secret=`;
                    React.createElement('div', { key: 'search-controls', className: 'flex flex-col sm:flex-row gap-4 mb-6' }, [
                        React.createElement('div', { key: 'search-input', className: 'flex-1' }, [
                            React.createElement('input', {
-                               key: 'search-field',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'search-field',
                                type: 'text',
                                placeholder: 'Search by product name or SKU...',
                                value: historySearchTerm,
                                onChange: (e) => setHistorySearchTerm(e.target.value),
-                               className: 'w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white'
-                           })
+                               className: 'w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white'})
                        ]),
                        React.createElement('div', { key: 'batch-filter', className: 'min-w-48' }, [
                            React.createElement('select', {
@@ -3754,22 +3822,28 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'number-field' }, [
                            React.createElement('label', { key: 'number-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Number of products to generate (max 10)'),
                            React.createElement('input', {
-                               key: 'number-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'number-input',
                                type: 'number',
                                min: 1,
                                max: 10,
                                value: generateForm.numberOfProducts,
-                               onChange: (e) => setGenerateForm(prev => ({ ...prev, numberOfProducts: parseInt(e.target.value) || 1 })),
+                               onChange: (e) => setGenerateForm(prev => ({ ...prev, numberOfProducts: parseInt(e.target.value) || 1})),
                                className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'
                            })
                        ]),
                        React.createElement('div', { key: 'brand-field' }, [
                            React.createElement('label', { key: 'brand-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Brand *'),
                            React.createElement('input', {
-                               key: 'brand-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'brand-input',
                                type: 'text',
                                value: generateForm.brand,
-                               onChange: (e) => setGenerateForm(prev => ({ ...prev, brand: e.target.value })),
+                               onChange: (e) => setGenerateForm(prev => ({ ...prev, brand: e.target.value})),
                                placeholder: 'Type your own brand or an existing one',
                                className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'
                            })
@@ -3777,10 +3851,13 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'segment-field' }, [
                            React.createElement('label', { key: 'segment-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'Segment'),
                            React.createElement('input', {
-                               key: 'segment-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'segment-input',
                                type: 'text',
                                value: generateForm.segment,
-                               onChange: (e) => setGenerateForm(prev => ({ ...prev, segment: e.target.value })),
+                               onChange: (e) => setGenerateForm(prev => ({ ...prev, segment: e.target.value})),
                                placeholder: 'Segment the products',
                                className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'
                            })
@@ -3788,10 +3865,13 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'url-field' }, [
                            React.createElement('label', { key: 'url-label', className: 'block text-sm font-medium mb-2 dark:text-white' }, 'URL of current Brand'),
                            React.createElement('input', {
-                               key: 'url-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'url-input',
                                type: 'url',
                                value: generateForm.brandUrl,
-                               onChange: (e) => setGenerateForm(prev => ({ ...prev, brandUrl: e.target.value })),
+                               onChange: (e) => setGenerateForm(prev => ({ ...prev, brandUrl: e.target.value})),
                                placeholder: 'https://example.com (optional)',
                                className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'
                            })
@@ -3867,13 +3947,15 @@ sfdc.consumer_secret=`;
                                            }, [
                                                React.createElement('td', { key: 'select-cell', className: 'py-2 px-3' }, [
                                                    React.createElement('input', {
-                                                       key: 'checkbox',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'checkbox',
                                                        type: 'checkbox',
                                                        checked: selectedProducts.some(p => {
                                                            const getProductId = (prod) => {
                                                                if (prod.sku && prod.sku.trim()) {
-                                                                   return prod.sku;
-                                                               }
+                                                                   return prod.sku;}
                                                                return `${prod.product_name || 'unnamed'}_${prod.collection || 'no-collection'}_${prod.pricing?.price || 'no-price'}`;
                                                            };
                                                            return getProductId(p) === getProductId(product);
@@ -3984,13 +4066,15 @@ sfdc.consumer_secret=`;
                            React.createElement('div', { key: 'search-container', className: 'flex gap-4 items-center' }, [
                                React.createElement('div', { key: 'search-field', className: 'flex-1' }, [
                                    React.createElement('input', {
-                                       key: 'search-input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'search-input',
                                        type: 'text',
                                        value: historySearchTerm,
                                        onChange: (e) => setHistorySearchTerm(e.target.value),
                                        placeholder: 'Search by product name or SKU...',
-                                       className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'
-                                   })
+                                       className: 'w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'})
                                ]),
                                React.createElement('div', { key: 'batch-filter', className: 'min-w-48' }, [
                                    React.createElement('select', {
@@ -4415,13 +4499,15 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'inventory-section', className: 'p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600' }, [
                            React.createElement('div', { key: 'inventory-header', className: 'flex items-center gap-3 mb-4' }, [
                                React.createElement('input', {
-                                   key: 'inventory-checkbox',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'inventory-checkbox',
                                    type: 'checkbox',
                                    id: 'enable-inventory',
                                    checked: enableInventory,
                                    onChange: (e) => setEnableInventory(e.target.checked),
-                                   className: 'w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
-                               }),
+                                   className: 'w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'}),
                                React.createElement('label', { 
                                    key: 'inventory-label',
                                    htmlFor: 'enable-inventory',
@@ -4432,13 +4518,15 @@ sfdc.consumer_secret=`;
                            enableInventory && React.createElement('div', { key: 'inventory-options', className: 'space-y-3' }, [
                                React.createElement('div', { key: 'keep-stock-container', className: 'flex items-center gap-3' }, [
                                    React.createElement('input', {
-                                       key: 'keep-stock-checkbox',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'keep-stock-checkbox',
                                        type: 'checkbox',
                                        id: 'keep-existing-stock',
                                        checked: keepExistingStock,
                                        onChange: (e) => setKeepExistingStock(e.target.checked),
-                                       className: 'w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
-                                   }),
+                                       className: 'w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'}),
                                    React.createElement('label', { 
                                        key: 'keep-stock-label',
                                        htmlFor: 'keep-existing-stock',
@@ -4458,13 +4546,15 @@ sfdc.consumer_secret=`;
                        React.createElement('div', { key: 'pricing-section', className: 'p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600' }, [
                            React.createElement('div', { key: 'pricing-header', className: 'flex items-center gap-3 mb-4' }, [
                                React.createElement('input', {
-                                   key: 'pricing-checkbox',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'pricing-checkbox',
                                    type: 'checkbox',
                                    id: 'enable-pricing',
                                    checked: enablePricing,
                                    onChange: (e) => setEnablePricing(e.target.checked),
-                                   className: 'w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
-                               }),
+                                   className: 'w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'}),
                                React.createElement('label', { 
                                    key: 'pricing-label',
                                    htmlFor: 'enable-pricing',
@@ -4480,36 +4570,42 @@ sfdc.consumer_secret=`;
                                    }, 'Price Range'),
                                    React.createElement('div', { key: 'range-inputs', className: 'flex items-center gap-3' }, [
                                        React.createElement('input', {
-                                           key: 'min-price',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'min-price',
                                            type: 'number',
                                            value: priceRangeMin,
                                            onChange: (e) => setPriceRangeMin(parseInt(e.target.value) || 1),
                                            min: 1,
                                            max: priceRangeMax - 1,
-                                           className: 'w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500'
-                                       }),
+                                           className: 'w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500'}),
                                        React.createElement('span', { key: 'range-separator', className: 'text-gray-500' }, 'to'),
                                        React.createElement('input', {
-                                           key: 'max-price',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'max-price',
                                            type: 'number',
                                            value: priceRangeMax,
                                            onChange: (e) => setPriceRangeMax(parseInt(e.target.value) || 100),
                                            min: priceRangeMin + 1,
                                            max: 1000,
-                                           className: 'w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500'
-                                       })
+                                           className: 'w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500'})
                                    ])
                                ]),
                                
                                React.createElement('div', { key: 'keep-price-container', className: 'flex items-center gap-3' }, [
                                    React.createElement('input', {
-                                       key: 'keep-price-checkbox',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'keep-price-checkbox',
                                        type: 'checkbox',
                                        id: 'keep-existing-price',
                                        checked: keepExistingPrice,
                                        onChange: (e) => setKeepExistingPrice(e.target.checked),
-                                       className: 'w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
-                                   }),
+                                       className: 'w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'}),
                                    React.createElement('label', { 
                                        key: 'keep-price-label',
                                        htmlFor: 'keep-existing-price',

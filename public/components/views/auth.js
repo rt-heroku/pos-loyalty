@@ -110,7 +110,10 @@ window.Auth = {
                             className: 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2' 
                         }, 'Username'),
                         React.createElement('input', {
-                            key: 'input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'input',
                             type: 'text',
                             value: credentials.username,
                             onChange: (e) => setCredentials({...credentials, username: e.target.value}),
@@ -126,7 +129,10 @@ window.Auth = {
                             className: 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2' 
                         }, 'Password'),
                         React.createElement('input', {
-                            key: 'input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'input',
                             type: 'password',
                             value: credentials.password,
                             onChange: (e) => setCredentials({...credentials, password: e.target.value}),
@@ -360,7 +366,10 @@ window.Auth = {
                             className: 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1' 
                         }, 'Current Password'),
                         React.createElement('input', {
-                            key: 'input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'input',
                             type: 'password',
                             value: passwordForm.current_password,
                             onChange: (e) => setPasswordForm({...passwordForm, current_password: e.target.value}),
@@ -375,7 +384,10 @@ window.Auth = {
                             className: 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1' 
                         }, 'New Password'),
                         React.createElement('input', {
-                            key: 'input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'input',
                             type: 'password',
                             value: passwordForm.new_password,
                             onChange: (e) => setPasswordForm({...passwordForm, new_password: e.target.value}),
@@ -390,7 +402,10 @@ window.Auth = {
                             className: 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1' 
                         }, 'Confirm New Password'),
                         React.createElement('input', {
-                            key: 'input',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'input',
                             type: 'password',
                             value: passwordForm.confirm_password,
                             onChange: (e) => setPasswordForm({...passwordForm, confirm_password: e.target.value}),
@@ -545,7 +560,10 @@ window.Auth = {
                     className: 'grid grid-cols-1 md:grid-cols-2 gap-4' 
                 }, [
                     React.createElement('input', {
-                        key: 'username',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'username',
                         type: 'text',
                         placeholder: 'Username',
                         value: createForm.username,
@@ -554,7 +572,10 @@ window.Auth = {
                         required: true
                     }),
                     React.createElement('input', {
-                        key: 'email',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'email',
                         type: 'email',
                         placeholder: 'Email',
                         value: createForm.email,
@@ -563,7 +584,10 @@ window.Auth = {
                         required: true
                     }),
                     React.createElement('input', {
-                        key: 'first_name',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'first_name',
                         type: 'text',
                         placeholder: 'First Name',
                         value: createForm.first_name,
@@ -572,7 +596,10 @@ window.Auth = {
                         required: true
                     }),
                     React.createElement('input', {
-                        key: 'last_name',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'last_name',
                         type: 'text',
                         placeholder: 'Last Name',
                         value: createForm.last_name,
@@ -581,7 +608,10 @@ window.Auth = {
                         required: true
                     }),
                     React.createElement('input', {
-                        key: 'password',
+                autoComplete: 'off',
+                'data-1p-ignore': 'true',
+                'data-lpignore': 'true',
+                key: 'password',
                         type: 'password',
                         placeholder: 'Password',
                         value: createForm.password,

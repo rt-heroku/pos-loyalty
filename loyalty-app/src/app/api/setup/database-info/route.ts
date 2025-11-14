@@ -2,16 +2,16 @@ import { NextResponse } from 'next/server';
 import { fetchBackend } from '@/lib/backend';
 
 /**
- * Get Current/Default Location
+ * Get Database Connection Information
  * 
- * Returns the current active location (first active location in the system).
- * This is a public endpoint (no auth required) for use during setup and login.
+ * Returns database connection details for MuleSoft deployment.
+ * This is a public endpoint (no auth required) for use during initial setup.
  */
 export async function GET() {
   try {
-    console.log('[Next.js API] Proxying current location request to backend');
+    console.log('[Next.js API] Proxying database info request to backend');
     
-    const backendResponse = await fetchBackend('/api/locations/current');
+    const backendResponse = await fetchBackend('/api/setup/database-info');
     
     if (!backendResponse.ok) {
       console.error(`[Next.js API] Backend responded with status ${backendResponse.status}`);
@@ -25,14 +25,11 @@ export async function GET() {
     const data = await backendResponse.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('[Next.js API] Error proxying current location request:', error);
+    console.error('[Next.js API] Error proxying database info request:', error);
     return NextResponse.json(
-      { 
-        success: false,
-        error: 'Failed to fetch current location',
-        message: 'No locations configured yet'
-      },
+      { error: 'Failed to fetch database information' },
       { status: 500 }
     );
   }
 }
+

@@ -501,14 +501,6 @@ CREATE TABLE IF NOT EXISTS roles (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert default roles if they don't exist
-INSERT INTO roles (name, description, permissions) VALUES 
-('Admin', 'System Administrator', '{"all": true}'),
-('Manager', 'Store Manager', '{"store": true, "reports": true}'),
-('Employee', 'Store Employee', '{"pos": true, "inventory": true}'),
-('Customer', 'Customer', '{"profile": true, "orders": true}')
-ON CONFLICT (name) DO NOTHING;
-
 -- ============================================================================
 -- LOYALTY PROGRAM ENHANCEMENTS
 -- ============================================================================
@@ -1713,37 +1705,6 @@ BEGIN
 END $$;
 
 -- =====================================================
--- SYSTEM SETTINGS FOR SHOP
--- =====================================================
-
-INSERT INTO system_settings (setting_key, setting_value, category, description, is_active)
-VALUES 
-    ('shop_hero_enabled', 'true', 'shop', 'Show hero/banner section on shop page', true),
-    ('shop_hero_title', 'Order Your Favorites', 'shop', 'Hero section title', true),
-    ('shop_hero_subtitle', 'Fresh, delicious, delivered to your door', 'shop', 'Hero section subtitle', true),
-    ('shop_min_order_amount', '0', 'shop', 'Minimum order amount (0 for no minimum)', true),
-    ('shop_delivery_fee', '5.00', 'shop', 'Delivery fee amount', true),
-    ('shop_free_delivery_threshold', '50.00', 'shop', 'Free delivery over this amount', true),
-    ('shop_estimated_prep_time', '30', 'shop', 'Estimated preparation time in minutes', true)
-ON CONFLICT (setting_key) DO UPDATE SET
-    setting_value = EXCLUDED.setting_value,
-    description = EXCLUDED.description,
-    updated_at = CURRENT_TIMESTAMP;
-
--- =====================================================
--- DEFAULT PAYMENT METHODS
--- =====================================================
-
-INSERT INTO public.payment_methods ("name",code,description,is_active,requires_online_payment,display_order,icon) VALUES
-	 ('Credit Card','credit_card','Pay online with credit or debit card',true,true,1,'/loyalty/payment-methods/credit-card.png'),
-	 ('Cash on Delivery','cash','Pay with cash when order arrives',true,false,2,'/loyalty/payment-methods/cash.png'),
-	 ('Pay at Pickup','pay_at_pickup','Pay when you pick up your order',true,false,3,'/loyalty/payment-methods/pay-at-pickup.png'),
-	 ('Apple Pay','apple_pay','Pay with Apple Pay',true,true,4,'/loyalty/payment-methods/apple-pay.png'),
-	 ('PayPal','paypal','Pay securely with PayPal',true,true,5,'/loyalty/payment-methods/paypal.png'),
-	 ('Google Pay','google_pay','Pay with Google Pay',true,true,5,'/loyalty/payment-methods/google.png');
-ON CONFLICT (code) DO NOTHING;
-
--- =====================================================
 -- INDEXES FOR PERFORMANCE
 -- =====================================================
 
@@ -2910,12 +2871,12 @@ CREATE TRIGGER trigger_set_product_voucher_discount
 
 -- Insert sample locations
 INSERT INTO locations (store_code, store_name, brand, address_line1, city, state, zip_code, tax_rate, manager_name) VALUES
-('NYC001', 'Manhattan Flagship', 'TUMI', '350 Madison Avenue', 'New York', 'NY', '10017', 0.08875, 'John Manager'),
-('LAX001', 'Beverly Hills Store', 'TUMI', '9570 Wilshire Boulevard', 'Beverly Hills', 'CA', '90212', 0.1025, 'Jane Store Manager'),
-('CHI001', 'Michigan Avenue', 'TUMI', '900 N Michigan Avenue', 'Chicago', 'IL', '60611', 0.1025, 'Mike Regional Manager')
+('NYC001', 'Manhattan Flagship', 'Mule Store', '350 Madison Avenue', 'New York', 'NY', '10017', 0.08875, 'John Manager'),
+('LAX001', 'Beverly Hills Store', 'Mule Store', '9570 Wilshire Boulevard', 'Beverly Hills', 'CA', '90212', 0.1025, 'Jane Store Manager'),
+('CHI001', 'Michigan Avenue', 'Mule Store', '900 N Michigan Avenue', 'Chicago', 'IL', '60611', 0.1025, 'Mike Regional Manager')
 ON CONFLICT (store_code) DO NOTHING;
 
--- Insert default user settings
+-- Insert default user settings 
 
 -- Insert default tier rules
 INSERT INTO customer_tier_rules (tier_name, min_spending, min_visits, min_points, calculation_multiplier, benefits) VALUES
@@ -2933,7 +2894,7 @@ ON CONFLICT (tier_name) DO UPDATE SET
 
 -- Insert system settings
 INSERT INTO system_settings (setting_key, setting_value, setting_type, description, category, is_encrypted, is_active, created_by, updated_by) VALUES
-('company_name', 'FAKE Store', 'text', 'Company name displayed on receipts and reports', 'general', false, true, 'admin', 'admin'),
+('company_name', 'Mule Store', 'text', 'Company name displayed on receipts and reports', 'general', false, true, 'admin', 'admin'),
 ('currency_symbol', '$', 'text', 'Currency symbol for displaying prices', 'general', false, true, 'admin', 'admin'),
 ('currency_code', 'USD', 'text', 'ISO currency code', 'general', false, true, 'admin', 'admin'),
 ('date_format', 'MM/DD/YYYY', 'text', 'Date format for display', 'general', false, true, 'admin', 'admin'),
@@ -2966,27 +2927,68 @@ VALUES
 ('landing_page', 'landing_subtitle', 'Manage your entire business with our integrated Point of Sale and Customer Loyalty system. Streamline operations, boost sales, and reward your customers all in one place.', 'Subtitle/description text on landing page', 'text', false, true, 'admin', 'admin')
 ON CONFLICT (setting_key) DO NOTHING;
 
--- Insert default roles
-INSERT INTO roles (name, description, permissions) VALUES
-('admin', 'Full system access with all permissions', 
- '{"pos": {"read": true, "write": true, "delete": true}, 
-   "inventory": {"read": true, "write": true, "delete": true}, 
-   "customers": {"read": true, "write": true, "delete": true}, 
-   "transactions": {"read": true, "write": true, "delete": true}, 
-   "reports": {"read": true, "write": true}, 
-   "settings": {"read": true, "write": true, "delete": true}, 
-   "users": {"read": true, "write": true, "delete": true}, 
-   "locations": {"read": true, "write": true, "delete": true}}'),
-('manager', 'Store management with limited admin access', 
- '{"pos": {"read": true, "write": true}, 
-   "inventory": {"read": true, "write": true}, 
-   "customers": {"read": true, "write": true}, 
-   "transactions": {"read": true, "write": true}, 
-   "reports": {"read": true, "write": true}, 
-   "settings": {"read": true}, 
-   "users": {"read": true}, 
-   "locations": {"read": true, "write": true}}'),
-('cashier', 'Basic POS operations and customer service', 
+-- =====================================================
+-- SYSTEM SETTINGS FOR SHOP
+-- =====================================================
+
+INSERT INTO system_settings (setting_key, setting_value, category, description, is_active)
+VALUES 
+    ('shop_hero_enabled', 'true', 'shop', 'Show hero/banner section on shop page', true),
+    ('shop_hero_title', 'Order Your Favorites', 'shop', 'Hero section title', true),
+    ('shop_hero_subtitle', 'Fresh, delicious, delivered to your door', 'shop', 'Hero section subtitle', true),
+    ('shop_min_order_amount', '0', 'shop', 'Minimum order amount (0 for no minimum)', true),
+    ('shop_delivery_fee', '5.00', 'shop', 'Delivery fee amount', true),
+    ('shop_free_delivery_threshold', '50.00', 'shop', 'Free delivery over this amount', true),
+    ('shop_estimated_prep_time', '30', 'shop', 'Estimated preparation time in minutes', true)
+ON CONFLICT (setting_key) DO UPDATE SET
+    setting_value = EXCLUDED.setting_value,
+    description = EXCLUDED.description,
+    updated_at = CURRENT_TIMESTAMP;
+
+-- =====================================================
+-- DEFAULT PAYMENT METHODS
+-- =====================================================
+
+INSERT INTO public.payment_methods ("name",code,description,is_active,requires_online_payment,display_order,icon) VALUES
+	 ('Credit Card','credit_card','Pay online with credit or debit card',true,true,1,'/loyalty/payment-methods/credit-card.png'),
+	 ('Cash on Delivery','cash','Pay with cash when order arrives',true,false,2,'/loyalty/payment-methods/cash.png'),
+	 ('Pay at Pickup','pay_at_pickup','Pay when you pick up your order',true,false,3,'/loyalty/payment-methods/pay-at-pickup.png'),
+	 ('Apple Pay','apple_pay','Pay with Apple Pay',true,true,4,'/loyalty/payment-methods/apple-pay.png'),
+	 ('PayPal','paypal','Pay securely with PayPal',true,true,5,'/loyalty/payment-methods/paypal.png'),
+	 ('Google Pay','google_pay','Pay with Google Pay',true,true,5,'/loyalty/payment-methods/google.png');
+ON CONFLICT (code) DO NOTHING;
+
+-- Insert unified roles (merged from POS and Loyalty systems)
+-- Admin role has both "all": true AND granular permissions for maximum compatibility
+INSERT INTO roles (name, description, permissions) VALUES 
+('Admin', 'System Administrator with full access to all features', 
+ '{"all": true,
+   "pos": {"read": true, "write": true, "delete": true},
+   "users": {"read": true, "write": true, "delete": true},
+   "reports": {"read": true, "write": true},
+   "settings": {"read": true, "write": true, "delete": true},
+   "customers": {"read": true, "write": true, "delete": true},
+   "inventory": {"read": true, "write": true, "delete": true},
+   "locations": {"read": true, "write": true, "delete": true},
+   "transactions": {"read": true, "write": true, "delete": true}}'),
+('Manager', 'Store Manager with management access',
+ '{"pos": {"read": true, "write": true},
+   "users": {"read": true},
+   "reports": {"read": true, "write": true},
+   "settings": {"read": true},
+   "customers": {"read": true, "write": true},
+   "inventory": {"read": true, "write": true},
+   "locations": {"read": true, "write": true},
+   "transactions": {"read": true, "write": true}}'),
+('Employee', 'Store Employee with POS access',
+ '{"pos": {"read": true, "write": true},
+   "customers": {"read": true, "write": true},
+   "inventory": {"read": true},
+   "transactions": {"read": true, "write": true}}'),
+('Customer', 'Customer account with order history access',
+ '{"orders": {"read": true, "write": true},
+   "profile": {"read": true, "write": true}}'),
+('cashier', 'Cashier with basic POS and customer service access', 
  '{"pos": {"read": true, "write": true}, 
    "inventory": {"read": true}, 
    "customers": {"read": true, "write": true}, 
@@ -2995,7 +2997,7 @@ INSERT INTO roles (name, description, permissions) VALUES
    "settings": {"read": true}, 
    "users": {"read": true}, 
    "locations": {"read": true}}'),
-('viewer', 'Read-only access for reporting and monitoring', 
+('viewer', 'Viewer with read-only access for reporting', 
  '{"pos": {"read": true}, 
    "inventory": {"read": true}, 
    "customers": {"read": true}, 
@@ -3005,6 +3007,7 @@ INSERT INTO roles (name, description, permissions) VALUES
    "users": {"read": true}, 
    "locations": {"read": true}}')
 ON CONFLICT (name) DO NOTHING;
+
 
 -- =============================================================================
 -- FIRST-TIME SETUP

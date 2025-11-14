@@ -265,6 +265,12 @@ const requirePermission = (module, action) => {
     }
 
     const permissions = req.user.permissions;
+    
+    // Admin users with "all" permission have access to everything
+    if (permissions && permissions.all === true) {
+      return next();
+    }
+    
     if (!permissions || !permissions[module] || !permissions[module][action]) {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
@@ -329,13 +335,14 @@ app.get('/api/setup/status', async (req, res) => {
 // Database Connection Info - For setup wizard
 app.get('/api/setup/database-info', async (req, res) => {
   try {
-    // Return database connection information
+    // Return ACTUAL database connection information (unmasked)
+    // This is needed for MuleSoft deployment configuration
     const dbInfo = {
       host: process.env.DB_HOST || 'localhost',
       port: process.env.DB_PORT || '5432',
       database: process.env.DB_NAME || 'database',
       user: process.env.DB_USER || 'user',
-      password: process.env.DB_PASSWORD || '********',
+      password: process.env.DB_PASSWORD || '', // Real password, not masked
     };
     res.json(dbInfo);
   } catch (error) {
@@ -652,9 +659,9 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
-    // Get user with role information
+    // Get user with role information (accept both username and email)
     const userResult = await pool.query(
-      'SELECT u.*, r.name as role_name, r.permissions FROM users u JOIN roles r ON u.role_id = r.id WHERE u.username = $1 AND u.is_active = true',
+      'SELECT u.*, r.name as role_name, r.permissions FROM users u JOIN roles r ON u.role_id = r.id WHERE (u.username = $1 OR u.email = $1) AND u.is_active = true',
       [username]
     );
 
@@ -3720,6 +3727,39 @@ app.get('/api/locations', async (req, res) => {
     }
 });
 
+// Get current/default location (must be before /:id route)
+app.get('/api/locations/current', async (req, res) => {
+    try {
+        // Get the first active location (or any location if none are specifically marked)
+        const result = await pool.query(
+            'SELECT * FROM locations WHERE is_active = true ORDER BY id LIMIT 1'
+        );
+        
+        if (result.rows.length === 0) {
+            // If no active locations, just get the first one
+            const fallback = await pool.query('SELECT * FROM locations ORDER BY id LIMIT 1');
+            if (fallback.rows.length === 0) {
+                return res.json({ 
+                    success: false, 
+                    message: 'No locations configured yet'
+                });
+            }
+            return res.json({ 
+                success: true, 
+                location: fallback.rows[0] 
+            });
+        }
+        
+        res.json({ 
+            success: true, 
+            location: result.rows[0] 
+        });
+    } catch (err) {
+        console.error('Error fetching current location:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 app.get('/api/locations/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -4028,7 +4068,8 @@ app.get('/api/settings/:userId', authenticateToken, async (req, res) => {
         const { userId } = req.params;
         
         // Users can only access their own settings, or admins can access any
-        if (req.user.user_id.toString() !== userId && !req.user.permissions.settings?.read) {
+        const hasAdminAccess = req.user.permissions?.all === true || req.user.permissions?.settings?.read;
+        if (req.user.user_id.toString() !== userId && !hasAdminAccess) {
             return res.status(403).json({ error: 'Access denied' });
         }
         
@@ -4061,7 +4102,8 @@ app.put('/api/settings/:userId', authenticateToken, async (req, res) => {
         const { selected_location_id, theme_mode, language, currency_format, notifications_enabled } = req.body;
         
         // Users can only update their own settings, or admins can update any
-        if (req.user.user_id.toString() !== userId && !req.user.permissions.settings?.write) {
+        const hasAdminAccess = req.user.permissions?.all === true || req.user.permissions?.settings?.write;
+        if (req.user.user_id.toString() !== userId && !hasAdminAccess) {
             return res.status(403).json({ error: 'Access denied' });
         }
         
@@ -4606,6 +4648,43 @@ app.get('/api/mulesoft/members', async (req, res) => {
         console.error('Error fetching members from MuleSoft:', err);
         res.status(500).json({ 
             error: 'Failed to fetch members from MuleSoft',
+            details: err.message 
+        });
+    }
+});
+
+// Get products from MuleSoft Loyalty Cloud
+app.get('/api/mulesoft/products/loyalty', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT setting_value FROM system_settings WHERE setting_key = $1', ['mulesoft_loyalty_sync_endpoint']);
+        const mulesoftEndpoint = result.rows[0]?.setting_value;
+        
+        if (!mulesoftEndpoint) {
+            return res.status(400).json({ error: 'MuleSoft endpoint not configured' });
+        }
+        
+        console.log('🔄 Fetching products from MuleSoft:', `${mulesoftEndpoint}/loyalty/products`);
+        
+        const response = await fetch(`${mulesoftEndpoint}/loyalty/products`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ MuleSoft API error:', response.status, errorText);
+            throw new Error(`MuleSoft API error: ${response.status} - ${errorText || response.statusText}`);
+        }
+        
+        const products = await response.json();
+        console.log('✅ Products fetched successfully:', products.length || 0, 'products');
+        res.json(products);
+    } catch (err) {
+        console.error('Error fetching products from MuleSoft:', err);
+        res.status(500).json({ 
+            error: 'Failed to fetch products from MuleSoft',
             details: err.message 
         });
     }
