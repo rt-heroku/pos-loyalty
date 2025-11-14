@@ -209,7 +209,7 @@ export default function SetupWizardPage() {
       return true;
     } catch (err) {
       if (err instanceof z.ZodError) {
-        setError(err.errors[0].message);
+        setError(err.errors[0]?.message || 'Validation error');
       }
       return false;
     }
