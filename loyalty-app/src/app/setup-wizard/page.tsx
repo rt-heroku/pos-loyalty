@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
-import { Building2, User, Mail, Lock, Phone, MapPin, CheckCircle2, ArrowRight, ArrowLeft, Store } from 'lucide-react';
+import { Building2, User, Mail, Lock, Phone, MapPin, CheckCircle2, ArrowRight, ArrowLeft, Store, Link, Database, CheckCircle, XCircle } from 'lucide-react';
 
 // Step schemas
 const step1Schema = z.object({
@@ -28,6 +28,10 @@ const step2Schema = z.object({
 });
 
 const step3Schema = z.object({
+  mulesoftEndpoint: z.string().url().optional().or(z.literal('')),
+});
+
+const step4Schema = z.object({
   locationId: z.number().optional(),
   createNewLocation: z.boolean().default(false),
   storeCode: z.string().optional(),
@@ -42,6 +46,7 @@ const step3Schema = z.object({
 type Step1Data = z.infer<typeof step1Schema>;
 type Step2Data = z.infer<typeof step2Schema>;
 type Step3Data = z.infer<typeof step3Schema>;
+type Step4Data = z.infer<typeof step4Schema>;
 
 interface Location {
   id: number;
@@ -60,11 +65,15 @@ export default function SetupWizardPage() {
   const [checkingSetup, setCheckingSetup] = useState(true);
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [locations, setLocations] = useState<Location[]>([]);
+  const [dbConnection, setDbConnection] = useState<any>(null);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectionTestResult, setConnectionTestResult] = useState<{ success: boolean; message: string; data?: any } | null>(null);
   
   // Form data for all steps
   const [step1Data, setStep1Data] = useState<Partial<Step1Data>>({});
   const [step2Data, setStep2Data] = useState<Partial<Step2Data>>({});
-  const [step3Data, setStep3Data] = useState<Partial<Step3Data>>({ createNewLocation: false });
+  const [step3Data, setStep3Data] = useState<Partial<Step3Data>>({ mulesoftEndpoint: '' });
+  const [step4Data, setStep4Data] = useState<Partial<Step4Data>>({ createNewLocation: false });
 
   // Check if setup is needed
   useEffect(() => {
@@ -122,6 +131,60 @@ export default function SetupWizardPage() {
     }
   };
 
+  // Load database connection info
+  useEffect(() => {
+    const loadDbConnection = async () => {
+      try {
+        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+        const response = await fetch(`${basePath}/api/setup/database-info`);
+        if (response.ok) {
+          const data = await response.json();
+          setDbConnection(data);
+        }
+      } catch (error) {
+        console.error('Error loading database info:', error);
+      }
+    };
+    if (currentStep === 3) {
+      loadDbConnection();
+    }
+  }, [currentStep]);
+
+  // Test MuleSoft connection
+  const testMulesoftConnection = async () => {
+    if (!step3Data.mulesoftEndpoint) {
+      setConnectionTestResult({
+        success: false,
+        message: 'Please enter a MuleSoft endpoint URL'
+      });
+      return;
+    }
+
+    setTestingConnection(true);
+    setConnectionTestResult(null);
+
+    try {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const response = await fetch(`${basePath}/api/setup/test-mulesoft`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ endpoint: step3Data.mulesoftEndpoint }),
+      });
+
+      const data = await response.json();
+      setConnectionTestResult(data);
+    } catch (error) {
+      setConnectionTestResult({
+        success: false,
+        message: 'Failed to test connection: ' + (error instanceof Error ? error.message : 'Unknown error')
+      });
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
   const validateStep = (step: number): boolean => {
     try {
       if (step === 1) {
@@ -129,12 +192,15 @@ export default function SetupWizardPage() {
       } else if (step === 2) {
         step2Schema.parse(step2Data);
       } else if (step === 3) {
-        if (step3Data.createNewLocation) {
-          if (!step3Data.storeCode || !step3Data.storeName) {
+        step3Schema.parse(step3Data);
+        // MuleSoft step is optional, always valid
+      } else if (step === 4) {
+        if (step4Data.createNewLocation) {
+          if (!step4Data.storeCode || !step4Data.storeName) {
             setError('Store code and name are required for new location');
             return false;
           }
-        } else if (!step3Data.locationId && locations.length > 0) {
+        } else if (!step4Data.locationId && locations.length > 0) {
           setError('Please select a location or create a new one');
           return false;
         }
@@ -174,6 +240,7 @@ export default function SetupWizardPage() {
         ...step1Data,
         ...step2Data,
         ...step3Data,
+        ...step4Data,
       };
 
       const response = await fetch(`${basePath}/api/setup/initialize`, {
@@ -251,14 +318,19 @@ export default function SetupWizardPage() {
             Welcome to Your POS & Loyalty System
           </h1>
           <p className="text-gray-600">
-            Step {currentStep} of 3: {currentStep === 1 ? 'Admin Account' : currentStep === 2 ? 'Business Information' : 'Location Setup'}
+            Step {currentStep} of 4: {
+              currentStep === 1 ? 'Admin Account' : 
+              currentStep === 2 ? 'Business Information' : 
+              currentStep === 3 ? 'MuleSoft Integration' :
+              'Location Setup'
+            }
           </p>
         </div>
 
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            {[1, 2, 3].map((step) => (
+            {[1, 2, 3, 4].map((step) => (
               <div key={step} className="flex flex-1 items-center">
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-full ${
@@ -269,7 +341,7 @@ export default function SetupWizardPage() {
                 >
                   {step}
                 </div>
-                {step < 3 && (
+                {step < 4 && (
                   <div
                     className={`mx-2 h-1 flex-1 ${
                       step < currentStep ? 'bg-blue-600' : 'bg-gray-300'
@@ -503,8 +575,173 @@ export default function SetupWizardPage() {
             </div>
           )}
 
-          {/* Step 3: Location Setup */}
+          {/* Step 3: MuleSoft Integration */}
           {currentStep === 3 && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-gray-900">MuleSoft Integration</h2>
+              
+              {/* Deployment Instructions */}
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-6">
+                <div className="flex items-start space-x-3">
+                  <Database className="h-6 w-6 text-blue-600 mt-1 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-blue-900 mb-2">
+                      Please deploy the MuleSoft Loyalty Sync application
+                    </h3>
+                    <p className="text-sm text-blue-700 mb-3">
+                      Before proceeding, you need to deploy the MuleSoft Loyalty Sync application. 
+                      Follow the instructions in the deployment guide:
+                    </p>
+                    <a
+                      href="https://docs.google.com/document/d/1AqZEVKX52ZySBjEWQnqa5P1EPBffyEu88xe1cLaZlb0/edit?tab=t.f0smgig9s2jq"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center space-x-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+                    >
+                      <Link className="h-4 w-4" />
+                      <span>View Deployment Instructions</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Database Connection Information */}
+              {dbConnection && (
+                <div className="rounded-lg border border-gray-300 bg-gray-50 p-6">
+                  <h3 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                    <Database className="h-5 w-5 text-gray-600" />
+                    <span>Database Connection Information</span>
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          Host
+                        </label>
+                        <div className="rounded bg-white px-3 py-2 text-sm font-mono text-gray-900 border border-gray-200">
+                          {dbConnection.host || 'N/A'}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          Port
+                        </label>
+                        <div className="rounded bg-white px-3 py-2 text-sm font-mono text-gray-900 border border-gray-200">
+                          {dbConnection.port || 'N/A'}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          Database
+                        </label>
+                        <div className="rounded bg-white px-3 py-2 text-sm font-mono text-gray-900 border border-gray-200">
+                          {dbConnection.database || 'N/A'}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          User
+                        </label>
+                        <div className="rounded bg-white px-3 py-2 text-sm font-mono text-gray-900 border border-gray-200">
+                          {dbConnection.user || 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Password
+                      </label>
+                      <div className="rounded bg-white px-3 py-2 text-sm font-mono text-gray-900 border border-gray-200">
+                        {dbConnection.password || 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* MuleSoft Endpoint Configuration */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  MuleSoft Endpoint URL (Optional)
+                </label>
+                <p className="mb-3 text-xs text-gray-600">
+                  Enter the base URL of your deployed MuleSoft application (e.g., https://your-app.cloudhub.io)
+                </p>
+                <input
+                  type="url"
+                  value={step3Data.mulesoftEndpoint || ''}
+                  onChange={(e) => setStep3Data({ ...step3Data, mulesoftEndpoint: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://your-mulesoft-app.cloudhub.io"
+                />
+              </div>
+
+              {/* Test Connection Button */}
+              {step3Data.mulesoftEndpoint && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={testMulesoftConnection}
+                    disabled={testingConnection}
+                    className="flex items-center space-x-2 rounded-lg border border-blue-600 bg-white px-4 py-2 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {testingConnection ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
+                        <span>Testing Connection...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Database className="h-4 w-4" />
+                        <span>Test MuleSoft Connection</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Connection Test Result */}
+                  {connectionTestResult && (
+                    <div className={`mt-4 rounded-lg border p-4 ${
+                      connectionTestResult.success 
+                        ? 'border-green-200 bg-green-50' 
+                        : 'border-red-200 bg-red-50'
+                    }`}>
+                      <div className="flex items-start space-x-3">
+                        {connectionTestResult.success ? (
+                          <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                        )}
+                        <div className="flex-1">
+                          <p className={`text-sm font-medium ${
+                            connectionTestResult.success ? 'text-green-900' : 'text-red-900'
+                          }`}>
+                            {connectionTestResult.message}
+                          </p>
+                          {connectionTestResult.success && connectionTestResult.data && (
+                            <div className="mt-2 text-xs text-green-700">
+                              <p className="font-semibold">Loyalty Programs Found:</p>
+                              <ul className="mt-1 list-disc list-inside">
+                                {connectionTestResult.data.map((program: any, index: number) => (
+                                  <li key={index}>{program.Name} (ID: {program.Id})</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <p className="text-xs text-gray-500 italic">
+                Note: The MuleSoft endpoint configuration is optional. You can skip this step and configure it later in Settings.
+              </p>
+            </div>
+          )}
+
+          {/* Step 4: Location Setup */}
+          {currentStep === 4 && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-900">Location Setup</h2>
               
@@ -526,8 +763,8 @@ export default function SetupWizardPage() {
                           <input
                             type="radio"
                             name="location"
-                            checked={step3Data.locationId === location.id && !step3Data.createNewLocation}
-                            onChange={() => setStep3Data({ ...step3Data, locationId: location.id, createNewLocation: false })}
+                            checked={step4Data.locationId === location.id && !step4Data.createNewLocation}
+                            onChange={() => setStep4Data({ ...step4Data, locationId: location.id, createNewLocation: false })}
                             className="h-4 w-4 text-blue-600"
                           />
                           <div className="flex-1">
@@ -547,8 +784,8 @@ export default function SetupWizardPage() {
                       <input
                         type="radio"
                         name="location"
-                        checked={step3Data.createNewLocation === true}
-                        onChange={() => setStep3Data({ ...step3Data, createNewLocation: true, locationId: undefined })}
+                        checked={step4Data.createNewLocation === true}
+                        onChange={() => setStep4Data({ ...step4Data, createNewLocation: true, locationId: undefined })}
                         className="h-4 w-4 text-blue-600"
                       />
                       <div className="flex-1">
@@ -563,7 +800,7 @@ export default function SetupWizardPage() {
               )}
 
               {/* New Location Form */}
-              {(step3Data.createNewLocation || locations.length === 0) && (
+              {(step4Data.createNewLocation || locations.length === 0) && (
                 <div className="mt-6 space-y-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
                   <h3 className="font-semibold text-gray-900">New Location Details</h3>
                   
@@ -574,8 +811,8 @@ export default function SetupWizardPage() {
                       </label>
                       <input
                         type="text"
-                        value={step3Data.storeCode || ''}
-                        onChange={(e) => setStep3Data({ ...step3Data, storeCode: e.target.value.toUpperCase() })}
+                        value={step4Data.storeCode || ''}
+                        onChange={(e) => setStep4Data({ ...step4Data, storeCode: e.target.value.toUpperCase() })}
                         className="w-full rounded-lg border border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="STORE01"
                         maxLength={10}
@@ -588,8 +825,8 @@ export default function SetupWizardPage() {
                       </label>
                       <input
                         type="text"
-                        value={step3Data.storeName || ''}
-                        onChange={(e) => setStep3Data({ ...step3Data, storeName: e.target.value })}
+                        value={step4Data.storeName || ''}
+                        onChange={(e) => setStep4Data({ ...step4Data, storeName: e.target.value })}
                         className="w-full rounded-lg border border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Main Store"
                       />
@@ -602,8 +839,8 @@ export default function SetupWizardPage() {
                     </label>
                     <input
                       type="text"
-                      value={step3Data.locationAddress || ''}
-                      onChange={(e) => setStep3Data({ ...step3Data, locationAddress: e.target.value })}
+                      value={step4Data.locationAddress || ''}
+                      onChange={(e) => setStep4Data({ ...step4Data, locationAddress: e.target.value })}
                       className="w-full rounded-lg border border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="123 Store Street"
                     />
@@ -616,8 +853,8 @@ export default function SetupWizardPage() {
                       </label>
                       <input
                         type="text"
-                        value={step3Data.locationCity || ''}
-                        onChange={(e) => setStep3Data({ ...step3Data, locationCity: e.target.value })}
+                        value={step4Data.locationCity || ''}
+                        onChange={(e) => setStep4Data({ ...step4Data, locationCity: e.target.value })}
                         className="w-full rounded-lg border border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="New York"
                       />
@@ -629,8 +866,8 @@ export default function SetupWizardPage() {
                       </label>
                       <input
                         type="text"
-                        value={step3Data.locationState || ''}
-                        onChange={(e) => setStep3Data({ ...step3Data, locationState: e.target.value })}
+                        value={step4Data.locationState || ''}
+                        onChange={(e) => setStep4Data({ ...step4Data, locationState: e.target.value })}
                         className="w-full rounded-lg border border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="NY"
                       />
@@ -642,8 +879,8 @@ export default function SetupWizardPage() {
                       </label>
                       <input
                         type="text"
-                        value={step3Data.locationZipCode || ''}
-                        onChange={(e) => setStep3Data({ ...step3Data, locationZipCode: e.target.value })}
+                        value={step4Data.locationZipCode || ''}
+                        onChange={(e) => setStep4Data({ ...step4Data, locationZipCode: e.target.value })}
                         className="w-full rounded-lg border border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="10001"
                       />
@@ -656,8 +893,8 @@ export default function SetupWizardPage() {
                     </label>
                     <input
                       type="text"
-                      value={step3Data.taxRate || '0.08'}
-                      onChange={(e) => setStep3Data({ ...step3Data, taxRate: e.target.value })}
+                      value={step4Data.taxRate || '0.08'}
+                      onChange={(e) => setStep4Data({ ...step4Data, taxRate: e.target.value })}
                       className="w-full rounded-lg border border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="0.08"
                     />
@@ -688,7 +925,7 @@ export default function SetupWizardPage() {
               </button>
             )}
 
-            {currentStep < 3 ? (
+            {currentStep < 4 ? (
               <button
                 onClick={handleNext}
                 className="ml-auto flex items-center space-x-2 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"

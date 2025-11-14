@@ -326,6 +326,80 @@ app.get('/api/setup/status', async (req, res) => {
   }
 });
 
+// Database Connection Info - For setup wizard
+app.get('/api/setup/database-info', async (req, res) => {
+  try {
+    // Return database connection information
+    const dbInfo = {
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT || '5432',
+      database: process.env.DB_NAME || 'database',
+      user: process.env.DB_USER || 'user',
+      password: process.env.DB_PASSWORD || '********',
+    };
+    res.json(dbInfo);
+  } catch (error) {
+    console.error('Error getting database info:', error);
+    res.status(500).json({ error: 'Failed to get database information' });
+  }
+});
+
+// Test MuleSoft Connection - For setup wizard
+app.post('/api/setup/test-mulesoft', async (req, res) => {
+  try {
+    const { endpoint } = req.body;
+
+    if (!endpoint) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Endpoint URL is required' 
+      });
+    }
+
+    // Test connection by calling /programs endpoint
+    const testUrl = `${endpoint}/programs`;
+    console.log(`Testing MuleSoft connection: ${testUrl}`);
+
+    const response = await fetch(testUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      signal: AbortSignal.timeout(10000), // 10 second timeout
+    });
+
+    if (!response.ok) {
+      return res.json({
+        success: false,
+        message: `Connection failed: HTTP ${response.status} ${response.statusText}`,
+      });
+    }
+
+    const data = await response.json();
+
+    // Check if response is an array of programs
+    if (Array.isArray(data) && data.length > 0) {
+      return res.json({
+        success: true,
+        message: `Successfully connected! Found ${data.length} loyalty program(s).`,
+        data: data,
+      });
+    } else {
+      return res.json({
+        success: false,
+        message: 'Connected but no loyalty programs found. Please check your MuleSoft configuration.',
+        data: data,
+      });
+    }
+  } catch (error) {
+    console.error('Error testing MuleSoft connection:', error);
+    return res.json({
+      success: false,
+      message: `Connection failed: ${error.message}`,
+    });
+  }
+});
+
 // Initialize Setup - Create first admin user
 app.post('/api/setup/initialize', async (req, res) => {
   const client = await pool.connect();
@@ -355,6 +429,8 @@ app.post('/api/setup/initialize', async (req, res) => {
       state,
       zipCode,
       country = 'US',
+      // MuleSoft Integration
+      mulesoftEndpoint,
       // Location data
       locationId,
       createNewLocation,
@@ -464,6 +540,28 @@ app.post('/api/setup/initialize', async (req, res) => {
        ON CONFLICT (setting_key)
        DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = NOW()`,
       [companyName]
+    );
+
+    // Save MuleSoft endpoint if provided
+    if (mulesoftEndpoint) {
+      await client.query(
+        `INSERT INTO system_settings (setting_key, setting_value, category, description)
+         VALUES ('mulesoft_loyalty_sync_endpoint', $1, 'integrations', 'MuleSoft Loyalty Sync API endpoint')
+         ON CONFLICT (setting_key)
+         DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = NOW()`,
+        [mulesoftEndpoint]
+      );
+      console.log(`✅ Saved MuleSoft endpoint: ${mulesoftEndpoint}`);
+    }
+
+    // Save deployment docs URL
+    const docsUrl = 'https://docs.google.com/document/d/1AqZEVKX52ZySBjEWQnqa5P1EPBffyEu88xe1cLaZlb0/edit?tab=t.f0smgig9s2jq';
+    await client.query(
+      `INSERT INTO system_settings (setting_key, setting_value, category, description)
+       VALUES ('mulesoft_deployment_docs_url', $1, 'integrations', 'MuleSoft Loyalty Sync deployment instructions')
+       ON CONFLICT (setting_key)
+       DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = NOW()`,
+      [docsUrl]
     );
 
     // **IMPORTANT: Update all existing locations' brand with company name**
