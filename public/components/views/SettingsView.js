@@ -1099,11 +1099,12 @@ mac:
   openai_key: ""
 
 #Salesforce configurations
+# How to create an External Connected App: https://docs.google.com/document/d/1AqZEVKX52ZySBjEWQnqa5P1EPBffyEu88xe1cLaZlb0/edit?tab=t.yox8akb3q8gc
 sfdc:
-  url: "http://login.salesforce.com/services/Soap/u/64.0"
-  token: 
-  password: 
-  account: `;
+  domain: ""
+  consumer_key: ""
+  consumer_secret: ""
+`;
             } catch (error) {
                 const inferenceKey = envData?.inference_key || "";
                 
@@ -1123,11 +1124,11 @@ mac:
   openai_key: ""
 
 #Salesforce configurations
+# How to create an External Connected App: https://docs.google.com/document/d/1AqZEVKX52ZySBjEWQnqa5P1EPBffyEu88xe1cLaZlb0/edit?tab=t.yox8akb3q8gc
 sfdc:
-  url: "http://login.salesforce.com/services/Soap/u/64.0"
-  token: 
-  password: 
-  account: `;
+  domain: ""
+  consumer_key: ""
+  consumer_secret: ""`;
             }
         };
 
@@ -1156,10 +1157,11 @@ mac.heroku.inference_key=${inferenceKey}
 mac.openai_key=
 
 #Salesforce configurations
-sfdc.url=http://login.salesforce.com/services/Soap/u/64.0
-sfdc.token=
-sfdc.password=
-sfdc.account=`;
+# How to create an External Connected App: https://docs.google.com/document/d/1AqZEVKX52ZySBjEWQnqa5P1EPBffyEu88xe1cLaZlb0/edit?tab=t.yox8akb3q8gc
+sfdc.domain=
+sfdc.consumer_key=
+sfdc.consumer_secret=
+`;
             } catch (error) {
                 const inferenceKey = envData?.inference_key || "";
                 
@@ -1177,10 +1179,10 @@ mac.heroku.inference_key=${inferenceKey}
 mac.openai_key=
 
 #Salesforce configurations
-sfdc.url=http://login.salesforce.com/services/Soap/u/64.0
-sfdc.token=
-sfdc.password=
-sfdc.account=`;
+# How to create an External Connected App: https://docs.google.com/document/d/1AqZEVKX52ZySBjEWQnqa5P1EPBffyEu88xe1cLaZlb0/edit?tab=t.yox8akb3q8gc
+sfdc.domain=
+sfdc.consumer_key=
+sfdc.consumer_secret=`;
             }
         };
 
@@ -2833,7 +2835,7 @@ sfdc.account=`;
                        // PostgreSQL Credentials - YAML Format
                        React.createElement('div', { key: 'credentials-yaml-section', className: 'mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg' }, [
                            React.createElement('h4', { key: 'credentials-yaml-title', className: 'text-sm font-medium mb-2 dark:text-gray-300' }, 
-                               'PostgreSQL Credentials (YAML Property File Format)'
+                               'Credentials (YAML Property File Format for Studio or ACB)'
                            ),
                            React.createElement('div', { key: 'credentials-yaml-container', className: 'flex gap-2' }, [
                                React.createElement('pre', { key: 'credentials-yaml-pre', 
@@ -2855,7 +2857,7 @@ sfdc.account=`;
                        // PostgreSQL Credentials - Java Properties Format
                        React.createElement('div', { key: 'credentials-java-section', className: 'mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg' }, [
                            React.createElement('h4', { key: 'credentials-java-title', className: 'text-sm font-medium mb-2 dark:text-gray-300' }, 
-                               'PostgreSQL Credentials (Java Property File Format)'
+                               'Credentials (Mulesoft Property CloudHub Format)'
                            ),
                            React.createElement('div', { key: 'credentials-java-container', className: 'flex gap-2' }, [
                                React.createElement('pre', { key: 'credentials-java-pre', 
