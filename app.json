@@ -4,7 +4,8 @@
   "repository": "https://github.com/rt-heroku/pos-loyalty",
   "keywords": ["mule", "pos", "loyalty", "nextjs", "express", "unified"],
   "addons": [
-    "heroku-postgresql"
+    "heroku-postgresql",
+    "heroku-inference:claude-3-5-haiku"
   ],
   "env": {
     "JWT_SECRET": {
@@ -17,6 +18,6 @@
     }
   },
   "scripts": {
-    "postdeploy": "psql $DATABASE_URL -f db/database.sql && psql $DATABASE_URL -f loyalty-app/db/loyalty-database-changes.sql"
+    "postdeploy": "psql $DATABASE_URL -f db/temp/database.sql"
   }
 }
