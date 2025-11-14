@@ -6,7 +6,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Building2, User, Mail, Lock, Phone, MapPin, CheckCircle2 } from 'lucide-react';
-import Image from 'next/image';
 
 const setupSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
