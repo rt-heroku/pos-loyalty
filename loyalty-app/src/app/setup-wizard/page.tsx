@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
-import { Building2, User, Mail, Lock, Phone, MapPin, CheckCircle2, ArrowRight, ArrowLeft, Store, Link, Database, CheckCircle, XCircle } from 'lucide-react';
+import { Building2, User, Mail, Lock, Phone, MapPin, CheckCircle2, ArrowRight, ArrowLeft, Link, Database, CheckCircle, XCircle } from 'lucide-react';
 
 // Step schemas
 const step1Schema = z.object({
