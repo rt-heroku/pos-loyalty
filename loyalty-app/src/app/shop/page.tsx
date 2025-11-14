@@ -491,6 +491,12 @@ export default function ShopPage() {
 
   const clearCart = () => {
     setCart([]);
+    setAppliedVouchers([]);
+    // Also clear sessionStorage to prevent cart restoration on refresh
+    sessionStorage.removeItem('checkout_cart');
+    sessionStorage.removeItem('checkout_applied_vouchers');
+    sessionStorage.removeItem('checkout_location');
+    console.log('[Shop] 🗑️  Cart cleared (including sessionStorage)');
   };
 
   const getCartTotal = () => {
