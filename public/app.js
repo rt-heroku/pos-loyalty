@@ -39,6 +39,7 @@ const POSApp = () => {
     // Authentication state
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
+    const [setupRequired, setSetupRequired] = useState(false);
     
     // Debug: Make currentUser available in console
     React.useEffect(() => {
@@ -157,7 +158,22 @@ const POSApp = () => {
     }, []);
 
     // Check if user is authenticated
-    const checkAuthentication = () => {
+    const checkAuthentication = async () => {
+        // First check if setup is required
+        try {
+            const setupResponse = await fetch('/api/setup/status');
+            const setupData = await setupResponse.json();
+            
+            if (setupData.setupRequired) {
+                setSetupRequired(true);
+                setAuthLoading(false);
+                return;
+            }
+        } catch (error) {
+            console.error('Error checking setup status:', error);
+            // Continue with normal auth check if setup check fails
+        }
+        
         const token = localStorage.getItem('auth_token');
         const userData = localStorage.getItem('user_data');
         const tokenExpires = localStorage.getItem('token_expires');
@@ -1466,6 +1482,16 @@ const POSApp = () => {
         ]);
     }
 
+    // Show setup wizard if setup is required
+    if (setupRequired) {
+        return React.createElement(window.Auth.SetupView, {
+            onSetupComplete: () => {
+                setSetupRequired(false);
+                window.location.reload(); // Reload to show login
+            }
+        });
+    }
+    
     // Show login screen if not authenticated
     if (!isAuthenticated) {
         return React.createElement(window.Auth.LoginView, {

@@ -309,6 +309,165 @@ const calculatePoints = (total) => Math.floor(total);
 
 // Authentication API Routes
 
+// Setup Status - Check if initial setup is required
+app.get('/api/setup/status', async (req, res) => {
+  try {
+    // Check if any users exist
+    const result = await pool.query('SELECT COUNT(*) as count FROM users');
+    const userCount = parseInt(result.rows[0].count);
+
+    res.json({
+      setupRequired: userCount === 0,
+      userCount,
+    });
+  } catch (error) {
+    console.error('Error checking setup status:', error);
+    res.status(500).json({ error: 'Failed to check setup status' });
+  }
+});
+
+// Initialize Setup - Create first admin user
+app.post('/api/setup/initialize', async (req, res) => {
+  try {
+    // Check if setup is still required
+    const userCountResult = await pool.query('SELECT COUNT(*) as count FROM users');
+    const userCount = parseInt(userCountResult.rows[0].count);
+
+    if (userCount > 0) {
+      return res.status(400).json({ error: 'Setup has already been completed' });
+    }
+
+    const {
+      username,
+      email,
+      password,
+      firstName,
+      lastName,
+      phone,
+      companyName,
+      address,
+      city,
+      state,
+      zipCode,
+      country = 'US',
+    } = req.body;
+
+    // Validation
+    if (!username || !email || !password || !firstName || !lastName) {
+      return res.status(400).json({ error: 'Required fields missing' });
+    }
+
+    // Get admin role ID
+    const roleResult = await pool.query(
+      "SELECT id FROM roles WHERE name = 'admin' OR name = 'Admin' LIMIT 1"
+    );
+
+    if (roleResult.rows.length === 0) {
+      return res.status(500).json({ error: 'Admin role not found in database' });
+    }
+
+    const adminRoleId = roleResult.rows[0].id;
+
+    // Hash password using database function (bcrypt)
+    const passwordHashResult = await pool.query(
+      'SELECT hash_password($1) as hash',
+      [password]
+    );
+    const passwordHash = passwordHashResult.rows[0].hash;
+
+    // Create user
+    const userResult = await pool.query(
+      `INSERT INTO users (
+        username, email, password_hash, first_name, last_name,
+        phone, role_id, role, is_active, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+      RETURNING id, username, email, first_name, last_name, role`,
+      [
+        username,
+        email,
+        passwordHash,
+        firstName,
+        lastName,
+        phone || null,
+        adminRoleId,
+        'admin',
+        true,
+      ]
+    );
+
+    const user = userResult.rows[0];
+
+    // Generate loyalty number
+    const loyaltyResult = await pool.query('SELECT generate_loyalty_number() as number');
+    const loyaltyNumber = loyaltyResult.rows[0].number;
+
+    // Create customer record
+    await pool.query(
+      `INSERT INTO customers (
+        user_id, loyalty_number, first_name, last_name, name,
+        email, phone, points, total_spent, visit_count,
+        is_active, member_status, enrollment_date, member_type,
+        customer_tier, tier_calculation_number, status,
+        address_line1, city, state, zip_code, country,
+        created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5,
+        $6, $7, 0, 0.00, 0,
+        true, 'Active', NOW(), 'Individual',
+        'Bronze', 0.00, 'Created',
+        $8, $9, $10, $11, $12,
+        NOW(), NOW()
+      )`,
+      [
+        user.id,
+        loyaltyNumber,
+        firstName,
+        lastName,
+        `${firstName} ${lastName}`,
+        email,
+        phone || null,
+        address || null,
+        city || null,
+        state || null,
+        zipCode || null,
+        country,
+      ]
+    );
+
+    // Update system settings if company name provided
+    if (companyName) {
+      await pool.query(
+        `INSERT INTO system_settings (setting_key, setting_value, category, description)
+         VALUES ('company_name', $1, 'general', 'Company name displayed on receipts and reports')
+         ON CONFLICT (setting_key)
+         DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = NOW()`,
+        [companyName]
+      );
+    }
+
+    console.log(`✅ Setup complete! Admin user created: ${email}`);
+
+    res.json({
+      success: true,
+      message: 'Setup completed successfully',
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error('Error during setup:', error);
+    res.status(500).json({
+      error: 'Setup failed',
+      details: error.message,
+    });
+  }
+});
+
 // Login endpoint
 app.post('/api/auth/login', async (req, res) => {
   try {
