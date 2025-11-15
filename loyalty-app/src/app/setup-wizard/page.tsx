@@ -311,7 +311,7 @@ export default function SetupWizardPage() {
 
       // Load catalogs via backend API (avoids CORS)
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      const catalogsResponse = await fetch(`${basePath}/api/loyalty/catalogs`);
+      const catalogsResponse = await fetch(`${basePath}/api/loyalty/catalogs?endpoint=${encodeURIComponent(step5Data.mulesoftEndpoint)}`);
       if (catalogsResponse.ok) {
         const catalogsData = await catalogsResponse.json();
         console.log('✅ Loaded catalogs:', catalogsData);
@@ -353,7 +353,7 @@ export default function SetupWizardPage() {
       
       // Step 1: Fetch members from MuleSoft (GET)
       console.log('🔄 Step 1: Fetching members from MuleSoft...');
-      const fetchResponse = await fetch(`${basePath}/api/mulesoft/members`);
+      const fetchResponse = await fetch(`${basePath}/api/mulesoft/members?endpoint=${encodeURIComponent(step5Data.mulesoftEndpoint || '')}`);
       
       if (!fetchResponse.ok) {
         const errorData = await fetchResponse.json();
@@ -368,7 +368,10 @@ export default function SetupWizardPage() {
       const syncResponse = await fetch(`${basePath}/api/mulesoft/members/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ loyaltyProgramId: step6Data.loyaltyProgramId }),
+        body: JSON.stringify({ 
+          loyaltyProgramId: step6Data.loyaltyProgramId,
+          endpoint: step5Data.mulesoftEndpoint 
+        }),
       });
 
       if (!syncResponse.ok) {
@@ -412,7 +415,10 @@ export default function SetupWizardPage() {
       const response = await fetch(`${basePath}/api/loyalty/products/load`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ catalogId: selectedCatalog }),
+        body: JSON.stringify({ 
+          catalogId: selectedCatalog,
+          endpoint: step5Data.mulesoftEndpoint 
+        }),
       });
 
       if (!response.ok) {

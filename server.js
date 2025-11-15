@@ -1305,17 +1305,21 @@ app.get('/api/products/types', async (req, res) => {
 // Get catalogs from MuleSoft API
 app.get('/api/loyalty/catalogs', async (req, res) => {
   try {
-    // Get MuleSoft endpoint from system settings
-    const settingsResult = await pool.query(
-      'SELECT setting_value FROM system_settings WHERE setting_key = $1',
-      ['mulesoft_loyalty_sync_endpoint']
-    );
-
-    if (!settingsResult.rows.length || !settingsResult.rows[0].setting_value) {
-      return res.status(400).json({ error: 'MuleSoft endpoint not configured' });
+    // Allow endpoint to be passed via query string (for setup wizard)
+    let mulesoftEndpoint = req.query.endpoint;
+    
+    if (!mulesoftEndpoint) {
+      // Fallback to reading from database
+      const settingsResult = await pool.query(
+        'SELECT setting_value FROM system_settings WHERE setting_key = $1',
+        ['mulesoft_loyalty_sync_endpoint']
+      );
+      mulesoftEndpoint = settingsResult.rows[0]?.setting_value;
     }
 
-    const mulesoftEndpoint = settingsResult.rows[0].setting_value;
+    if (!mulesoftEndpoint) {
+      return res.status(400).json({ error: 'MuleSoft endpoint not configured' });
+    }
     const catalogsUrl = `${mulesoftEndpoint}/loyalty/catalogs`;
 
 //    console.log('=== MuleSoft Catalogs Request ===');
@@ -1352,23 +1356,27 @@ app.get('/api/loyalty/catalogs', async (req, res) => {
 // Load products from selected catalog using MuleSoft API
 app.post('/api/loyalty/products/load', async (req, res) => {
   try {
-    const { catalogId } = req.body;
+    const { catalogId, endpoint } = req.body;
     
     if (!catalogId) {
       return res.status(400).json({ error: 'Catalog ID is required' });
     }
 
-    // Get MuleSoft endpoint from system settings
-    const settingsResult = await pool.query(
-      'SELECT setting_value FROM system_settings WHERE setting_key = $1',
-      ['mulesoft_loyalty_sync_endpoint']
-    );
-
-    if (!settingsResult.rows.length || !settingsResult.rows[0].setting_value) {
-      return res.status(400).json({ error: 'MuleSoft endpoint not configured' });
+    // Allow endpoint to be passed in request body (for setup wizard)
+    let mulesoftEndpoint = endpoint;
+    
+    if (!mulesoftEndpoint) {
+      // Fallback to reading from database
+      const settingsResult = await pool.query(
+        'SELECT setting_value FROM system_settings WHERE setting_key = $1',
+        ['mulesoft_loyalty_sync_endpoint']
+      );
+      mulesoftEndpoint = settingsResult.rows[0]?.setting_value;
     }
 
-    const mulesoftEndpoint = settingsResult.rows[0].setting_value;
+    if (!mulesoftEndpoint) {
+      return res.status(400).json({ error: 'MuleSoft endpoint not configured' });
+    }
     const loadProductsUrl = `${mulesoftEndpoint}/loyalty/products/load?catalog=${catalogId}`;
 
     // console.log('=== MuleSoft Load Products Request ===');
@@ -4637,8 +4645,14 @@ app.post('/api/mulesoft/flows', async (req, res) => {
 // Get members from MuleSoft Loyalty Cloud
 app.get('/api/mulesoft/members', async (req, res) => {
     try {
-        const result = await pool.query('SELECT setting_value FROM system_settings WHERE setting_key = $1', ['mulesoft_loyalty_sync_endpoint']);
-        const mulesoftEndpoint = result.rows[0]?.setting_value;
+        // Allow endpoint to be passed via query string (for setup wizard)
+        let mulesoftEndpoint = req.query.endpoint;
+        
+        if (!mulesoftEndpoint) {
+            // Fallback to reading from database
+            const result = await pool.query('SELECT setting_value FROM system_settings WHERE setting_key = $1', ['mulesoft_loyalty_sync_endpoint']);
+            mulesoftEndpoint = result.rows[0]?.setting_value;
+        }
         
         if (!mulesoftEndpoint) {
             return res.status(400).json({ error: 'MuleSoft endpoint not configured' });
@@ -4711,14 +4725,20 @@ app.get('/api/mulesoft/products/loyalty', async (req, res) => {
 // Sync members from MuleSoft Loyalty Cloud to local database
 app.post('/api/mulesoft/members/sync', async (req, res) => {
     try {
-        const { loyaltyProgramId } = req.body;
+        const { loyaltyProgramId, endpoint } = req.body;
         
         if (!loyaltyProgramId) {
             return res.status(400).json({ error: 'Loyalty program ID is required' });
         }
         
-        const result = await pool.query('SELECT setting_value FROM system_settings WHERE setting_key = $1', ['mulesoft_loyalty_sync_endpoint']);
-        const mulesoftEndpoint = result.rows[0]?.setting_value;
+        // Allow endpoint to be passed in request body (for setup wizard)
+        let mulesoftEndpoint = endpoint;
+        
+        if (!mulesoftEndpoint) {
+            // Fallback to reading from database
+            const result = await pool.query('SELECT setting_value FROM system_settings WHERE setting_key = $1', ['mulesoft_loyalty_sync_endpoint']);
+            mulesoftEndpoint = result.rows[0]?.setting_value;
+        }
         
         if (!mulesoftEndpoint) {
             return res.status(400).json({ error: 'MuleSoft endpoint not configured' });
