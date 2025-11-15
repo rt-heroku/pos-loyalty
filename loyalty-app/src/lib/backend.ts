@@ -5,13 +5,19 @@ import { headers } from 'next/headers';
  * This allows zero-configuration deployment - no env vars needed!
  * 
  * Works for:
- * - Heroku: https://your-app.herokuapp.com
+ * - Heroku: Uses BACKEND_INTERNAL_URL env var for internal communication
  * - Local: http://localhost:3000
  * - Custom domains: https://yourdomain.com
  * 
  * Note: This returns the Express backend URL (port 3000), not the Next.js URL (port 3001)
  */
 export function getBackendUrl(): string {
+  // In production (Heroku), use internal backend URL if set
+  // This avoids external HTTP calls and uses internal process communication
+  if (process.env.BACKEND_INTERNAL_URL) {
+    return process.env.BACKEND_INTERNAL_URL;
+  }
+  
   // If explicitly set, use it (for advanced users)
   if (process.env.BACKEND_URL) {
     return process.env.BACKEND_URL;
