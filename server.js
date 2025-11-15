@@ -337,13 +337,29 @@ app.get('/api/setup/database-info', async (req, res) => {
   try {
     // Return ACTUAL database connection information (unmasked)
     // This is needed for MuleSoft deployment configuration
-    const dbInfo = {
-      host: process.env.DB_HOST || 'localhost',
-      port: process.env.DB_PORT || '5432',
-      database: process.env.DB_NAME || 'database',
-      user: process.env.DB_USER || 'user',
-      password: process.env.DB_PASSWORD || '', // Real password, not masked
-    };
+    let dbInfo;
+    
+    if (process.env.DATABASE_URL) {
+      // Parse DATABASE_URL (for Heroku and other platforms)
+      const url = new URL(process.env.DATABASE_URL);
+      dbInfo = {
+        host: url.hostname,
+        port: url.port || '5432',
+        database: url.pathname.substring(1), // Remove leading slash
+        user: url.username,
+        password: url.password,
+      };
+    } else {
+      // Fallback to individual env vars (for local development)
+      dbInfo = {
+        host: process.env.DB_HOST || 'localhost',
+        port: process.env.DB_PORT || '5432',
+        database: process.env.DB_NAME || 'database',
+        user: process.env.DB_USER || 'user',
+        password: process.env.DB_PASSWORD || '',
+      };
+    }
+    
     res.json(dbInfo);
   } catch (error) {
     console.error('Error getting database info:', error);
