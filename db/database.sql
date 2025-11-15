@@ -4128,11 +4128,11 @@ CREATE TRIGGER trigger_set_product_voucher_discount
 -- =============================================================================
 
 -- Insert sample locations
-INSERT INTO locations (store_code, store_name, brand, address_line1, city, state, zip_code, tax_rate, manager_name) VALUES
-('NYC001', 'Manhattan Flagship', 'TUMI', '350 Madison Avenue', 'New York', 'NY', '10017', 0.08875, 'John Manager'),
-('LAX001', 'Beverly Hills Store', 'TUMI', '9570 Wilshire Boulevard', 'Beverly Hills', 'CA', '90212', 0.1025, 'Jane Store Manager'),
-('CHI001', 'Michigan Avenue', 'TUMI', '900 N Michigan Avenue', 'Chicago', 'IL', '60611', 0.1025, 'Mike Regional Manager')
-ON CONFLICT (store_code) DO NOTHING;
+-- INSERT INTO locations (store_code, store_name, brand, address_line1, city, state, zip_code, tax_rate, manager_name) VALUES
+-- ('NYC001', 'Manhattan Flagship', 'TUMI', '350 Madison Avenue', 'New York', 'NY', '10017', 0.08875, 'John Manager'),
+-- ('LAX001', 'Beverly Hills Store', 'TUMI', '9570 Wilshire Boulevard', 'Beverly Hills', 'CA', '90212', 0.1025, 'Jane Store Manager'),
+-- ('CHI001', 'Michigan Avenue', 'TUMI', '900 N Michigan Avenue', 'Chicago', 'IL', '60611', 0.1025, 'Mike Regional Manager')
+-- ON CONFLICT (store_code) DO NOTHING;
 
 -- Insert default user settings
 INSERT INTO user_settings (user_identifier, theme_mode) VALUES ('default_user', 'light')
@@ -4229,18 +4229,18 @@ INSERT INTO roles (name, description, permissions) VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- Insert default admin user (password: P@$$word1)
-INSERT INTO users (username, email, password_hash, first_name, last_name, role_id, is_active) 
-SELECT 
-    'admin',
-    'admin@pos.com',
-    hash_password('P@$$word1'),
-    'System',
-    'Administrator',
-    r.id,
-    true
-FROM roles r 
-WHERE r.name = 'admin'
-ON CONFLICT (email) DO NOTHING;
+-- INSERT INTO users (username, email, password_hash, first_name, last_name, role_id, is_active) 
+-- SELECT 
+--     'admin',
+--     'admin@pos.com',
+--     hash_password('P@$$word1'),
+--     'System',
+--     'Administrator',
+--     r.id,
+--     true
+-- FROM roles r 
+-- WHERE r.name = 'admin'
+-- ON CONFLICT (email) DO NOTHING;
 
 -- =============================================================================
 -- COMPLETION MESSAGE
