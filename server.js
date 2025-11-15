@@ -425,6 +425,47 @@ app.post('/api/setup/test-mulesoft', async (req, res) => {
   }
 });
 
+// Save MuleSoft Settings - For setup wizard Step 5
+app.post('/api/setup/save-mulesoft', async (req, res) => {
+  try {
+    const { mulesoftEndpoint } = req.body;
+
+    if (!mulesoftEndpoint) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'MuleSoft endpoint URL is required' 
+      });
+    }
+
+    // Save to system_settings table
+    await pool.query(
+      `INSERT INTO system_settings (setting_key, setting_value, category, description)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (setting_key)
+       DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = NOW()`,
+      [
+        'mulesoft_loyalty_sync_endpoint',
+        mulesoftEndpoint,
+        'mulesoft',
+        'MuleSoft Loyalty Sync API endpoint'
+      ]
+    );
+
+    console.log(`✅ MuleSoft endpoint saved: ${mulesoftEndpoint}`);
+
+    return res.json({
+      success: true,
+      message: 'MuleSoft settings saved successfully',
+    });
+  } catch (error) {
+    console.error('Error saving MuleSoft settings:', error);
+    return res.status(500).json({
+      success: false,
+      message: `Failed to save settings: ${error.message}`,
+    });
+  }
+});
+
 // Initialize Setup - Create first admin user
 app.post('/api/setup/initialize', async (req, res) => {
   const client = await pool.connect();

@@ -12,12 +12,17 @@ export const dynamic = 'force-dynamic';
  * 1. GET /api/mulesoft/members - Fetch members from MuleSoft (this route)
  * 2. POST /api/mulesoft/members/sync - Sync members to database
  */
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     console.log('[Next.js API] Proxying members fetch request to backend');
 
+    // Forward query parameters (e.g., endpoint for setup wizard)
+    const { searchParams } = new URL(request.url);
+    const endpoint = searchParams.get('endpoint');
+    const queryString = endpoint ? `?endpoint=${encodeURIComponent(endpoint)}` : '';
+
     // Forward the request to the Express backend
-    const backendResponse = await fetchBackend('/api/mulesoft/members', {
+    const backendResponse = await fetchBackend(`/api/mulesoft/members${queryString}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

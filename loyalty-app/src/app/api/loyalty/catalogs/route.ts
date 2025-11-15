@@ -10,12 +10,17 @@ export const dynamic = 'force-dynamic';
  * 
  * Used in the setup wizard and settings to load available product catalogs
  */
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     console.log('[Next.js API] Proxying catalogs fetch request to backend');
 
+    // Forward query parameters (e.g., endpoint for setup wizard)
+    const { searchParams } = new URL(request.url);
+    const endpoint = searchParams.get('endpoint');
+    const queryString = endpoint ? `?endpoint=${encodeURIComponent(endpoint)}` : '';
+
     // Forward the request to the Express backend
-    const backendResponse = await fetchBackend('/api/loyalty/catalogs', {
+    const backendResponse = await fetchBackend(`/api/loyalty/catalogs${queryString}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

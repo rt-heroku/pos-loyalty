@@ -250,6 +250,29 @@ export default function SetupWizardPage() {
 
       const data = await response.json();
       setConnectionTestResult(data);
+
+      // If connection is successful, save the MuleSoft settings immediately
+      if (data.success) {
+        console.log('✅ Connection successful, saving MuleSoft settings...');
+        try {
+          const saveResponse = await fetch(`${basePath}/api/setup/save-mulesoft`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ mulesoftEndpoint: step5Data.mulesoftEndpoint }),
+          });
+
+          if (saveResponse.ok) {
+            console.log('✅ MuleSoft settings saved successfully');
+          } else {
+            console.error('❌ Failed to save MuleSoft settings:', await saveResponse.text());
+          }
+        } catch (saveError) {
+          console.error('❌ Error saving MuleSoft settings:', saveError);
+          // Don't fail the whole operation, just log it
+        }
+      }
     } catch (error) {
       setConnectionTestResult({
         success: false,
