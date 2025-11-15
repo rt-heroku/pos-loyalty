@@ -898,8 +898,8 @@ CREATE INDEX IF NOT EXISTS idx_customer_addresses_customer ON customer_addresses
 CREATE INDEX IF NOT EXISTS idx_customer_addresses_type ON customer_addresses(address_type);
 CREATE INDEX IF NOT EXISTS idx_order_tracking_transaction ON order_tracking(transaction_id);
 CREATE INDEX IF NOT EXISTS idx_order_tracking_status ON order_tracking(status);
-CREATE INDEX IF NOT EXISTS idx_order_status_history_transaction ON order_status_history(transaction_id);
-CREATE INDEX IF NOT EXISTS idx_order_status_history_timestamp ON order_status_history(timestamp);
+CREATE INDEX IF NOT EXISTS idx_order_status_history_order ON order_status_history(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_status_history_created ON order_status_history(created_at);
 
 -- Chat and support indexes
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_customer ON chat_sessions(customer_id);
@@ -2457,7 +2457,7 @@ SELECT
     
     CASE 
         WHEN c.last_visit IS NOT NULL 
-        THEN EXTRACT(DAY FROM (CURRENT_DATE - c.last_visit::DATE))
+        THEN (CURRENT_DATE - c.last_visit::DATE)
         ELSE NULL 
     END as days_since_last_visit,
     
@@ -2619,7 +2619,7 @@ CREATE TABLE IF NOT EXISTS customer_vouchers (
 
 -- 2. Add voucher_id to transaction_items table
 ALTER TABLE transaction_items 
-ADD COLUMN voucher_id INTEGER REFERENCES customer_vouchers(id);
+ADD COLUMN IF NOT EXISTS voucher_id INTEGER REFERENCES customer_vouchers(id);
 
 -- 3. Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_customer_vouchers_customer_id ON customer_vouchers(customer_id);
@@ -3631,7 +3631,7 @@ SELECT
     
     CASE 
         WHEN c.last_visit IS NOT NULL 
-        THEN EXTRACT(DAY FROM (CURRENT_DATE - c.last_visit::DATE))
+        THEN (CURRENT_DATE - c.last_visit::DATE)
         ELSE NULL 
     END as days_since_last_visit,
     
@@ -3793,7 +3793,7 @@ CREATE TABLE IF NOT EXISTS customer_vouchers (
 
 -- 2. Add voucher_id to transaction_items table
 ALTER TABLE transaction_items 
-ADD COLUMN voucher_id INTEGER REFERENCES customer_vouchers(id);
+ADD COLUMN IF NOT EXISTS voucher_id INTEGER REFERENCES customer_vouchers(id);
 
 -- 3. Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_customer_vouchers_customer_id ON customer_vouchers(customer_id);
