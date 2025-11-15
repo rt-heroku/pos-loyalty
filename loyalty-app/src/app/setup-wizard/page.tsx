@@ -848,7 +848,7 @@ db.password=${dbConnection.password || 'password'}
 db.database=${dbConnection.database || 'database'}
 
 #Mule AI Chain Configuration
-mac.heroku.inference_key=\${inferenceKey}
+mac.heroku.inference_key=${dbConnection.inferenceKey || ''}
 mac.openai_key=
 
 #Salesforce configurations
@@ -877,7 +877,7 @@ db.password=${dbConnection.password || 'password'}
 db.database=${dbConnection.database || 'database'}
 
 #Mule AI Chain Configuration
-mac.heroku.inference_key=\${inferenceKey}
+mac.heroku.inference_key=${dbConnection.inferenceKey || ''}
 mac.openai_key=
 
 #Salesforce configurations

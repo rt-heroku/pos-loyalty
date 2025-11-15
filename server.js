@@ -348,6 +348,7 @@ app.get('/api/setup/database-info', async (req, res) => {
         database: url.pathname.substring(1), // Remove leading slash
         user: url.username,
         password: url.password,
+        inferenceKey: process.env.INFERENCE_KEY || '',
       };
     } else {
       // Fallback to individual env vars (for local development)
@@ -357,6 +358,7 @@ app.get('/api/setup/database-info', async (req, res) => {
         database: process.env.DB_NAME || 'database',
         user: process.env.DB_USER || 'user',
         password: process.env.DB_PASSWORD || '',
+        inferenceKey: process.env.INFERENCE_KEY || '',
       };
     }
     
