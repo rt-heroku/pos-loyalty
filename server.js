@@ -507,6 +507,7 @@ app.post('/api/setup/initialize', async (req, res) => {
       locationState,
       locationZipCode,
       taxRate,
+      locationLogo, // Base64 encoded logo image
     } = req.body;
 
     // Validation
@@ -650,8 +651,8 @@ app.post('/api/setup/initialize', async (req, res) => {
       const locationResult = await client.query(
         `INSERT INTO locations (
           store_code, store_name, brand, address_line1, city, state, zip_code,
-          tax_rate, is_active, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, NOW(), NOW())
+          tax_rate, logo_base64, is_active, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true, NOW(), NOW())
         RETURNING id`,
         [
           storeCode,
@@ -662,11 +663,19 @@ app.post('/api/setup/initialize', async (req, res) => {
           locationState || null,
           locationZipCode || null,
           taxRate ? parseFloat(taxRate) : 0.08,
+          locationLogo || null, // Save base64 logo
         ]
       );
       
       selectedLocationId = locationResult.rows[0].id;
       console.log(`✅ Created new location: ${storeName} (ID: ${selectedLocationId})`);
+    } else if (selectedLocationId && locationLogo) {
+      // If using existing location but logo was uploaded, update the location with the logo
+      await client.query(
+        `UPDATE locations SET logo_base64 = $1, updated_at = NOW() WHERE id = $2`,
+        [locationLogo, selectedLocationId]
+      );
+      console.log(`✅ Updated location ${selectedLocationId} with logo`);
     }
 
     // Create user_settings record with selected location

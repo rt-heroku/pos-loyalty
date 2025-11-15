@@ -219,6 +219,14 @@ export async function POST(request: NextRequest) {
         console.log(`✅ Created location: "${locationResult.rows[0].store_name}" (Code: ${locationResult.rows[0].store_code}, ID: ${currentLocationId})`);
       } else if (currentLocationId) {
         console.log(`✅ Using existing location ID: ${currentLocationId}`);
+        // If using existing location but logo was uploaded, update the location with the logo
+        if (validation.data.locationLogo) {
+          await query(
+            `UPDATE locations SET logo_base64 = $1, updated_at = NOW() WHERE id = $2`,
+            [validation.data.locationLogo, currentLocationId]
+          );
+          console.log(`✅ Updated location ${currentLocationId} with logo`);
+        }
       } else {
         console.log('⚠️  No location created or selected');
       }
