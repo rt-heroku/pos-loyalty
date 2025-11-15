@@ -3,6 +3,9 @@ import { query } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import type { RecentlyViewedProduct } from '@/types/product';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;

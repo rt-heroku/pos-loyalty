@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchBackend } from '@/lib/backend';
 
+// Force dynamic rendering since this route uses headers
+export const dynamic = 'force-dynamic';
+
 /**
  * Fetch members from MuleSoft Loyalty Cloud
  * This endpoint proxies to the Express backend which handles the MuleSoft communication
@@ -50,4 +53,5 @@ export async function GET(_request: NextRequest) {
     );
   }
 }
+
 

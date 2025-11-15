@@ -4,6 +4,9 @@ import { query } from '@/lib/db';
 import { z } from 'zod';
 import { getSystemSetting } from '@/lib/system-settings';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // Validation schema for registration
 const registerSchema = z
   .object({

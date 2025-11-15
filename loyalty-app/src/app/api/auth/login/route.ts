@@ -3,6 +3,9 @@ import jwt from 'jsonwebtoken';
 import { query } from '@/lib/db';
 import { z } from 'zod';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // Validation schema for login
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),

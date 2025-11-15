@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { fetchBackend } from '@/lib/backend';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const response = await fetchBackend('/api/shop/settings');

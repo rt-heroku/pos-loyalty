@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchBackend } from '@/lib/backend';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/mulesoft/members/sync
  * Proxy to backend Express API to sync members from MuleSoft Loyalty Cloud

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchBackend } from '@/lib/backend';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 /**
  * Load products from selected catalog in MuleSoft Loyalty Cloud
  * This endpoint proxies to the Express backend which handles the MuleSoft communication
@@ -64,4 +67,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
 

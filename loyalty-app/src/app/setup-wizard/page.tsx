@@ -3,7 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { z } from 'zod';
-import { Building2, User, Mail, Lock, Phone, MapPin, CheckCircle2, ArrowRight, ArrowLeft, Link, Database, CheckCircle, XCircle, Upload, Image as ImageIcon, Users } from 'lucide-react';
+import { Building2, User, Mail, Lock, Phone, CheckCircle2, ArrowRight, ArrowLeft, Link, Database, CheckCircle, XCircle, Upload, Image as ImageIcon, Users } from 'lucide-react';
+
+// Disable static optimization for this page (uses dynamic search params)
+export const dynamic = 'force-dynamic';
 
 // Step schemas
 const step1Schema = z.object({
@@ -37,8 +40,7 @@ const step3Schema = z.object({
   locationLogo: z.string().optional(), // Base64 encoded logo
 });
 
-// Step 4: Database Connection Info (display only - no validation needed)
-const step4Schema = z.object({});
+// Step 4: Database Connection Info (display only - no schema needed)
 
 // Step 5: MuleSoft Integration
 const step5Schema = z.object({
@@ -58,7 +60,7 @@ const step6Schema = z.object({
 type Step1Data = z.infer<typeof step1Schema>;
 type Step2Data = z.infer<typeof step2Schema>;
 type Step3Data = z.infer<typeof step3Schema>;
-type Step4Data = z.infer<typeof step4Schema>;
+// Step 4 is display-only, no type needed
 type Step5Data = z.infer<typeof step5Schema>;
 type Step6Data = z.infer<typeof step6Schema>;
 
@@ -91,7 +93,7 @@ export default function SetupWizardPage() {
   const [step1Data, setStep1Data] = useState<Partial<Step1Data>>({});
   const [step2Data, setStep2Data] = useState<Partial<Step2Data>>({});
   const [step3Data, setStep3Data] = useState<Partial<Step3Data>>({ createNewLocation: false }); // Location
-  const [step4Data, setStep4Data] = useState<Partial<Step4Data>>({}); // DB Info (display only)
+  // Step 4 (DB Info) is display-only, no form data needed
   const [step5Data, setStep5Data] = useState<Partial<Step5Data>>({ mulesoftEndpoint: '' }); // MuleSoft
   const [step6Data, setStep6Data] = useState<Partial<Step6Data>>({}); // Loyalty Data Setup
   
@@ -450,20 +452,20 @@ export default function SetupWizardPage() {
             setError('Store code and name are required for new location');
             return false;
           }
-        } else if (!step3Data.locationId && locations.length > 0) {
-          setError('Please select a location or create a new one');
-          return false;
-        }
-      } else if (step === 4) {
-        // Database info step - no validation needed, display only
-        step4Schema.parse(step4Data);
-      } else if (step === 5) {
-        // MuleSoft step is optional, always valid
-        step5Schema.parse(step5Data);
-      } else if (step === 6) {
-        // Loyalty data setup is optional, always valid
-        step6Schema.parse(step6Data);
+      } else if (!step3Data.locationId && locations.length > 0) {
+        setError('Please select a location or create a new one');
+        return false;
       }
+    } else if (step === 4) {
+      // Database info step - display only, no validation needed
+      // Just return true to allow proceeding to next step
+    } else if (step === 5) {
+      // MuleSoft step is optional, always valid
+      step5Schema.parse(step5Data);
+    } else if (step === 6) {
+      // Loyalty data setup is optional, always valid
+      step6Schema.parse(step6Data);
+    }
       setError(null);
       return true;
     } catch (err) {
@@ -482,7 +484,7 @@ export default function SetupWizardPage() {
         // Since step 6 is optional and requires MuleSoft, skip it
         handleSubmit();
       } else {
-        setCurrentStep(currentStep + 1);
+      setCurrentStep(currentStep + 1);
       }
     }
   };
@@ -506,7 +508,7 @@ export default function SetupWizardPage() {
         ...step1Data,
         ...step2Data,
         ...step3Data,
-        // step4Data is display-only (DB connection info), not submitted
+        // Step 4 (DB connection info) is display-only, not submitted
         ...step5Data,
         ...step6Data, // Include loyalty data configuration
       };
@@ -910,14 +912,14 @@ sfdc.consumer_secret=`}
                 <p className="mb-3 text-xs text-gray-600">
                   Enter the base URL of your deployed MuleSoft application (e.g., https://your-app.cloudhub.io)
                 </p>
-                <input
+                  <input
                   type="url"
                   value={step5Data.mulesoftEndpoint || ''}
                   onChange={(e) => setStep5Data({ ...step5Data, mulesoftEndpoint: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="https://your-mulesoft-app.cloudhub.io"
-                />
-              </div>
+                  />
+                </div>
 
               {/* Test Connection Button */}
               {step5Data.mulesoftEndpoint && (
@@ -968,7 +970,7 @@ sfdc.consumer_secret=`}
                                   <li key={index}>{program.Name} (ID: {program.Id})</li>
                                 ))}
                               </ul>
-                            </div>
+              </div>
                           )}
                         </div>
                       </div>
@@ -1007,14 +1009,14 @@ sfdc.consumer_secret=`}
               ) : (
                 <>
                   {/* Loyalty Program Selection */}
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
                       Loyalty Program
-                    </label>
+                  </label>
                     <select
                       value={step6Data.loyaltyProgramId || ''}
                       onChange={(e) => setStep6Data({ ...step6Data, loyaltyProgramId: e.target.value })}
-                      className="w-full rounded-lg border border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       disabled={loyaltyPrograms.length === 0}
                     >
                       {loyaltyPrograms.length === 0 ? (
@@ -1027,13 +1029,13 @@ sfdc.consumer_secret=`}
                         ))
                       )}
                     </select>
-                  </div>
+                </div>
 
                   {/* Journal Type Selection */}
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
                       Journal Type
-                    </label>
+                  </label>
                     <select
                       value={step6Data.journalTypeId || ''}
                       onChange={(e) => {
@@ -1047,7 +1049,7 @@ sfdc.consumer_secret=`}
                           }
                         }
                       }}
-                      className="w-full rounded-lg border border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       disabled={journalTypes.length === 0}
                     >
                       {journalTypes.length === 0 ? (
@@ -1060,17 +1062,17 @@ sfdc.consumer_secret=`}
                         ))
                       )}
                     </select>
-                  </div>
+                </div>
 
                   {/* Transaction Journal Subtype Selection */}
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
                       Transaction Journal Subtype
-                    </label>
+                  </label>
                     <select
                       value={step6Data.journalSubtypeId || ''}
                       onChange={(e) => setStep6Data({ ...step6Data, journalSubtypeId: e.target.value })}
-                      className="w-full rounded-lg border border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       disabled={!step6Data.journalTypeId || getCurrentSubtypes().length === 0}
                     >
                       {!step6Data.journalTypeId ? (
@@ -1085,7 +1087,7 @@ sfdc.consumer_secret=`}
                         ))
                       )}
                     </select>
-                  </div>
+                </div>
 
                   {/* Enrollment Journal Subtype Selection */}
                   <div>
@@ -1110,7 +1112,7 @@ sfdc.consumer_secret=`}
                         ))
                       )}
                     </select>
-                  </div>
+              </div>
 
                   {/* Product Catalog Selection */}
                   <div className="pt-4 border-t border-gray-200">
@@ -1132,7 +1134,7 @@ sfdc.consumer_secret=`}
                         </option>
                       ))}
                     </select>
-                  </div>
+            </div>
 
                   {/* Load Data Buttons */}
                   <div className="space-y-4 pt-4">

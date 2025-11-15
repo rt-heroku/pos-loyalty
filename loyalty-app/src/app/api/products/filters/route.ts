@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export async function GET(_request: NextRequest) {
   try {
     // Get categories

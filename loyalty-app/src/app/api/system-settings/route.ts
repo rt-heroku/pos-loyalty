@@ -10,6 +10,9 @@ import {
   setSystemSettingWithType,
 } from '@/lib/system-settings';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/system-settings
  * Get system settings with optional filtering

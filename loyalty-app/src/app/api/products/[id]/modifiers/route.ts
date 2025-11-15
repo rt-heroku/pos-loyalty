@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getBackendUrl } from '@/lib/backend';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   _request: Request,
   { params }: { params: { id: string } }

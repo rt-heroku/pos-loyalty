@@ -76,3 +76,4 @@ The `/loyalty/products` endpoint (when deployed in MuleSoft):
 ⏳ Waiting for server restart  
 🎯 Ready to test products loading!
 
+

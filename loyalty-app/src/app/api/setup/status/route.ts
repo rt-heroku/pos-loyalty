@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 /**
  * Check if initial setup is required
  * Returns setupRequired: true if no users exist in the system

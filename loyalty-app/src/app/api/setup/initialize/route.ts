@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { z } from 'zod';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 const setupSchema = z.object({
   // User fields
   username: z.string().min(3, 'Username must be at least 3 characters'),

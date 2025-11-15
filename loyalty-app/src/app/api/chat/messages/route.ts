@@ -3,6 +3,9 @@ import { verifyToken } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { MulesoftChatRequest, MulesoftChatResponse } from '@/types/chat';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // Mulesoft API integration function
 async function sendToMulesoftAPI(
   chatRequest: MulesoftChatRequest,

@@ -9,6 +9,9 @@ import {
   setSystemSettingWithType,
 } from '@/lib/system-settings';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/system-settings/[key]
  * Get a specific system setting by key

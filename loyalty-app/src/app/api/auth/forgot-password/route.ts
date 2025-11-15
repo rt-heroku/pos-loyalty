@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { z } from 'zod';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // Validation schema for forgot password
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),

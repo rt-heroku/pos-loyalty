@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { fetchBackend } from '@/lib/backend';
 
+// Force dynamic rendering since this route uses headers
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/mulesoft/products/loyalty
  * Proxy to backend Express API to load products from MuleSoft Loyalty Cloud

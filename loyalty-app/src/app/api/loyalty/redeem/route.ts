@@ -3,6 +3,9 @@ import { getUserFromRequest } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { z } from 'zod';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 const redeemSchema = z.object({
   rewardId: z.number().positive('Invalid reward ID'),
   quantity: z.number().positive('Quantity must be positive').default(1),
