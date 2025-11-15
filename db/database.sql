@@ -302,70 +302,80 @@ CREATE TABLE location_inventory (
 -- =============================================================================
 
 -- Orders table for tracking customer orders across POS and online channels
-CREATE TABLE IF NOT EXISTS orders (
-    id SERIAL PRIMARY KEY,
-    order_number VARCHAR(50) UNIQUE NOT NULL,
-    customer_id INTEGER REFERENCES customers(id),
-    location_id INTEGER REFERENCES locations(id),
-    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    order_type VARCHAR(50) DEFAULT 'delivery', -- delivery, pickup, dine-in
-    origin VARCHAR(50) DEFAULT 'pos', -- pos, online, mobile, kiosk
-    status VARCHAR(50) DEFAULT 'pending', -- pending, confirmed, preparing, ready, completed, cancelled
-    subtotal DECIMAL(10,2) DEFAULT 0.00,
-    discount_amount DECIMAL(10,2) DEFAULT 0.00,
-    tax_amount DECIMAL(10,2) DEFAULT 0.00,
-    total_amount DECIMAL(10,2) DEFAULT 0.00,
-    voucher_id INTEGER,
-    voucher_discount DECIMAL(10,2) DEFAULT 0.00,
-    coupon_code VARCHAR(50),
-    coupon_discount DECIMAL(10,2) DEFAULT 0.00,
-    payment_method VARCHAR(50),
-    payment_method_id INTEGER,
-    transaction_id INTEGER REFERENCES transactions(id),
-    scheduled_time TIMESTAMP,
-    special_instructions TEXT,
-    guest_name VARCHAR(255),
-    guest_phone VARCHAR(20),
-    guest_email VARCHAR(255),
-    delivery_address TEXT,
-    delivery_instructions TEXT,
-    notes TEXT,
-    sf_id VARCHAR(100),
-    created_by INTEGER REFERENCES users(id),
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    completed_at TIMESTAMP
+CREATE TABLE IF NOT EXISTS orders(
+	id serial4 NOT NULL,
+	order_number varchar(50) NOT NULL,
+	customer_id int4 NULL,
+	location_id int4 NULL,
+	order_date timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	status varchar(50) DEFAULT 'pending'::character varying NULL,
+	origin varchar(50) DEFAULT 'pos'::character varying NULL,
+	subtotal numeric(10, 2) DEFAULT 0.00 NULL,
+	discount_amount numeric(10, 2) DEFAULT 0.00 NULL,
+	tax_amount numeric(10, 2) DEFAULT 0.00 NULL,
+	total_amount numeric(10, 2) DEFAULT 0.00 NULL,
+	voucher_id int4 NULL,
+	voucher_discount numeric(10, 2) DEFAULT 0.00 NULL,
+	coupon_code varchar(50) NULL,
+	coupon_discount numeric(10, 2) DEFAULT 0.00 NULL,
+	payment_method varchar(50) NULL,
+	transaction_id int4 NULL,
+	notes text NULL,
+	created_by int4 NULL,
+	updated_at timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	completed_at timestamp NULL,
+	sf_id varchar NULL,
+	special_instructions text NULL,
+	order_type varchar(20) DEFAULT 'pickup'::character varying NULL,
+	delivery_address text NULL,
+	delivery_instructions text NULL,
+	estimated_time timestamp NULL,
+	scheduled_time timestamp NULL,
+	payment_method_id int4 NULL,
+	guest_name varchar(100) NULL,
+	guest_phone varchar(20) NULL,
+	guest_email varchar(100) NULL,
+	sync_status bool NULL,
+	sync_message jsonb NULL,
+	salesforce_order_id varchar(255) DEFAULT NULL::character varying NULL,
+	sync_attempted_at timestamp NULL,
+	CONSTRAINT orders_order_number_key UNIQUE (order_number),
+	CONSTRAINT orders_order_type_check CHECK (((order_type)::text = ANY ((ARRAY['pickup'::character varying, 'delivery'::character varying])::text[]))),
+	CONSTRAINT orders_pkey PRIMARY KEY (id)
 );
 
 -- Order items table for individual products in an order
 CREATE TABLE IF NOT EXISTS order_items (
-    id SERIAL PRIMARY KEY,
-    order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
-    product_id INTEGER REFERENCES products(id),
-    product_name VARCHAR(255) NOT NULL,
-    product_sku VARCHAR(100),
-    product_image_url TEXT,
-    quantity INTEGER NOT NULL DEFAULT 1,
-    unit_price DECIMAL(10,2) NOT NULL,
-    tax_amount DECIMAL(10,2) DEFAULT 0.00,
-    discount_amount DECIMAL(10,2) DEFAULT 0.00,
-    voucher_discount DECIMAL(10,2) DEFAULT 0.00,
-    total_price DECIMAL(10,2) NOT NULL,
-    modifiers JSONB,
-    special_instructions TEXT,
-    notes TEXT,
-    sf_id VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	id serial4 NOT NULL,
+	order_id int4 NULL,
+	product_id int4 NULL,
+	product_name varchar(255) NOT NULL,
+	product_sku varchar(100) NULL,
+	product_image_url text NULL,
+	quantity int4 DEFAULT 1 NOT NULL,
+	unit_price numeric(10, 2) NOT NULL,
+	tax_amount numeric(10, 2) DEFAULT 0.00 NULL,
+	discount_amount numeric(10, 2) DEFAULT 0.00 NULL,
+	voucher_discount numeric(10, 2) DEFAULT 0.00 NULL,
+	total_price numeric(10, 2) NOT NULL,
+	notes text NULL,
+	created_at timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	sf_id varchar NULL,
+	modifiers jsonb DEFAULT '[]'::jsonb NULL,
+	special_instructions text NULL,
+	CONSTRAINT order_items_pkey PRIMARY KEY (id)
 );
 
 -- Order status history for tracking status changes
 CREATE TABLE IF NOT EXISTS order_status_history (
-    id SERIAL PRIMARY KEY,
-    order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
-    old_status VARCHAR(50),
-    new_status VARCHAR(50) NOT NULL,
-    changed_by INTEGER REFERENCES users(id),
-    change_reason TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	id serial4 NOT NULL,
+	order_id int4 NULL,
+	old_status varchar(50) NULL,
+	new_status varchar(50) NOT NULL,
+	changed_by int4 NULL,
+	change_reason text NULL,
+	created_at timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	CONSTRAINT order_status_history_pkey PRIMARY KEY (id)
 );
 
 -- Indexes for orders
@@ -1170,13 +1180,7 @@ SELECT
     ca.city,
     ca.state,
     ca.zip_code,
-    ca.country,
-    -- Latest status update
-    (SELECT osh.status 
-     FROM order_status_history osh 
-     WHERE osh.transaction_id = t.id 
-     ORDER BY osh.timestamp DESC 
-     LIMIT 1) as latest_status
+    ca.country
 FROM transactions t
 JOIN customers c ON t.customer_id = c.id
 LEFT JOIN order_tracking ot ON t.id = ot.transaction_id
@@ -1836,86 +1840,86 @@ CREATE INDEX IF NOT EXISTS idx_orders_salesforce_id ON orders(salesforce_order_i
 -- =============================================================================
 
 -- Products indexes
-CREATE INDEX idx_products_sku ON products(sku);
-CREATE INDEX idx_products_brand ON products(brand);
-CREATE INDEX idx_products_collection ON products(collection);
-CREATE INDEX idx_products_product_type ON products(product_type);
-CREATE INDEX idx_products_active ON products(is_active);
+CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku);
+CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand);
+CREATE INDEX IF NOT EXISTS idx_products_collection ON products(collection);
+CREATE INDEX IF NOT EXISTS idx_products_product_type ON products(product_type);
+CREATE INDEX IF NOT EXISTS idx_products_active ON products(is_active);
 
 -- Customers indexes
-CREATE INDEX idx_customers_loyalty_number ON customers(loyalty_number);
-CREATE INDEX idx_customers_name ON customers(LOWER(name));
-CREATE INDEX idx_customers_first_name ON customers(LOWER(first_name));
-CREATE INDEX idx_customers_last_name ON customers(LOWER(last_name));
-CREATE INDEX idx_customers_email ON customers(LOWER(email));
-CREATE INDEX idx_customers_phone ON customers(phone);
-CREATE INDEX idx_customers_active ON customers(is_active);
-CREATE INDEX idx_customers_created_at ON customers(created_at);
-CREATE INDEX idx_customers_last_visit ON customers(last_visit);
-CREATE INDEX idx_customers_member_status ON customers(member_status);
-CREATE INDEX idx_customers_member_type ON customers(member_type);
-CREATE INDEX idx_customers_customer_tier ON customers(customer_tier);
-CREATE INDEX idx_customers_enrollment_date ON customers(enrollment_date);
-CREATE INDEX idx_customers_tier_calculation_number ON customers(tier_calculation_number);
-CREATE INDEX idx_customers_sf_id ON customers(sf_id);
+CREATE INDEX IF NOT EXISTS idx_customers_loyalty_number ON customers(loyalty_number);
+CREATE INDEX IF NOT EXISTS idx_customers_name ON customers(LOWER(name));
+CREATE INDEX IF NOT EXISTS idx_customers_first_name ON customers(LOWER(first_name));
+CREATE INDEX IF NOT EXISTS idx_customers_last_name ON customers(LOWER(last_name));
+CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(LOWER(email));
+CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone);
+CREATE INDEX IF NOT EXISTS idx_customers_active ON customers(is_active);
+CREATE INDEX IF NOT EXISTS idx_customers_created_at ON customers(created_at);
+CREATE INDEX IF NOT EXISTS idx_customers_last_visit ON customers(last_visit);
+CREATE INDEX IF NOT EXISTS idx_customers_member_status ON customers(member_status);
+CREATE INDEX IF NOT EXISTS idx_customers_member_type ON customers(member_type);
+CREATE INDEX IF NOT EXISTS idx_customers_customer_tier ON customers(customer_tier);
+CREATE INDEX IF NOT EXISTS idx_customers_enrollment_date ON customers(enrollment_date);
+CREATE INDEX IF NOT EXISTS idx_customers_tier_calculation_number ON customers(tier_calculation_number);
+CREATE INDEX IF NOT EXISTS idx_customers_sf_id ON customers(sf_id);
 
 -- Transactions indexes
-CREATE INDEX idx_transactions_customer_id ON transactions(customer_id);
-CREATE INDEX idx_transactions_created_at ON transactions(created_at);
-CREATE INDEX idx_transactions_location_id ON transactions(location_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_customer_id ON transactions(customer_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON transactions(created_at);
+CREATE INDEX IF NOT EXISTS idx_transactions_location_id ON transactions(location_id);
 
 -- Transaction items indexes
-CREATE INDEX idx_transaction_items_transaction_id ON transaction_items(transaction_id);
+CREATE INDEX IF NOT EXISTS idx_transaction_items_transaction_id ON transaction_items(transaction_id);
 
 -- Generated products indexes
-CREATE INDEX idx_generated_products_batch_id ON generated_products(batch);
-CREATE INDEX idx_generated_products_brand_id ON generated_products(brand);
-CREATE INDEX idx_generated_products_segment_id ON generated_products(segment);
-CREATE INDEX idx_generated_products_created_at ON generated_products(created_at);
+CREATE INDEX IF NOT EXISTS idx_generated_products_batch_id ON generated_products(batch);
+CREATE INDEX IF NOT EXISTS idx_generated_products_brand_id ON generated_products(brand);
+CREATE INDEX IF NOT EXISTS idx_generated_products_segment_id ON generated_products(segment);
+CREATE INDEX IF NOT EXISTS idx_generated_products_created_at ON generated_products(created_at);
 
 -- Product images and features indexes
-CREATE INDEX idx_product_images_product_id ON product_images(product_id);
-CREATE INDEX idx_product_features_product_id ON product_features(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_images_product_id ON product_images(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_features_product_id ON product_features(product_id);
 
 -- Locations indexes
-CREATE INDEX idx_locations_store_code ON locations(store_code);
-CREATE INDEX idx_locations_active ON locations(is_active);
+CREATE INDEX IF NOT EXISTS idx_locations_store_code ON locations(store_code);
+CREATE INDEX IF NOT EXISTS idx_locations_active ON locations(is_active);
 
 -- User settings indexes
-CREATE INDEX idx_user_settings_identifier ON user_settings(user_identifier);
+CREATE INDEX IF NOT EXISTS idx_user_settings_identifier ON user_settings(user_identifier);
 
 -- Location inventory indexes
-CREATE INDEX idx_location_inventory_location ON location_inventory(location_id);
-CREATE INDEX idx_location_inventory_product ON location_inventory(product_id);
+CREATE INDEX IF NOT EXISTS idx_location_inventory_location ON location_inventory(location_id);
+CREATE INDEX IF NOT EXISTS idx_location_inventory_product ON location_inventory(product_id);
 
 -- Work orders indexes
-CREATE INDEX idx_work_orders_location ON work_orders(location_id);
-CREATE INDEX idx_work_orders_customer ON work_orders(customer_id);
-CREATE INDEX idx_work_orders_status ON work_orders(status);
-CREATE INDEX idx_work_orders_created_date ON work_orders(created_date);
-CREATE INDEX idx_work_order_products_work_order ON work_order_products(work_order_id);
+CREATE INDEX IF NOT EXISTS idx_work_orders_location ON work_orders(location_id);
+CREATE INDEX IF NOT EXISTS idx_work_orders_customer ON work_orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_work_orders_status ON work_orders(status);
+CREATE INDEX IF NOT EXISTS idx_work_orders_created_date ON work_orders(created_date);
+CREATE INDEX IF NOT EXISTS idx_work_order_products_work_order ON work_order_products(work_order_id);
 
 -- Customer activity log indexes
-CREATE INDEX idx_customer_activity_log_customer ON customer_activity_log(customer_id);
-CREATE INDEX idx_customer_activity_log_type ON customer_activity_log(activity_type);
-CREATE INDEX idx_customer_activity_log_created ON customer_activity_log(created_at);
+CREATE INDEX IF NOT EXISTS idx_customer_activity_log_customer ON customer_activity_log(customer_id);
+CREATE INDEX IF NOT EXISTS idx_customer_activity_log_type ON customer_activity_log(activity_type);
+CREATE INDEX IF NOT EXISTS idx_customer_activity_log_created ON customer_activity_log(created_at);
 
 -- System settings indexes
-CREATE INDEX idx_system_settings_key ON system_settings(setting_key);
-CREATE INDEX idx_system_settings_category ON system_settings(category);
-CREATE INDEX idx_system_settings_active ON system_settings(is_active);
+CREATE INDEX IF NOT EXISTS idx_system_settings_key ON system_settings(setting_key);
+CREATE INDEX IF NOT EXISTS idx_system_settings_category ON system_settings(category);
+CREATE INDEX IF NOT EXISTS idx_system_settings_active ON system_settings(is_active);
 
 -- Users and roles indexes
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_role_id ON users(role_id);
-CREATE INDEX idx_users_active ON users(is_active);
-CREATE INDEX idx_user_sessions_token ON user_sessions(session_token);
-CREATE INDEX idx_user_sessions_user_id ON user_sessions(user_id);
-CREATE INDEX idx_user_sessions_expires ON user_sessions(expires_at);
-CREATE INDEX idx_user_activity_log_user_id ON user_activity_log(user_id);
-CREATE INDEX idx_user_activity_log_created_at ON user_activity_log(created_at);
-CREATE INDEX idx_password_reset_tokens_token ON password_reset_tokens(token);
-CREATE INDEX idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id);
+CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions(session_token);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_expires ON user_sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_user_activity_log_user_id ON user_activity_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_activity_log_created_at ON user_activity_log(created_at);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
 
 -- =============================================================================
 -- SEQUENCES
@@ -2453,7 +2457,7 @@ SELECT
     
     CASE 
         WHEN c.last_visit IS NOT NULL 
-        THEN EXTRACT(DAY FROM CURRENT_DATE - c.last_visit::DATE)
+        THEN EXTRACT(DAY FROM (CURRENT_DATE - c.last_visit::DATE))
         ELSE NULL 
     END as days_since_last_visit,
     
@@ -2578,7 +2582,7 @@ COMMENT ON COLUMN customer_images.height IS 'Image height in pixels';
 -- Database schema for customer vouchers
 
 -- 1. Create customer_vouchers table
-CREATE TABLE customer_vouchers (
+CREATE TABLE IF NOT EXISTS customer_vouchers (
     id SERIAL PRIMARY KEY,
     sf_id VARCHAR(100) UNIQUE, -- Salesforce ID
     customer_id INTEGER REFERENCES customers(id) ON DELETE CASCADE,
@@ -2618,11 +2622,11 @@ ALTER TABLE transaction_items
 ADD COLUMN voucher_id INTEGER REFERENCES customer_vouchers(id);
 
 -- 3. Create indexes for performance
-CREATE INDEX idx_customer_vouchers_customer_id ON customer_vouchers(customer_id);
-CREATE INDEX idx_customer_vouchers_status ON customer_vouchers(status);
-CREATE INDEX idx_customer_vouchers_expiration ON customer_vouchers(expiration_date);
-CREATE INDEX idx_customer_vouchers_type ON customer_vouchers(voucher_type);
-CREATE INDEX idx_transaction_items_voucher_id ON transaction_items(voucher_id);
+CREATE INDEX IF NOT EXISTS idx_customer_vouchers_customer_id ON customer_vouchers(customer_id);
+CREATE INDEX IF NOT EXISTS idx_customer_vouchers_status ON customer_vouchers(status);
+CREATE INDEX IF NOT EXISTS idx_customer_vouchers_expiration ON customer_vouchers(expiration_date);
+CREATE INDEX IF NOT EXISTS idx_customer_vouchers_type ON customer_vouchers(voucher_type);
+CREATE INDEX IF NOT EXISTS idx_transaction_items_voucher_id ON transaction_items(voucher_id);
 
 -- 4. Create function to check voucher validity
 CREATE OR REPLACE FUNCTION is_voucher_valid(voucher_id INTEGER)
@@ -2763,7 +2767,7 @@ CREATE TRIGGER trigger_update_voucher_on_use
     EXECUTE FUNCTION update_voucher_on_use();
 
 -- 7. Create view for active vouchers
-CREATE VIEW active_customer_vouchers AS
+CREATE OR REPLACE VIEW active_customer_vouchers AS
 SELECT 
     cv.*,
     c.name as customer_name,
@@ -3042,7 +3046,7 @@ INSERT INTO public.payment_methods ("name",code,description,is_active,requires_o
 	 ('Pay at Pickup','pay_at_pickup','Pay when you pick up your order',true,false,3,'/loyalty/payment-methods/pay-at-pickup.png'),
 	 ('Apple Pay','apple_pay','Pay with Apple Pay',true,true,4,'/loyalty/payment-methods/apple-pay.png'),
 	 ('PayPal','paypal','Pay securely with PayPal',true,true,5,'/loyalty/payment-methods/paypal.png'),
-	 ('Google Pay','google_pay','Pay with Google Pay',true,true,5,'/loyalty/payment-methods/google.png');
+	 ('Google Pay','google_pay','Pay with Google Pay',true,true,5,'/loyalty/payment-methods/google.png')
 ON CONFLICT (code) DO NOTHING;
 
 -- Insert unified roles (merged from POS and Loyalty systems)
@@ -3500,6 +3504,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_set_work_order_number ON work_orders;
 CREATE TRIGGER trigger_set_work_order_number
     BEFORE INSERT ON work_orders
     FOR EACH ROW
@@ -3524,6 +3529,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_location_inventory ON transactions;
 CREATE TRIGGER trigger_update_location_inventory
     AFTER INSERT ON transactions
     FOR EACH ROW
@@ -3544,6 +3550,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_log_work_order_status_change ON work_orders;
 CREATE TRIGGER trigger_log_work_order_status_change
     BEFORE UPDATE ON work_orders
     FOR EACH ROW
@@ -3624,7 +3631,7 @@ SELECT
     
     CASE 
         WHEN c.last_visit IS NOT NULL 
-        THEN EXTRACT(DAY FROM CURRENT_DATE - c.last_visit::DATE)
+        THEN EXTRACT(DAY FROM (CURRENT_DATE - c.last_visit::DATE))
         ELSE NULL 
     END as days_since_last_visit,
     
@@ -3749,7 +3756,7 @@ COMMENT ON COLUMN customer_images.height IS 'Image height in pixels';
 -- Database schema for customer vouchers
 
 -- 1. Create customer_vouchers table
-CREATE TABLE customer_vouchers (
+CREATE TABLE IF NOT EXISTS customer_vouchers (
     id SERIAL PRIMARY KEY,
     sf_id VARCHAR(100) UNIQUE, -- Salesforce ID
     customer_id INTEGER REFERENCES customers(id) ON DELETE CASCADE,
@@ -3789,11 +3796,11 @@ ALTER TABLE transaction_items
 ADD COLUMN voucher_id INTEGER REFERENCES customer_vouchers(id);
 
 -- 3. Create indexes for performance
-CREATE INDEX idx_customer_vouchers_customer_id ON customer_vouchers(customer_id);
-CREATE INDEX idx_customer_vouchers_status ON customer_vouchers(status);
-CREATE INDEX idx_customer_vouchers_expiration ON customer_vouchers(expiration_date);
-CREATE INDEX idx_customer_vouchers_type ON customer_vouchers(voucher_type);
-CREATE INDEX idx_transaction_items_voucher_id ON transaction_items(voucher_id);
+CREATE INDEX IF NOT EXISTS idx_customer_vouchers_customer_id ON customer_vouchers(customer_id);
+CREATE INDEX IF NOT EXISTS idx_customer_vouchers_status ON customer_vouchers(status);
+CREATE INDEX IF NOT EXISTS idx_customer_vouchers_expiration ON customer_vouchers(expiration_date);
+CREATE INDEX IF NOT EXISTS idx_customer_vouchers_type ON customer_vouchers(voucher_type);
+CREATE INDEX IF NOT EXISTS idx_transaction_items_voucher_id ON transaction_items(voucher_id);
 
 -- 4. Create function to check voucher validity
 CREATE OR REPLACE FUNCTION is_voucher_valid(voucher_id INTEGER)
@@ -3928,13 +3935,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_voucher_on_use ON transaction_items;
 CREATE TRIGGER trigger_update_voucher_on_use
     AFTER INSERT ON transaction_items
     FOR EACH ROW
     EXECUTE FUNCTION update_voucher_on_use();
 
 -- 7. Create view for active vouchers
-CREATE VIEW active_customer_vouchers AS
+CREATE OR REPLACE VIEW active_customer_vouchers AS
 SELECT 
     cv.*,
     c.name as customer_name,
@@ -4238,414 +4246,6 @@ ON CONFLICT (email) DO NOTHING;
 -- COMPLETION MESSAGE
 -- =============================================================================
 
--- =====================================================
--- ORDERS SYSTEM
--- =====================================================
--- Orders table for tracking customer orders across POS and online channels
-CREATE TABLE IF NOT EXISTS orders (
-    id SERIAL PRIMARY KEY,
-    order_number VARCHAR(50) UNIQUE NOT NULL,
-    customer_id INTEGER REFERENCES customers(id),
-    location_id INTEGER REFERENCES locations(id),
-    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(50) DEFAULT 'pending',
-    origin VARCHAR(50) DEFAULT 'pos', -- pos, online, mobile, kiosk
-    subtotal DECIMAL(10,2) DEFAULT 0.00,
-    discount_amount DECIMAL(10,2) DEFAULT 0.00,
-    tax_amount DECIMAL(10,2) DEFAULT 0.00,
-    total_amount DECIMAL(10,2) DEFAULT 0.00,
-    voucher_id INTEGER,
-    voucher_discount DECIMAL(10,2) DEFAULT 0.00,
-    coupon_code VARCHAR(50),
-    coupon_discount DECIMAL(10,2) DEFAULT 0.00,
-    payment_method VARCHAR(50),
-    transaction_id INTEGER REFERENCES transactions(id),
-    notes TEXT,
-    sf_id VARCHAR(100),
-    created_by INTEGER REFERENCES users(id),
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    completed_at TIMESTAMP
-);
-
--- Order items table for individual products in an order
-CREATE TABLE IF NOT EXISTS order_items (
-    id SERIAL PRIMARY KEY,
-    order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
-    product_id INTEGER REFERENCES products(id),
-    product_name VARCHAR(255) NOT NULL,
-    product_sku VARCHAR(100),
-    product_image_url TEXT,
-    quantity INTEGER NOT NULL DEFAULT 1,
-    unit_price DECIMAL(10,2) NOT NULL,
-    tax_amount DECIMAL(10,2) DEFAULT 0.00,
-    discount_amount DECIMAL(10,2) DEFAULT 0.00,
-    voucher_discount DECIMAL(10,2) DEFAULT 0.00,
-    total_price DECIMAL(10,2) NOT NULL,
-    notes TEXT,
-    sf_id VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Order status history for tracking status changes
-CREATE TABLE IF NOT EXISTS order_status_history (
-    id SERIAL PRIMARY KEY,
-    order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
-    old_status VARCHAR(50),
-    new_status VARCHAR(50) NOT NULL,
-    changed_by INTEGER REFERENCES users(id),
-    change_reason TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Indexes for orders
-CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);
-CREATE INDEX IF NOT EXISTS idx_orders_location_id ON orders(location_id);
-CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
-CREATE INDEX IF NOT EXISTS idx_orders_origin ON orders(origin);
-CREATE INDEX IF NOT EXISTS idx_orders_order_date ON orders(order_date);
-CREATE INDEX IF NOT EXISTS idx_orders_order_number ON orders(order_number);
-CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
-CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
-CREATE INDEX IF NOT EXISTS idx_order_status_history_order_id ON order_status_history(order_id);
-
--- Function to generate order number
-CREATE OR REPLACE FUNCTION generate_order_number()
-RETURNS TEXT AS $$
-DECLARE
-    new_number TEXT;
-    counter INTEGER;
-BEGIN
-    -- Get the count of orders today
-    SELECT COUNT(*) INTO counter
-    FROM orders
-    WHERE DATE(order_date) = CURRENT_DATE;
-    
-    -- Generate order number: ORD-YYYYMMDD-####
-    new_number := 'ORD-' || TO_CHAR(CURRENT_DATE, 'YYYYMMDD') || '-' || LPAD((counter + 1)::TEXT, 4, '0');
-    
-    RETURN new_number;
-END;
-$$ LANGUAGE plpgsql;
-
--- Trigger to auto-generate order number
-CREATE OR REPLACE FUNCTION set_order_number()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.order_number IS NULL OR NEW.order_number = '' THEN
-        NEW.order_number := generate_order_number();
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_set_order_number
-BEFORE INSERT ON orders
-FOR EACH ROW
-EXECUTE FUNCTION set_order_number();
-
--- Trigger to log status changes
-CREATE OR REPLACE FUNCTION log_order_status_change()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF OLD.status IS DISTINCT FROM NEW.status THEN
-        INSERT INTO order_status_history (order_id, old_status, new_status, changed_by)
-        VALUES (NEW.id, OLD.status, NEW.status, NEW.created_by);
-    END IF;
-    NEW.updated_at := CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_log_order_status_change
-BEFORE UPDATE ON orders
-FOR EACH ROW
-EXECUTE FUNCTION log_order_status_change();
-
--- Function to generate a random order with X number of products
--- Usage: SELECT generate_random_order(customer_id, location_id, num_products);
--- Example: SELECT generate_random_order(1, 1, 5);
-CREATE OR REPLACE FUNCTION generate_random_order(
-    p_customer_id INTEGER,
-    p_location_id INTEGER,
-    p_num_products INTEGER DEFAULT 3
-)
-RETURNS TABLE (
-    order_id INTEGER,
-    order_number VARCHAR(50),
-    total_amount DECIMAL(10,2),
-    items_count INTEGER
-) AS $$
-DECLARE
-    v_order_id INTEGER;
-    v_order_number VARCHAR(50);
-    v_subtotal DECIMAL(10,2) := 0;
-    v_tax_amount DECIMAL(10,2) := 0;
-    v_total_amount DECIMAL(10,2) := 0;
-    v_tax_rate DECIMAL(5,2) := 8.5; -- Default tax rate
-    v_product RECORD;
-    v_quantity INTEGER;
-    v_item_total DECIMAL(10,2);
-    v_item_tax DECIMAL(10,2);
-BEGIN
-    -- Validate inputs
-    IF p_num_products <= 0 THEN
-        RAISE EXCEPTION 'Number of products must be greater than 0';
-    END IF;
-    
-    IF p_customer_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM customers WHERE id = p_customer_id) THEN
-        RAISE EXCEPTION 'Customer with id % does not exist', p_customer_id;
-    END IF;
-    
-    IF p_location_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM locations WHERE id = p_location_id) THEN
-        RAISE EXCEPTION 'Location with id % does not exist', p_location_id;
-    END IF;
-    
-    -- Check if there are enough products available
-    IF (SELECT COUNT(*) FROM products WHERE (is_active = true OR is_active IS NULL) AND (stock > 0 OR stock IS NULL)) < p_num_products THEN
-        RAISE NOTICE 'Requested % products but only % available. Will create order with available products.', 
-            p_num_products, 
-            (SELECT COUNT(*) FROM products WHERE (is_active = true OR is_active IS NULL) AND (stock > 0 OR stock IS NULL));
-    END IF;
-    
-    -- Create the order (order_number will be auto-generated by trigger)
-    INSERT INTO orders (
-        customer_id,
-        location_id,
-        status,
-        origin,
-        subtotal,
-        discount_amount,
-        tax_amount,
-        total_amount
-    ) VALUES (
-        p_customer_id,
-        p_location_id,
-        'pending',
-        'pos',
-        0, -- Will be updated after adding items
-        0,
-        0,
-        0
-    ) RETURNING orders.id, orders.order_number INTO v_order_id, v_order_number;
-    
-    -- Add random products to the order
-    FOR v_product IN (
-        SELECT id, name, price, sku, main_image_url
-        FROM products
-        WHERE (is_active = true OR is_active IS NULL) 
-          AND (stock > 0 OR stock IS NULL)
-        ORDER BY RANDOM()
-        LIMIT p_num_products
-    ) LOOP
-        -- Random quantity between 1 and 3
-        v_quantity := FLOOR(RANDOM() * 3 + 1)::INTEGER;
-        
-        -- Calculate item totals
-        v_item_total := v_product.price * v_quantity;
-        v_item_tax := v_item_total * (v_tax_rate / 100);
-        
-        -- Add to running totals
-        v_subtotal := v_subtotal + v_item_total;
-        v_tax_amount := v_tax_amount + v_item_tax;
-        
-        -- Insert order item
-        INSERT INTO order_items (
-            order_id,
-            product_id,
-            product_name,
-            product_sku,
-            product_image_url,
-            quantity,
-            unit_price,
-            tax_amount,
-            discount_amount,
-            voucher_discount,
-            total_price
-        ) VALUES (
-            v_order_id,
-            v_product.id,
-            v_product.name,
-            v_product.sku,
-            v_product.main_image_url,
-            v_quantity,
-            v_product.price,
-            v_item_tax,
-            0,
-            0,
-            v_item_total
-        );
-    END LOOP;
-    
-    -- Calculate final total
-    v_total_amount := v_subtotal + v_tax_amount;
-    
-    -- Update order with calculated totals
-    UPDATE orders
-    SET subtotal = v_subtotal,
-        tax_amount = v_tax_amount,
-        total_amount = v_total_amount,
-        updated_at = CURRENT_TIMESTAMP
-    WHERE id = v_order_id;
-    
-    -- Return order summary
-    RETURN QUERY
-    SELECT 
-        v_order_id,
-        v_order_number,
-        v_total_amount,
-        p_num_products;
-END;
-$$ LANGUAGE plpgsql;
-
--- Helper function to generate multiple random orders
--- Usage: SELECT generate_multiple_random_orders(5, 1, 1, 3);
--- Generates 5 orders for customer 1, location 1, with 3 products each
-CREATE OR REPLACE FUNCTION generate_multiple_random_orders(
-    p_num_orders INTEGER,
-    p_customer_id INTEGER DEFAULT NULL,
-    p_location_id INTEGER DEFAULT 1,
-    p_num_products INTEGER DEFAULT 3
-)
-RETURNS TABLE (
-    order_id INTEGER,
-    order_number VARCHAR(50),
-    total_amount DECIMAL(10,2),
-    items_count INTEGER
-) AS $$
-DECLARE
-    i INTEGER;
-    v_customer_id INTEGER;
-BEGIN
-    FOR i IN 1..p_num_orders LOOP
-        -- If no customer specified, pick a random one
-        IF p_customer_id IS NULL THEN
-            SELECT id INTO v_customer_id
-            FROM customers
-            ORDER BY RANDOM()
-            LIMIT 1;
-        ELSE
-            v_customer_id := p_customer_id;
-        END IF;
-        
-        -- Generate the order
-        RETURN QUERY
-        SELECT * FROM generate_random_order(v_customer_id, p_location_id, p_num_products);
-    END LOOP;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION generate_unique_email(
-    p_first_name VARCHAR,
-    p_last_name VARCHAR
-) RETURNS VARCHAR AS $$
-DECLARE
-    v_base_email VARCHAR;
-    v_final_email VARCHAR;
-    v_counter INTEGER := 1;
-    v_exists BOOLEAN;
-BEGIN
-    -- Clean and create base email from first and last name
-    v_base_email := LOWER(
-        REGEXP_REPLACE(COALESCE(p_first_name, ''), '[^a-zA-Z0-9]', '', 'g') || '.' ||
-        REGEXP_REPLACE(COALESCE(p_last_name, ''), '[^a-zA-Z0-9]', '', 'g')
-    ) || '@demo.com';
-    
-    -- Handle empty names
-    IF v_base_email = '.@demo.com' OR v_base_email = '@demo.com' THEN
-        v_base_email := 'user@demo.com';
-    END IF;
-    
-    v_final_email := v_base_email;
-    
-    -- Check if email exists and increment counter if needed
-    LOOP
-        SELECT EXISTS(
-            SELECT 1 FROM customers WHERE email = v_final_email
-        ) INTO v_exists;
-        
-        EXIT WHEN NOT v_exists;
-        
-        -- Email exists, try with counter
-        v_final_email := REGEXP_REPLACE(v_base_email, '@demo\.com$', '') || v_counter || '@demo.com';
-        v_counter := v_counter + 1;
-    END LOOP;
-    
-    RETURN v_final_email;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION ensure_unique_email_simple()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Only generate if email is empty or null
-    IF NEW.email IS NULL OR NEW.email = '' THEN
-        NEW.email := generate_unique_email(NEW.first_name, NEW.last_name);
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Drop old triggers if they exist
-DROP TRIGGER IF EXISTS trigger_ensure_unique_email_insert ON customers;
-DROP TRIGGER IF EXISTS trigger_ensure_unique_email_update ON customers;
-
-/* -- Remove comments to enable simple email generation
--- Create new triggers
-CREATE TRIGGER trigger_ensure_unique_email_insert
-BEFORE INSERT ON customers
-FOR EACH ROW
-EXECUTE FUNCTION ensure_unique_email_simple();
-
-CREATE TRIGGER trigger_ensure_unique_email_update
-BEFORE UPDATE ON customers
-FOR EACH ROW
-WHEN (NEW.email IS NULL OR NEW.email = '')
-EXECUTE FUNCTION ensure_unique_email_simple();
-*/
-
--- Or disable temporarily
--- ALTER TABLE customers DISABLE TRIGGER trigger_ensure_unique_email_insert;
---ALTER TABLE customers DISABLE TRIGGER trigger_ensure_unique_email_update;
-
--- Re-enable
---ALTER TABLE customers ENABLE TRIGGER trigger_ensure_unique_email_insert;
---ALTER TABLE customers ENABLE TRIGGER trigger_ensure_unique_email_update;
-
-CREATE OR REPLACE FUNCTION ensure_unique_email()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_new_email VARCHAR;
-BEGIN
-    -- Check if email is empty, null, or already exists (for updates, exclude current record)
-    IF NEW.email IS NULL OR NEW.email = '' OR 
-       EXISTS (
-           SELECT 1 FROM customers 
-           WHERE email = NEW.email 
-           AND id != COALESCE(NEW.id, -1)
-       ) THEN
-        -- Generate unique email
-        NEW.email := generate_unique_email(NEW.first_name, NEW.last_name);
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Create the trigger for INSERT
-CREATE TRIGGER trigger_ensure_unique_email_insert
-BEFORE INSERT ON customers
-FOR EACH ROW
-EXECUTE FUNCTION ensure_unique_email();
-
--- Create the trigger for UPDATE
-CREATE TRIGGER trigger_ensure_unique_email_update
-BEFORE UPDATE ON customers
-FOR EACH ROW
-WHEN (NEW.email IS DISTINCT FROM OLD.email OR NEW.first_name IS DISTINCT FROM OLD.first_name OR NEW.last_name IS DISTINCT FROM OLD.last_name)
-EXECUTE FUNCTION ensure_unique_email();
-
--- =============================================================================
 -- FIRST-TIME SETUP
 -- =============================================================================
 -- NO default admin user is created automatically
