@@ -4420,21 +4420,8 @@ app.post('/api/transactions', async (req, res) => {
     }
 });
 
-// Check if this is first-time setup (no locations exist)
-app.get('/api/setup/status', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT COUNT(*) as count FROM locations WHERE is_active = true');
-        const hasLocations = parseInt(result.rows[0].count) > 0;
-        
-        res.json({
-            setupRequired: !hasLocations,
-            locationCount: parseInt(result.rows[0].count)
-        });
-    } catch (err) {
-        console.error('Error checking setup status:', err);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
+// Removed duplicate /api/setup/status endpoint
+// The correct endpoint is at line 319 and checks for users, not locations
 
 
 // Add these to your server.js file after the other API routes
