@@ -4257,6 +4257,8 @@ CREATE TABLE IF NOT EXISTS data_loader_jobs (
     processed_rows INTEGER DEFAULT 0,
     error_count INTEGER DEFAULT 0,
     field_mapping JSONB,
+    constant_values JSONB, -- Constants to apply to all rows (e.g., brand, collection)
+    features_config JSONB, -- Feature flags for import (e.g., useAI, skipDuplicates)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP
@@ -4309,6 +4311,8 @@ COMMENT ON COLUMN data_loader_jobs.job_id IS 'Unique identifier for the import j
 COMMENT ON COLUMN data_loader_jobs.type IS 'Type of data being imported (products or customers)';
 COMMENT ON COLUMN data_loader_jobs.status IS 'Current status of the import job';
 COMMENT ON COLUMN data_loader_jobs.field_mapping IS 'JSON mapping of CSV fields to database fields';
+COMMENT ON COLUMN data_loader_jobs.constant_values IS 'JSON object with constant values to apply to all rows (e.g., brand, collection)';
+COMMENT ON COLUMN data_loader_jobs.features_config IS 'JSON object with feature flags for import (e.g., useAI, skipDuplicates)';
 
 COMMENT ON COLUMN data_loader_rows.raw_data IS 'Original CSV row data as JSON';
 COMMENT ON COLUMN data_loader_rows.mapped_data IS 'Transformed data after field mapping';
