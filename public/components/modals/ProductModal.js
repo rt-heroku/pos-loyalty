@@ -50,6 +50,16 @@ window.Modals.ProductModal = function ProductModal({
     const [showSalesforceResultsModal, setShowSalesforceResultsModal] = React.useState(false);
     const [salesforceResults, setSalesforceResults] = React.useState(null);
 
+    // Helper function to check if user is admin (case-insensitive role or permissions)
+    const isAdmin = () => {
+        if (!window.currentUser) return false;
+        // Check role (case-insensitive)
+        if (window.currentUser.role && window.currentUser.role.toLowerCase() === 'admin') return true;
+        // Check permissions for all access
+        if (window.currentUser.permissions?.all === true) return true;
+        return false;
+    };
+
     // Initialize form data when product changes
     React.useEffect(() => {
         if (product) {
@@ -449,7 +459,7 @@ window.Modals.ProductModal = function ProductModal({
                         active: activeTab === 'features'
                     }),
                     // Advanced Tab - Only for admins
-                    window.currentUser && window.currentUser.role === 'admin' && React.createElement(TabButton, {
+                    isAdmin() && React.createElement(TabButton, {
                         key: 'ai',
                         tab: 'ai',
                         label: 'Advanced',
