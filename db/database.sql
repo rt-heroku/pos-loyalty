@@ -4257,8 +4257,8 @@ CREATE TABLE IF NOT EXISTS data_loader_jobs (
     processed_rows INTEGER DEFAULT 0,
     error_count INTEGER DEFAULT 0,
     field_mapping JSONB,
-    constant_values JSONB, -- Constants to apply to all rows (e.g., brand, collection)
-    features_config JSONB, -- Feature flags for import (e.g., useAI, skipDuplicates)
+    constant_values JSONB DEFAULT '{}'::jsonb, -- Constants to apply to all rows (e.g., brand, collection)
+    features_config JSONB DEFAULT '{}'::jsonb, -- Feature flags for import (e.g., useAI, skipDuplicates)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP
