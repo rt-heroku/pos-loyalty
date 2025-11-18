@@ -27,6 +27,7 @@ DROP TRIGGER IF EXISTS trigger_update_customer_tier_and_stats ON transactions CA
 DROP TRIGGER IF EXISTS trigger_update_customer_stats ON transactions CASCADE;
 DROP TRIGGER IF EXISTS trigger_update_customer_stats_enhanced ON transactions CASCADE;
 DROP TRIGGER IF EXISTS trigger_set_work_order_number ON work_orders CASCADE;
+DROP TRIGGER IF EXISTS trigger_set_order_number ON orders CASCADE;
 DROP TRIGGER IF EXISTS trigger_update_location_inventory ON transactions CASCADE;
 DROP TRIGGER IF EXISTS trigger_log_work_order_status_change ON work_orders CASCADE;
 
@@ -45,6 +46,8 @@ DROP FUNCTION IF EXISTS log_work_order_status_change() CASCADE;
 DROP FUNCTION IF EXISTS update_location_inventory() CASCADE;
 DROP FUNCTION IF EXISTS set_work_order_number() CASCADE;
 DROP FUNCTION IF EXISTS generate_work_order_number(INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS set_order_number() CASCADE;
+DROP FUNCTION IF EXISTS generate_order_number() CASCADE;
 DROP FUNCTION IF EXISTS generate_sku(TEXT, TEXT) CASCADE;
 DROP FUNCTION IF EXISTS get_next_batch_number_seq() CASCADE;
 DROP FUNCTION IF EXISTS get_next_batch_number() CASCADE;
@@ -2337,6 +2340,41 @@ CREATE TRIGGER trigger_set_work_order_number
     BEFORE INSERT ON work_orders
     FOR EACH ROW
     EXECUTE FUNCTION set_work_order_number();
+
+-- Function to generate order number
+CREATE OR REPLACE FUNCTION generate_order_number()
+RETURNS TEXT AS $$
+DECLARE
+    new_number TEXT;
+    counter INTEGER;
+BEGIN
+    -- Get the count of orders today
+    SELECT COUNT(*) INTO counter
+    FROM orders
+    WHERE DATE(order_date) = CURRENT_DATE;
+    
+    -- Generate order number: ORD-YYYYMMDD-####
+    new_number := 'ORD-' || TO_CHAR(CURRENT_DATE, 'YYYYMMDD') || '-' || LPAD((counter + 1)::TEXT, 4, '0');
+    
+    RETURN new_number;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to auto-generate order number
+CREATE OR REPLACE FUNCTION set_order_number()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.order_number IS NULL OR NEW.order_number = '' THEN
+        NEW.order_number := generate_order_number();
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_set_order_number
+BEFORE INSERT ON orders
+FOR EACH ROW
+EXECUTE FUNCTION set_order_number();
 
 -- Trigger to update location inventory after transactions
 CREATE OR REPLACE FUNCTION update_location_inventory() RETURNS TRIGGER AS $$
