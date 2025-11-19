@@ -5049,10 +5049,25 @@ app.get('/api/data-loader/fields/:jobId', async (req, res) => {
     
     const csvFields = Object.keys(sampleResult.rows[0].raw_data);
     
-    // Get database fields based on type
-    const dbFields = job.type === 'products' 
-      ? ['name', 'price', 'category', 'stock', 'sku', 'product_type', 'brand', 'collection', 'material', 'color', 'description', 'dimensions', 'weight', 'warranty_info', 'care_instructions', 'main_image_url', 'is_active', 'featured']
-      : ['loyalty_number', 'first_name', 'last_name', 'name', 'email', 'phone', 'points', 'total_spent', 'visit_count', 'last_visit', 'member_type', 'member_status', 'enrollment_date', 'notes', 'address_line1', 'address_line2', 'city', 'state', 'country', 'zip_code', 'date_of_birth'];
+    // Determine table name based on job type
+    const tableName = job.type === 'products' ? 'products' : 'customers';
+    
+    // Get database fields dynamically from table schema
+    // Exclude system fields: id, created_at, updated_at, created_by_user, user_id, status
+    const excludedFields = ['id', 'created_at', 'updated_at', 'created_by_user', 'user_id', 'status'];
+    
+    const dbFieldsResult = await client.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_schema = 'public' 
+        AND table_name = $1
+        AND column_name NOT IN (${excludedFields.map((_, i) => `$${i + 2}`).join(', ')})
+      ORDER BY ordinal_position
+    `, [tableName, ...excludedFields]);
+    
+    const dbFields = dbFieldsResult.rows.map(row => row.column_name);
+    
+    console.log(`[Data Loader] Loaded ${dbFields.length} fields for ${tableName}:`, dbFields);
     
     res.json({ csvFields, dbFields, type: job.type });
     
