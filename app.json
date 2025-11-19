@@ -19,5 +19,6 @@
   },
   "scripts": {
     "postdeploy": "psql $DATABASE_URL -f db/database.sql"
-  }
+  },
+    "success_url": "/pos"
 }
