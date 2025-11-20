@@ -6650,7 +6650,27 @@ async function syncOrderToSalesforce(orderId) {
       body: JSON.stringify({ id: orderId })
     });
     
-    const responseData = await response.json();
+    // Check if response is JSON before parsing
+    const contentType = response.headers.get('content-type');
+    let responseData;
+    let errorMessage = null;
+    
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        responseData = await response.json();
+      } catch (jsonError) {
+        console.error(`[Salesforce Sync] ✗ Invalid JSON response for order ${orderId}:`, jsonError);
+        const textResponse = await response.text();
+        errorMessage = `Invalid JSON response: ${textResponse.substring(0, 200)}`;
+        responseData = { success: false, error: errorMessage };
+      }
+    } else {
+      // Not JSON, get as text
+      const textResponse = await response.text();
+      console.error(`[Salesforce Sync] ✗ Non-JSON response for order ${orderId}:`, textResponse.substring(0, 200));
+      errorMessage = `Non-JSON response (${response.status}): ${textResponse.substring(0, 200)}`;
+      responseData = { success: false, error: errorMessage };
+    }
     
     if (response.ok && responseData.success) {
       // Sync successful
@@ -6673,7 +6693,7 @@ async function syncOrderToSalesforce(orderId) {
          SET sync_status = false, 
              sync_message = $1
          WHERE id = $2`,
-        [JSON.stringify(responseData), orderId]
+        [errorMessage || JSON.stringify(responseData), orderId]
       );
     }
   } catch (error) {

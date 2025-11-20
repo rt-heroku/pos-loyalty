@@ -921,17 +921,6 @@ function ProductCard({ product, onQuickAdd }: ProductCardProps) {
           <span className="text-sm font-medium text-gray-900">
             ${typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(product.price || '0').toFixed(2)}
           </span>
-          
-          {/* Rating & Orders (if available) */}
-          <div className="flex items-center text-xs text-gray-600">
-            <span className="mr-0.5">👍</span>
-            <span className="font-medium">91%</span>
-            <span className="ml-1 text-gray-400">(193)</span>
-          </div>
-        </div>
-        
-        <div className="mt-1.5 text-xs text-gray-500">
-          100+ recent orders
         </div>
       </div>
     </div>
@@ -1365,25 +1354,6 @@ function ProductCustomizationModal({ product, modifierGroups, onClose, onAddToCa
                 )}
               </div>
             )}
-
-            {/* Recommended Options (Mock Data) */}
-            <div className="p-4 border-t border-gray-100">
-              <h4 className="text-base font-semibold text-gray-900 mb-3">Your recommended options</h4>
-              <div className="space-y-2">
-                <button className="w-full p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0 mt-0.5"></div>
-                      <div className="text-left">
-                        <div className="text-sm font-medium text-gray-900">#1 • Ordered recently by 10+ others</div>
-                        <div className="text-xs text-gray-600 mt-0.5">Beef - No Pink • Steak Fries</div>
-                      </div>
-                    </div>
-                    <div className="text-sm font-semibold text-gray-900">${typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(product.price || '0').toFixed(2)}</div>
-                  </div>
-                </button>
-              </div>
-            </div>
 
             {/* Modifier Groups */}
             <div className="p-4 space-y-4 border-t border-gray-100">
