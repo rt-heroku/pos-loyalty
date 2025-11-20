@@ -1,12 +1,34 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 export const dynamic = 'force-dynamic';
 
 import { getBackendUrl } from '@/lib/backend';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Get user from cookies
+    const { searchParams } = new URL(request.url);
+    const orderNumber = searchParams.get('order_number');
+    const backendUrl = getBackendUrl();
+
+    // If order_number is provided, fetch that specific order (no auth required for confirmation page)
+    if (orderNumber) {
+      console.log('[Orders API] Fetching order by number:', orderNumber);
+      const url = `${backendUrl}/api/orders?search=${orderNumber}`;
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        console.error('[Orders API] Backend returned error:', response.status);
+        throw new Error(`Backend returned ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('[Orders API] Found orders:', data.length);
+      
+      return NextResponse.json(data);
+    }
+
+    // Otherwise, fetch orders for authenticated customer
     const cookieStore = cookies();
     const userCookie = cookieStore.get('user');
     
@@ -29,10 +51,9 @@ export async function GET() {
 
     // Fetch orders from backend for this customer with origin=shop
     // Backend already sorts by order_date DESC
-    const backendUrl = getBackendUrl();
     const url = `${backendUrl}/api/orders?customer_id=${customerId}&origin=shop`;
     
-    console.log('[Orders API] Fetching orders from:', url);
+    console.log('[Orders API] Fetching orders for customer:', customerId);
     
     const response = await fetch(url);
     
