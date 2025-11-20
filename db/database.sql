@@ -4384,3 +4384,28 @@ COMMENT ON COLUMN data_loader_errors.field_value IS 'Value that caused the error
 -- Database schema is now ready
 -- To load sample data, run: load_sample_data.sql
 -- =============================================================================
+
+-- =====================================================
+-- LOYALTY TIERS DATA
+-- =====================================================
+-- Insert loyalty tier data (Bronze, Silver, Elite)
+-- Based on customer_tier_rules structure with enhanced JSONB benefits
+INSERT INTO loyalty_tiers (tier_name, tier_level, min_spending, min_visits, min_points, points_multiplier, benefits, tier_color, tier_icon, is_active) VALUES
+('Bronze', 1, 0.00, 0, 0, 1.00, 
+ '{"description": "Basic loyalty benefits, 1x points earning", "features": ["1 point per $1 spent", "Birthday rewards", "Email support", "Basic member discounts"]}'::jsonb, 
+ '#CD7F32', 'bronze', true),
+('Silver', 2, 1000.00, 5, 1000, 1.25, 
+ '{"description": "Enhanced benefits, 1.25x points earning, priority support", "features": ["1.25 points per $1 spent", "Requires 5+ visits", "Free shipping on orders over $50", "Priority customer support", "Exclusive member events", "Double points on birthdays"]}'::jsonb, 
+ '#C0C0C0', 'silver', true),
+('Elite', 3, 2500.00, 15, 2500, 1.50, 
+ '{"description": "Premium benefits, 1.5x points earning, exclusive offers", "features": ["1.5 points per $1 spent", "Requires 15+ visits", "Free shipping on all orders", "VIP customer support", "Early access to sales", "Exclusive product launches", "Quarterly member gifts"]}'::jsonb, 
+ '#FFD700', 'elite', true)
+ON CONFLICT (tier_name) DO UPDATE SET
+  min_spending = EXCLUDED.min_spending,
+  min_visits = EXCLUDED.min_visits,
+  min_points = EXCLUDED.min_points,
+  points_multiplier = EXCLUDED.points_multiplier,
+  benefits = EXCLUDED.benefits,
+  tier_color = EXCLUDED.tier_color,
+  tier_icon = EXCLUDED.tier_icon,
+  updated_at = CURRENT_TIMESTAMP;

@@ -114,6 +114,22 @@ interface Order {
   items: any[];
 }
 
+interface LoyaltyTier {
+  id: number;
+  tier_name: string;
+  tier_level: number;
+  min_spending: number;
+  min_visits: number;
+  min_points: number;
+  points_multiplier: number;
+  benefits: {
+    description: string;
+    features: string[];
+  };
+  tier_color: string;
+  tier_icon: string;
+}
+
 export default function LoyaltyPage() {
   const { user, loading, refreshUser } = useAuth();
   const router = useRouter();
@@ -122,6 +138,7 @@ export default function LoyaltyPage() {
   const [rewardsData, setRewardsData] = useState<RewardsData | null>(null);
   const [vouchersData, setVouchersData] = useState<VouchersData | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [tiers, setTiers] = useState<LoyaltyTier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
@@ -149,6 +166,14 @@ export default function LoyaltyPage() {
     try {
       setIsLoading(true);
 
+      // Fetch loyalty tiers
+      const tiersResponse = await fetch('/loyalty/api/loyalty/tiers');
+      if (tiersResponse.ok) {
+        const tiersData = await tiersResponse.json();
+        setTiers(tiersData);
+        console.log('[Loyalty] Tiers loaded:', tiersData);
+      }
+
       // Fetch points data
       const pointsResponse = await fetch('/loyalty/api/loyalty/points');
       if (pointsResponse.ok) {
@@ -175,6 +200,9 @@ export default function LoyaltyPage() {
       if (ordersResponse.ok) {
         const ordersData = await ordersResponse.json();
         setOrders(ordersData);
+        console.log('[Loyalty] Orders loaded:', ordersData.length);
+      } else {
+        console.error('[Loyalty] Orders fetch failed:', ordersResponse.status);
       }
     } catch (error) {
       console.error('Error fetching loyalty data:', error);
@@ -256,35 +284,32 @@ export default function LoyaltyPage() {
   const normalizedTier = normalizeTier(pointsData?.tier || 'Bronze');
   const tierInfo = getLoyaltyTierInfo(normalizedTier);
   
-  // Calculate actual progress to next tier
-  const tierRequirements: Record<string, number> = {
-    Bronze: 0,
-    Silver: 1000,
-    Gold: 3500,
-    Platinum: 9000,
-  };
-  
+  // Calculate actual progress to next tier using database tiers
   const currentTierName = normalizedTier;
   const currentPoints = pointsData?.currentBalance || 0;
-  const tiers = ['Bronze', 'Silver', 'Gold', 'Platinum'];
-  const currentTierIndex = tiers.indexOf(currentTierName);
-  const nextTier = currentTierIndex < tiers.length - 1 ? tiers[currentTierIndex + 1] : null;
+  
+  const sortedTiers = [...tiers].sort((a, b) => a.tier_level - b.tier_level);
+  const currentTierData = sortedTiers.find(t => normalizeTier(t.tier_name) === currentTierName);
+  const currentTierIndex = sortedTiers.findIndex(t => t.id === currentTierData?.id);
+  const nextTierData = currentTierIndex >= 0 && currentTierIndex < sortedTiers.length - 1 
+    ? sortedTiers[currentTierIndex + 1] 
+    : null;
   
   let progressToNext = 0;
   let pointsToNext = 0;
   
-  if (nextTier) {
-    const currentTierThreshold = tierRequirements[currentTierName] ?? 0;
-    const nextTierThreshold = tierRequirements[nextTier] ?? 0;
+  if (nextTierData && currentTierData) {
+    const currentTierThreshold = currentTierData.min_points;
+    const nextTierThreshold = nextTierData.min_points;
     const pointsInCurrentTier = currentPoints - currentTierThreshold;
     const pointsNeededForNextTier = nextTierThreshold - currentTierThreshold;
     
     if (pointsNeededForNextTier > 0) {
       progressToNext = Math.min(100, Math.max(0, (pointsInCurrentTier / pointsNeededForNextTier) * 100));
+      pointsToNext = Math.max(0, nextTierThreshold - currentPoints);
     }
-    pointsToNext = Math.max(0, nextTierThreshold - currentPoints);
-  } else {
-    // Already at max tier
+  } else if (!nextTierData && currentTierData) {
+    // At max tier
     progressToNext = 100;
     pointsToNext = 0;
   }
@@ -349,13 +374,13 @@ export default function LoyaltyPage() {
                     {normalizedTier} Member
                   </h3>
                   <p className="text-sm text-gray-600">
-                    {nextTier ? `Progress to ${nextTier}` : 'Max Tier Achieved!'}
+                    {nextTierData ? `Progress to ${nextTierData.tier_name}` : 'Max Tier Achieved!'}
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-sm font-medium text-gray-900">
-                  {nextTier ? `${pointsToNext} points to go` : 'Congratulations!'}
+                  {nextTierData ? `${pointsToNext} points to go` : 'Congratulations!'}
                 </div>
                 <div className="text-xs text-gray-500">
                   {Math.round(progressToNext)}% complete

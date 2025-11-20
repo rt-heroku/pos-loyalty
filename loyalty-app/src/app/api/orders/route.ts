@@ -49,11 +49,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch orders from backend for this customer with origin=shop
+    // Fetch ALL online orders for this customer (both shop and mobile origins)
+    // We exclude POS orders by only showing orders with origin that's NOT 'pos'
     // Backend already sorts by order_date DESC
-    const url = `${backendUrl}/api/orders?customer_id=${customerId}&origin=shop`;
+    const url = `${backendUrl}/api/orders?customer_id=${customerId}`;
     
-    console.log('[Orders API] Fetching orders for customer:', customerId);
+    console.log('[Orders API] Fetching all online orders for customer:', customerId);
     
     const response = await fetch(url);
     

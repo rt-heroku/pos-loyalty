@@ -1813,9 +1813,13 @@ app.get('/api/orders', async (req, res) => {
         }
 
         if (origin) {
+            // If origin is explicitly specified, filter by it
             query += ` AND o.origin = $${paramCount}`;
             params.push(origin);
             paramCount++;
+        } else if (customer_id) {
+            // If customer_id is provided but no origin, exclude POS orders (only show online orders)
+            query += ` AND o.origin != 'pos'`;
         }
 
         if (customer_id) {
@@ -2998,28 +3002,34 @@ app.get('/api/customers/tier-summary', async (req, res) => {
   }
 });
 
-// Get customer tier rules
+// Get customer tier rules (now using loyalty_tiers table)
 app.get('/api/customers/tier-rules', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT * FROM customer_tier_rules 
-      ORDER BY 
-        CASE tier_name
-          WHEN 'Bronze' THEN 1
-          WHEN 'Silver' THEN 2
-          WHEN 'Gold' THEN 3
-          WHEN 'Platinum' THEN 4
-        END
+      SELECT 
+        id,
+        tier_name,
+        tier_level,
+        min_spending,
+        min_visits,
+        min_points,
+        points_multiplier,
+        benefits,
+        tier_color,
+        tier_icon,
+        is_active
+      FROM loyalty_tiers 
+      WHERE is_active = true
+      ORDER BY tier_level ASC
     `);
     res.json(result.rows);
   } catch (err) {
-    console.error('Error fetching customer tier rules:', err);
-    // If tier rules table doesn't exist, return default rules
+    console.error('Error fetching loyalty tiers:', err);
+    // If tier table doesn't exist, return default rules
     res.json([
-      { tier_name: 'Bronze', min_spending: 0, benefits: 'Basic loyalty benefits, 1x points earning' },
-      { tier_name: 'Silver', min_spending: 250, benefits: 'Enhanced benefits, 1.25x points earning' },
-      { tier_name: 'Gold', min_spending: 750, benefits: 'Premium benefits, 1.5x points earning' },
-      { tier_name: 'Platinum', min_spending: 2000, benefits: 'VIP benefits, 2x points earning' }
+      { tier_name: 'Bronze', min_spending: 0, min_points: 0, benefits: '{"description": "Basic loyalty benefits, 1x points earning"}' },
+      { tier_name: 'Silver', min_spending: 1000, min_points: 1000, benefits: '{"description": "Enhanced benefits, 1.25x points earning"}' },
+      { tier_name: 'Elite', min_spending: 2500, min_points: 2500, benefits: '{"description": "Premium benefits, 1.5x points earning"}' }
     ]);
   }
 });
