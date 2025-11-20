@@ -102,6 +102,18 @@ interface VouchersData {
   total: number;
 }
 
+interface Order {
+  id: number;
+  order_number: string;
+  status: string;
+  origin: string;
+  subtotal: number;
+  tax_amount: number;
+  total_amount: number;
+  order_date: string;
+  items: any[];
+}
+
 export default function LoyaltyPage() {
   const { user, loading, refreshUser } = useAuth();
   const router = useRouter();
@@ -109,6 +121,7 @@ export default function LoyaltyPage() {
   const [pointsData, setPointsData] = useState<PointsData | null>(null);
   const [rewardsData, setRewardsData] = useState<RewardsData | null>(null);
   const [vouchersData, setVouchersData] = useState<VouchersData | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
@@ -155,6 +168,13 @@ export default function LoyaltyPage() {
       if (vouchersResponse.ok) {
         const vouchersData = await vouchersResponse.json();
         setVouchersData(vouchersData);
+      }
+
+      // Fetch orders data
+      const ordersResponse = await fetch('/loyalty/api/orders');
+      if (ordersResponse.ok) {
+        const ordersData = await ordersResponse.json();
+        setOrders(ordersData);
       }
     } catch (error) {
       console.error('Error fetching loyalty data:', error);
@@ -228,13 +248,46 @@ export default function LoyaltyPage() {
   if (!user) return null;
 
   const tierInfo = getLoyaltyTierInfo(pointsData?.tier || 'Bronze');
+  
+  // Calculate actual progress to next tier
+  const tierRequirements: Record<string, number> = {
+    Bronze: 0,
+    Silver: 1000,
+    Gold: 3500,
+    Platinum: 9000,
+  };
+  
+  const currentTierName = pointsData?.tier || 'Bronze';
+  const currentPoints = pointsData?.currentBalance || 0;
+  const tiers = ['Bronze', 'Silver', 'Gold', 'Platinum'];
+  const currentTierIndex = tiers.indexOf(currentTierName);
+  const nextTier = currentTierIndex < tiers.length - 1 ? tiers[currentTierIndex + 1] : null;
+  
+  let progressToNext = 0;
+  let pointsToNext = 0;
+  
+  if (nextTier) {
+    const currentTierThreshold = tierRequirements[currentTierName] ?? 0;
+    const nextTierThreshold = tierRequirements[nextTier] ?? 0;
+    const pointsInCurrentTier = currentPoints - currentTierThreshold;
+    const pointsNeededForNextTier = nextTierThreshold - currentTierThreshold;
+    
+    if (pointsNeededForNextTier > 0) {
+      progressToNext = Math.min(100, Math.max(0, (pointsInCurrentTier / pointsNeededForNextTier) * 100));
+    }
+    pointsToNext = Math.max(0, nextTierThreshold - currentPoints);
+  } else {
+    // Already at max tier
+    progressToNext = 100;
+    pointsToNext = 0;
+  }
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Star },
-    { id: 'rewards', label: 'Rewards', icon: Gift },
+    { id: 'rewards', label: 'Promotions', icon: Gift },
     { id: 'vouchers', label: 'Vouchers', icon: Percent },
-    { id: 'orders', label: 'Orders', icon: ShoppingBag },
-    { id: 'history', label: 'History', icon: Calendar },
+    { id: 'orders', label: 'Online Orders', icon: ShoppingBag },
+    { id: 'history', label: 'In-Store Transactions', icon: Calendar },
     { id: 'referrals', label: 'Referrals', icon: Users },
   ];
 
@@ -289,23 +342,23 @@ export default function LoyaltyPage() {
                     {pointsData?.tier || 'Bronze'} Member
                   </h3>
                   <p className="text-sm text-gray-600">
-                    Progress to {tierInfo.nextTier}
+                    {nextTier ? `Progress to ${nextTier}` : 'Max Tier Achieved!'}
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-sm font-medium text-gray-900">
-                  {tierInfo.pointsToNext} points to go
+                  {nextTier ? `${pointsToNext} points to go` : 'Congratulations!'}
                 </div>
                 <div className="text-xs text-gray-500">
-                  {Math.round(tierInfo.progressToNext)}% complete
+                  {Math.round(progressToNext)}% complete
                 </div>
               </div>
             </div>
             <div className="h-3 w-full rounded-full bg-gray-200">
               <div
                 className="h-3 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 transition-all duration-1000"
-                style={{ width: `${tierInfo.progressToNext}%` }}
+                style={{ width: `${progressToNext}%` }}
               ></div>
             </div>
           </div>
@@ -399,13 +452,13 @@ export default function LoyaltyPage() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  Available Rewards
+                  Available Promotions
                 </h2>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search rewards..."
+                    placeholder="Search promotions..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                     className="rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:border-transparent focus:ring-2 focus:ring-primary-500"
@@ -485,7 +538,7 @@ export default function LoyaltyPage() {
               {filteredRewards.length === 0 && (
                 <div className="py-12 text-center">
                   <Gift className="mx-auto mb-4 h-16 w-16 text-gray-300" />
-                  <p className="text-gray-500">No rewards found</p>
+                  <p className="text-gray-500">No promotions found</p>
                   <p className="text-sm text-gray-400">
                     Try adjusting your search terms
                   </p>
@@ -799,25 +852,112 @@ export default function LoyaltyPage() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  Your Orders
+                  Online Orders
                 </h2>
-                <button
-                  onClick={() => router.push('/orders')}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
-                >
-                  View All Orders
-                </button>
+                <div className="text-sm text-gray-500">
+                  {orders.length} total orders
+                </div>
               </div>
 
-              <div className="text-center py-12 bg-gray-50 rounded-lg">
-                <ShoppingBag className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-4 text-lg font-medium text-gray-900">
-                  View Your Order History
-                </h3>
-                <p className="mt-2 text-gray-600">
-                  Click the "View All Orders" button above to see all your past orders with full details.
-                </p>
-              </div>
+              {orders.length > 0 ? (
+                <div className="space-y-4">
+                  {orders.map(order => (
+                    <div
+                      key={order.id}
+                      className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="font-semibold text-gray-900">
+                            Order #{order.order_number}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {formatDate(order.order_date, { 
+                              month: 'short', 
+                              day: 'numeric', 
+                              year: 'numeric',
+                              hour: 'numeric',
+                              minute: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-gray-900">
+                            {formatCurrency(order.total_amount)}
+                          </div>
+                          <span
+                            className={cn(
+                              'inline-flex rounded-full px-3 py-1 text-xs font-medium',
+                              order.status === 'completed'
+                                ? 'bg-green-100 text-green-800'
+                                : order.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : order.status === 'cancelled'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-gray-100 text-gray-800'
+                            )}
+                          >
+                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {order.items && order.items.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-gray-700">
+                            Items ({order.items.length}):
+                          </p>
+                          <div className="space-y-1">
+                            {order.items.slice(0, 3).map((item: any, index: number) => (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between text-sm"
+                              >
+                                <span className="text-gray-600">
+                                  {item.quantity}x {item.product_name}
+                                </span>
+                                <span className="text-gray-900">
+                                  {formatCurrency(item.total_price)}
+                                </span>
+                              </div>
+                            ))}
+                            {order.items.length > 3 && (
+                              <p className="text-xs text-gray-500">
+                                +{order.items.length - 3} more items
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Subtotal:</span>
+                          <span className="text-gray-900">
+                            {formatCurrency(order.subtotal)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Tax:</span>
+                          <span className="text-gray-900">
+                            {formatCurrency(order.tax_amount)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-gray-50 rounded-lg">
+                  <ShoppingBag className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-4 text-lg font-medium text-gray-900">
+                    No Online Orders Yet
+                  </h3>
+                  <p className="mt-2 text-gray-600">
+                    Your online orders will appear here
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -825,7 +965,7 @@ export default function LoyaltyPage() {
           {activeTab === 'history' && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-900">
-                Points History
+                In-Store Transactions
               </h2>
 
               <div className="space-y-4">
