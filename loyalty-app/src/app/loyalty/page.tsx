@@ -247,7 +247,14 @@ export default function LoyaltyPage() {
 
   if (!user) return null;
 
-  const tierInfo = getLoyaltyTierInfo(pointsData?.tier || 'Bronze');
+  // Normalize tier name (remove " Tier" suffix if present)
+  const normalizeTier = (tier: string) => {
+    if (!tier) return 'Bronze';
+    return tier.replace(' Tier', '').trim();
+  };
+
+  const normalizedTier = normalizeTier(pointsData?.tier || 'Bronze');
+  const tierInfo = getLoyaltyTierInfo(normalizedTier);
   
   // Calculate actual progress to next tier
   const tierRequirements: Record<string, number> = {
@@ -257,7 +264,7 @@ export default function LoyaltyPage() {
     Platinum: 9000,
   };
   
-  const currentTierName = pointsData?.tier || 'Bronze';
+  const currentTierName = normalizedTier;
   const currentPoints = pointsData?.currentBalance || 0;
   const tiers = ['Bronze', 'Silver', 'Gold', 'Platinum'];
   const currentTierIndex = tiers.indexOf(currentTierName);
@@ -339,7 +346,7 @@ export default function LoyaltyPage() {
                 <Crown className="h-6 w-6 text-primary-600" />
                 <div>
                   <h3 className="font-semibold text-gray-900">
-                    {pointsData?.tier || 'Bronze'} Member
+                    {normalizedTier} Member
                   </h3>
                   <p className="text-sm text-gray-600">
                     {nextTier ? `Progress to ${nextTier}` : 'Max Tier Achieved!'}
@@ -400,7 +407,7 @@ export default function LoyaltyPage() {
               {/* Tier Benefits */}
               <div>
                 <h3 className="mb-4 text-lg font-semibold text-gray-900">
-                  Your {pointsData?.tier || 'Bronze'} Benefits
+                  Your {normalizedTier} Benefits
                 </h3>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {tierInfo.benefits.map((benefit, index) => (
@@ -439,7 +446,7 @@ export default function LoyaltyPage() {
                 <div className="rounded-lg bg-purple-50 p-4 text-center">
                   <Crown className="mx-auto mb-2 h-8 w-8 text-purple-600" />
                   <div className="text-lg font-bold text-purple-900">
-                    {pointsData?.tier || 'Bronze'}
+                    {normalizedTier}
                   </div>
                   <p className="text-sm text-purple-700">Current Tier</p>
                 </div>
