@@ -4740,3 +4740,29 @@ COMMENT ON TABLE promotions IS 'Stores promotion definitions from Salesforce Pro
 COMMENT ON TABLE customer_promotions IS 'Tracks customer enrollment and progress in promotions (LoyaltyProgramMbrPromotion)';
 COMMENT ON TABLE loyalty_tier_promotions IS 'Maps promotions to specific loyalty tiers (LoyaltyTierPromotion)';
 COMMENT ON TABLE promotion_sync_log IS 'Tracks synchronization operations from Salesforce';
+
+-- =====================================================
+-- FIX: Auto-set remaining_value for Value vouchers
+-- =====================================================
+-- Trigger to automatically set remaining_value = face_value for new Value vouchers
+CREATE OR REPLACE FUNCTION set_voucher_remaining_value()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- For Value vouchers, if remaining_value is NULL, set it to face_value
+    IF NEW.voucher_type = 'Value' AND NEW.remaining_value IS NULL AND NEW.face_value IS NOT NULL THEN
+        NEW.remaining_value := NEW.face_value;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Drop trigger if exists and recreate
+DROP TRIGGER IF EXISTS trigger_set_voucher_remaining_value ON customer_vouchers;
+
+CREATE TRIGGER trigger_set_voucher_remaining_value
+    BEFORE INSERT OR UPDATE ON customer_vouchers
+    FOR EACH ROW
+    EXECUTE FUNCTION set_voucher_remaining_value();
+
+COMMENT ON FUNCTION set_voucher_remaining_value() IS 'Automatically sets remaining_value to face_value for Value vouchers when remaining_value is NULL';

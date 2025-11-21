@@ -250,20 +250,36 @@ window.Views.POSView = ({
 
     // Voucher functions
     const loadCustomerVouchers = async (customerId) => {
-        if (!customerId) return;
+        if (!customerId) {
+            console.log('[Vouchers] ❌ No customer ID provided');
+            return;
+        }
+        
+        console.log('[Vouchers] 🔍 Loading vouchers for customer ID:', customerId);
         
         setVoucherLoading(true);
         try {
             const response = await fetch(`/api/customers/${customerId}/vouchers`);
+            console.log('[Vouchers] 📡 Response status:', response.status, response.statusText);
+            
             const data = await response.json();
+            console.log('[Vouchers] 📦 Response data:', data);
+            console.log('[Vouchers] ✅ Success flag:', data.success);
+            console.log('[Vouchers] 🎫 Vouchers count:', data.vouchers?.length || 0);
+            console.log('[Vouchers] 🎫 Vouchers:', data.vouchers);
             
             if (data.success) {
                 setVouchers(data.vouchers);
+                console.log('[Vouchers] ✓ Vouchers set in state:', data.vouchers.length);
                 // Auto-apply product-specific vouchers
                 autoApplyProductVouchers(data.vouchers);
+            } else {
+                console.error('[Vouchers] ❌ Response success=false:', data);
+                setVouchers([]);
             }
         } catch (error) {
-            console.error('Error loading vouchers:', error);
+            console.error('[Vouchers] ❌ Error loading vouchers:', error);
+            setVouchers([]);
         } finally {
             setVoucherLoading(false);
         }
