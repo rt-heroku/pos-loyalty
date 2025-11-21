@@ -4409,3 +4409,334 @@ ON CONFLICT (tier_name) DO UPDATE SET
   tier_color = EXCLUDED.tier_color,
   tier_icon = EXCLUDED.tier_icon,
   updated_at = CURRENT_TIMESTAMP;
+
+-- =====================================================
+-- PROMOTIONS SYSTEM
+-- =====================================================
+-- Tables for managing promotions from Salesforce
+-- Synced via MuleSoft APIs
+
+-- Main promotions table
+CREATE TABLE IF NOT EXISTS promotions (
+    id SERIAL PRIMARY KEY,
+    sf_id VARCHAR(18) UNIQUE NOT NULL, -- Salesforce ID
+    name VARCHAR(255) NOT NULL,
+    display_name VARCHAR(255),
+    is_active BOOLEAN DEFAULT true,
+    is_automatic BOOLEAN DEFAULT false,
+    currency_iso_code VARCHAR(3) DEFAULT 'USD',
+    description TEXT,
+    objective TEXT,
+    discount_order INTEGER,
+    
+    -- Enrollment settings
+    is_enrollment_required BOOLEAN DEFAULT false,
+    enrollment_start_date TIMESTAMP,
+    enrollment_end_date TIMESTAMP,
+    
+    -- Dates and times
+    start_date DATE,
+    start_date_time TIMESTAMP,
+    end_date DATE,
+    end_date_time TIMESTAMP,
+    
+    -- Media and branding
+    image_url TEXT,
+    promotion_page_url TEXT,
+    
+    -- Loyalty program references
+    loyalty_program_id VARCHAR(18), -- Salesforce LoyaltyProgram ID
+    loyalty_program_currency_id VARCHAR(18), -- Salesforce LoyaltyProgramCurrency ID
+    
+    -- Points and rewards
+    point_factor NUMERIC(10,2),
+    total_reward_points INTEGER,
+    
+    -- Promotion details
+    promotion_code VARCHAR(50),
+    usage_type VARCHAR(50), -- e.g., 'Unlimited', 'Limited', 'Once'
+    transaction_journal_type VARCHAR(50),
+    issued_voucher_count INTEGER DEFAULT 0,
+    
+    -- Legal
+    terms_and_conditions TEXT,
+    
+    -- Sync tracking
+    sync_status VARCHAR(20) DEFAULT 'active', -- active, inactive, error
+    last_synced_at TIMESTAMP,
+    sync_error TEXT,
+    
+    -- Audit fields
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Indexes
+    CONSTRAINT promotions_sf_id_key UNIQUE (sf_id)
+);
+
+-- Create indexes for promotions
+CREATE INDEX IF NOT EXISTS idx_promotions_active ON promotions(is_active);
+CREATE INDEX IF NOT EXISTS idx_promotions_dates ON promotions(start_date_time, end_date_time);
+CREATE INDEX IF NOT EXISTS idx_promotions_code ON promotions(promotion_code);
+CREATE INDEX IF NOT EXISTS idx_promotions_sf_id ON promotions(sf_id);
+CREATE INDEX IF NOT EXISTS idx_promotions_loyalty_program ON promotions(loyalty_program_id);
+
+-- Customer promotions (enrollment and progress tracking)
+CREATE TABLE IF NOT EXISTS customer_promotions (
+    id SERIAL PRIMARY KEY,
+    sf_id VARCHAR(18) UNIQUE, -- Salesforce LoyaltyProgramMbrPromotion ID
+    
+    -- Relationships
+    customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    promotion_id INTEGER NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+    
+    -- Salesforce references
+    sf_member_id VARCHAR(18), -- Salesforce LoyaltyProgramMemberId
+    sf_promotion_id VARCHAR(18), -- Salesforce PromotionId
+    
+    -- Enrollment
+    is_auto_enrolled BOOLEAN DEFAULT false,
+    is_enrollment_active BOOLEAN DEFAULT true,
+    enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Usage tracking
+    cumulative_usage_completed NUMERIC(10,2) DEFAULT 0,
+    cumulative_usage_target NUMERIC(10,2) DEFAULT 0,
+    cumulative_usage_complete_percent NUMERIC(5,2) DEFAULT 0,
+    
+    -- Status
+    status VARCHAR(50) DEFAULT 'active', -- active, completed, expired, cancelled
+    completed_at TIMESTAMP,
+    
+    -- Sync tracking
+    last_synced_at TIMESTAMP,
+    sync_error TEXT,
+    
+    -- Audit fields
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Unique constraint: one enrollment per customer per promotion
+    CONSTRAINT customer_promotions_unique UNIQUE (customer_id, promotion_id)
+);
+
+-- Create indexes for customer_promotions
+CREATE INDEX IF NOT EXISTS idx_customer_promotions_customer ON customer_promotions(customer_id);
+CREATE INDEX IF NOT EXISTS idx_customer_promotions_promotion ON customer_promotions(promotion_id);
+CREATE INDEX IF NOT EXISTS idx_customer_promotions_active ON customer_promotions(is_enrollment_active);
+CREATE INDEX IF NOT EXISTS idx_customer_promotions_status ON customer_promotions(status);
+CREATE INDEX IF NOT EXISTS idx_customer_promotions_sf_member ON customer_promotions(sf_member_id);
+
+-- Loyalty tier promotions (tier-specific promotions)
+CREATE TABLE IF NOT EXISTS loyalty_tier_promotions (
+    id SERIAL PRIMARY KEY,
+    sf_id VARCHAR(18) UNIQUE, -- Salesforce LoyaltyTierPromotion ID
+    
+    -- Relationships
+    loyalty_tier_id INTEGER NOT NULL REFERENCES loyalty_tiers(id) ON DELETE CASCADE,
+    promotion_id INTEGER NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+    
+    -- Salesforce references
+    sf_tier_id VARCHAR(18), -- Salesforce LoyaltyTierId
+    sf_promotion_id VARCHAR(18), -- Salesforce PromotionId
+    
+    -- Sync tracking
+    last_synced_at TIMESTAMP,
+    sync_error TEXT,
+    
+    -- Audit fields
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Unique constraint: one promotion per tier
+    CONSTRAINT loyalty_tier_promotions_unique UNIQUE (loyalty_tier_id, promotion_id)
+);
+
+-- Create indexes for loyalty_tier_promotions
+CREATE INDEX IF NOT EXISTS idx_loyalty_tier_promotions_tier ON loyalty_tier_promotions(loyalty_tier_id);
+CREATE INDEX IF NOT EXISTS idx_loyalty_tier_promotions_promotion ON loyalty_tier_promotions(promotion_id);
+CREATE INDEX IF NOT EXISTS idx_loyalty_tier_promotions_sf_tier ON loyalty_tier_promotions(sf_tier_id);
+
+-- Add trigger to update updated_at timestamp for promotions
+CREATE OR REPLACE FUNCTION update_promotions_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_promotions_updated_at
+    BEFORE UPDATE ON promotions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_promotions_updated_at();
+
+-- Add trigger to update updated_at timestamp for customer_promotions
+CREATE TRIGGER trigger_update_customer_promotions_updated_at
+    BEFORE UPDATE ON customer_promotions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_promotions_updated_at();
+
+-- Add trigger to update updated_at timestamp for loyalty_tier_promotions
+CREATE TRIGGER trigger_update_loyalty_tier_promotions_updated_at
+    BEFORE UPDATE ON loyalty_tier_promotions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_promotions_updated_at();
+
+-- =====================================================
+-- PROMOTIONS VIEWS AND HELPER FUNCTIONS
+-- =====================================================
+
+-- View: Active promotions with tier eligibility
+CREATE OR REPLACE VIEW v_active_promotions AS
+SELECT 
+    p.*,
+    COUNT(DISTINCT ltp.loyalty_tier_id) as eligible_tier_count,
+    ARRAY_AGG(DISTINCT lt.tier_name) FILTER (WHERE lt.tier_name IS NOT NULL) as eligible_tiers
+FROM promotions p
+LEFT JOIN loyalty_tier_promotions ltp ON p.id = ltp.promotion_id
+LEFT JOIN loyalty_tiers lt ON ltp.loyalty_tier_id = lt.id
+WHERE p.is_active = true
+    AND (p.start_date_time IS NULL OR p.start_date_time <= CURRENT_TIMESTAMP)
+    AND (p.end_date_time IS NULL OR p.end_date_time >= CURRENT_TIMESTAMP)
+GROUP BY p.id;
+
+-- View: Customer promotions with progress
+CREATE OR REPLACE VIEW v_customer_promotions_progress AS
+SELECT 
+    cp.*,
+    c.first_name,
+    c.last_name,
+    c.email,
+    c.loyalty_tier,
+    p.name as promotion_name,
+    p.display_name as promotion_display_name,
+    p.image_url as promotion_image_url,
+    p.description as promotion_description,
+    p.total_reward_points,
+    p.end_date_time as promotion_end_date,
+    CASE 
+        WHEN cp.cumulative_usage_target > 0 THEN 
+            (cp.cumulative_usage_completed / cp.cumulative_usage_target * 100)
+        ELSE 0 
+    END as calculated_progress_percent
+FROM customer_promotions cp
+JOIN customers c ON cp.customer_id = c.id
+JOIN promotions p ON cp.promotion_id = p.id
+WHERE cp.is_enrollment_active = true
+    AND p.is_active = true;
+
+-- Function: Get available promotions for a customer based on their tier
+CREATE OR REPLACE FUNCTION get_customer_available_promotions(
+    p_customer_id INTEGER
+)
+RETURNS TABLE (
+    promotion_id INTEGER,
+    promotion_name VARCHAR(255),
+    display_name VARCHAR(255),
+    description TEXT,
+    image_url TEXT,
+    total_reward_points INTEGER,
+    end_date_time TIMESTAMP,
+    is_enrolled BOOLEAN,
+    is_tier_eligible BOOLEAN
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.id as promotion_id,
+        p.name as promotion_name,
+        p.display_name,
+        p.description,
+        p.image_url,
+        p.total_reward_points,
+        p.end_date_time,
+        CASE WHEN cp.id IS NOT NULL THEN true ELSE false END as is_enrolled,
+        CASE 
+            WHEN ltp.id IS NOT NULL THEN true -- Tier-specific promotion
+            WHEN NOT EXISTS (
+                SELECT 1 FROM loyalty_tier_promotions ltp2 
+                WHERE ltp2.promotion_id = p.id
+            ) THEN true -- No tier restrictions (available to all)
+            ELSE false 
+        END as is_tier_eligible
+    FROM promotions p
+    LEFT JOIN customers c ON c.id = p_customer_id
+    LEFT JOIN loyalty_tiers lt ON lt.tier_name = c.loyalty_tier
+    LEFT JOIN loyalty_tier_promotions ltp ON ltp.promotion_id = p.id AND ltp.loyalty_tier_id = lt.id
+    LEFT JOIN customer_promotions cp ON cp.promotion_id = p.id AND cp.customer_id = p_customer_id
+    WHERE p.is_active = true
+        AND (p.start_date_time IS NULL OR p.start_date_time <= CURRENT_TIMESTAMP)
+        AND (p.end_date_time IS NULL OR p.end_date_time >= CURRENT_TIMESTAMP)
+    GROUP BY p.id, cp.id, ltp.id
+    ORDER BY p.start_date_time DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function: Enroll customer in promotion
+CREATE OR REPLACE FUNCTION enroll_customer_in_promotion(
+    p_customer_id INTEGER,
+    p_promotion_id INTEGER,
+    p_auto_enrolled BOOLEAN DEFAULT false
+)
+RETURNS INTEGER AS $$
+DECLARE
+    v_enrollment_id INTEGER;
+BEGIN
+    -- Check if customer is already enrolled
+    SELECT id INTO v_enrollment_id
+    FROM customer_promotions
+    WHERE customer_id = p_customer_id AND promotion_id = p_promotion_id;
+    
+    IF v_enrollment_id IS NOT NULL THEN
+        -- Already enrolled, return existing ID
+        RETURN v_enrollment_id;
+    END IF;
+    
+    -- Create new enrollment
+    INSERT INTO customer_promotions (
+        customer_id,
+        promotion_id,
+        is_auto_enrolled,
+        is_enrollment_active,
+        status
+    ) VALUES (
+        p_customer_id,
+        p_promotion_id,
+        p_auto_enrolled,
+        true,
+        'active'
+    )
+    RETURNING id INTO v_enrollment_id;
+    
+    RETURN v_enrollment_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- PROMOTIONS SYNC LOGGING
+-- =====================================================
+
+-- Table to track promotion sync operations
+CREATE TABLE IF NOT EXISTS promotion_sync_log (
+    id SERIAL PRIMARY KEY,
+    sync_type VARCHAR(50) NOT NULL, -- 'promotions', 'customer_promotions', 'tier_promotions'
+    sync_action VARCHAR(20) NOT NULL, -- 'fetch', 'upsert', 'delete'
+    records_processed INTEGER DEFAULT 0,
+    records_success INTEGER DEFAULT 0,
+    records_failed INTEGER DEFAULT 0,
+    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'running', -- running, completed, failed
+    error_message TEXT,
+    sync_details JSONB, -- Store additional sync metadata
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_promotion_sync_log_type ON promotion_sync_log(sync_type);
+CREATE INDEX IF NOT EXISTS idx_promotion_sync_log_started ON promotion_sync_log(started_at DESC);
+
+COMMENT ON TABLE promotions IS 'Stores promotion definitions from Salesforce Promotion object';
+COMMENT ON TABLE customer_promotions IS 'Tracks customer enrollment and progress in promotions (LoyaltyProgramMbrPromotion)';
+COMMENT ON TABLE loyalty_tier_promotions IS 'Maps promotions to specific loyalty tiers (LoyaltyTierPromotion)';
+COMMENT ON TABLE promotion_sync_log IS 'Tracks synchronization operations from Salesforce';
