@@ -29,14 +29,15 @@ window.Modals.Customer360Modal = ({ customer, isOpen, onClose }) => {
     const [transactions, setTransactions] = React.useState([]);
     const [customerAvatar, setCustomerAvatar] = React.useState(null);
 
-    if (!isOpen || !customer) return null;
-
     // Fetch data when modal opens
     React.useEffect(() => {
         if (isOpen && customer) {
             fetchCustomerData();
         }
     }, [isOpen, customer?.id, activeTab]);
+
+    // Early return AFTER all hooks to follow Rules of Hooks
+    if (!isOpen || !customer) return null;
 
     const fetchCustomerData = async () => {
         try {
