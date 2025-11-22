@@ -3247,7 +3247,7 @@ app.get('/api/loyalty/:loyaltyNumber/promotions', async (req, res) => {
     
     // Get customer details
     const customerResult = await pool.query(
-      'SELECT id, name, loyalty_number, tier FROM customers WHERE loyalty_number = $1',
+      'SELECT id, name, loyalty_number, customer_tier as tier FROM customers WHERE loyalty_number = $1',
       [loyaltyNumber.toUpperCase()]
     );
     
