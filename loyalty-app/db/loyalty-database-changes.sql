@@ -610,7 +610,7 @@ SELECT
     ca.zip_code,
     ca.country,
     -- Latest status update
-    (SELECT osh.status 
+    (SELECT osh.new_status 
      FROM order_status_history osh 
      WHERE osh.transaction_id = t.id 
      ORDER BY osh.timestamp DESC 
