@@ -4,7 +4,7 @@ if (!window.Views) {
 
 // Promotions View Component
 window.Views.PromotionsView = () => {
-    const { Grid3X3, List, Calendar, Tag, AlertCircle, Loader } = window.Icons;
+    const { Grid3X3, List, Calendar, Tag, AlertCircle, RefreshCw } = window.Icons;
 
     const [viewMode, setViewMode] = React.useState('list'); // 'list' or 'grid'
     const [promotions, setPromotions] = React.useState([]);
@@ -301,7 +301,7 @@ window.Views.PromotionsView = () => {
                 key: 'loading-content',
                 className: 'text-center'
             }, [
-                React.createElement(Loader, {
+                React.createElement(RefreshCw, {
                     key: 'loader-icon',
                     size: 48,
                     className: 'mx-auto text-blue-600 dark:text-blue-400 animate-spin'
