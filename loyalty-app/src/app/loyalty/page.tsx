@@ -23,7 +23,6 @@ import {
   cn,
   formatCurrency,
   formatDate,
-  getLoyaltyTierInfo,
 } from '@/lib/utils';
 
 interface PointsData {
