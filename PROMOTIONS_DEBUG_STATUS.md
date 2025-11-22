@@ -1,5 +1,18 @@
 # Promotions Debug Status
 
+## ✅ ISSUE RESOLVED!
+
+**Root Cause Found:** The `/api/auth/me` and `/api/auth/login` endpoints were **not fetching** the `loyalty_number` field from the database!
+
+**Fix Applied:**
+- Added `c.loyalty_number` to SQL queries in both endpoints
+- Added `loyaltyNumber` to the returned user objects
+- Deployed in commit `5a11189`
+
+**Next Step:** Clear browser cache and login again. The user object should now include `loyaltyNumber: 'LOY002'`.
+
+---
+
 ## Current Data State
 
 ### User Information
