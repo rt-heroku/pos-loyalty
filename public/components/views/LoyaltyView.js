@@ -10,6 +10,7 @@ window.Views.LoyaltyView= ({
     loyaltySearchTerm, 
     setLoyaltySearchTerm, 
     customerSearchResults, 
+    customerPromotions = [],
     onLoadCustomerHistory, 
     customers = [],
     onRefreshCustomers,
@@ -18,7 +19,7 @@ window.Views.LoyaltyView= ({
     onAddNewCustomer,
     loading 
 }) => {
-    const { Award, Users, Plus, Edit, Trash2, Search, Eye, User } = window.Icons;
+    const { Award, Users, Plus, Edit, Trash2, Search, Eye, User, Tag, Calendar, TrendingUp } = window.Icons;
     
     const [currentTab, setCurrentTab] = React.useState('manage'); // 'search', 'manage', or 'vouchers'
     const [selectedCustomerForVouchers, setSelectedCustomerForVouchers] = React.useState(null);
@@ -31,6 +32,8 @@ window.Views.LoyaltyView= ({
     const [actionMenuOpen, setActionMenuOpen] = React.useState(null);
     const [loadingAvatars, setLoadingAvatars] = React.useState(new Set());
     const attemptedAvatars = React.useRef(new Set());
+    const [show360Modal, setShow360Modal] = React.useState(false);
+    const [selectedCustomerFor360, setSelectedCustomerFor360] = React.useState(null);
 
 
     // Load customer avatars
@@ -165,13 +168,18 @@ window.Views.LoyaltyView= ({
     );
 
     const CustomerCard = ({ customer, avatar }) => {
-        const { MoreVertical } = window.Icons;
+        const { MoreVertical, Eye } = window.Icons;
         const [showMenu, setShowMenu] = React.useState(false);
         const menuRef = React.useRef(null);
 
         const toggleMenu = (e) => {
             e.stopPropagation();
             setShowMenu(prev => !prev);
+        };
+
+        const handleCardClick = () => {
+            setSelectedCustomerFor360(customer);
+            setShow360Modal(true);
         };
 
         const handleClickOutside = (event) => {
@@ -226,9 +234,10 @@ window.Views.LoyaltyView= ({
         const daysSinceMember = Math.floor((new Date() - memberSince) / (1000 * 60 * 60 * 24));
         
         return React.createElement('div', { 
-            className: `bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow ${
+            className: `bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all cursor-pointer ${
                 customer.member_status !== 'Active' ? 'opacity-75' : ''
-            }` 
+            }`,
+            onClick: handleCardClick
         }, [
             React.createElement('div', { key: 'header', className: 'flex justify-between items-start mb-3' }, [
                 React.createElement('div', { key: 'info', className: 'flex items-start gap-3' }, [
@@ -288,18 +297,40 @@ window.Views.LoyaltyView= ({
                         className: 'absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-600'
                     }, [
                         React.createElement('button', {
+                            key: '360-view-menu-item',
+                            onClick: (e) => { 
+                                e.stopPropagation();
+                                setSelectedCustomerFor360(customer); 
+                                setShow360Modal(true); 
+                                setShowMenu(false); 
+                            },
+                            className: 'flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-t-md font-medium'
+                        }, [React.createElement(Eye, { key: 'eye-icon', size: 16 }), '360 View']),
+                        React.createElement('button', {
                             key: 'view-history-menu-item',
-                            onClick: () => { onLoadCustomerHistory(customer.id); setShowMenu(false); },
-                            className: 'flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-t-md'
-                        }, [React.createElement(Eye, { key: 'eye-icon', size: 16 }), 'View History']),
+                            onClick: (e) => { 
+                                e.stopPropagation();
+                                onLoadCustomerHistory(customer.id); 
+                                setShowMenu(false); 
+                            },
+                            className: 'flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600'
+                        }, [React.createElement(User, { key: 'user-icon', size: 16 }), 'View History']),
                         React.createElement('button', {
                             key: 'edit-menu-item',
-                            onClick: () => { onEditCustomer(customer); setShowMenu(false); },
+                            onClick: (e) => { 
+                                e.stopPropagation();
+                                onEditCustomer(customer); 
+                                setShowMenu(false); 
+                            },
                             className: 'flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600'
                         }, [React.createElement(Edit, { key: 'edit-icon', size: 16 }), 'Edit']),
                         React.createElement('button', {
                             key: 'delete-menu-item',
-                            onClick: () => { onDeleteCustomer(customer.id); setShowMenu(false); },
+                            onClick: (e) => { 
+                                e.stopPropagation();
+                                onDeleteCustomer(customer.id); 
+                                setShowMenu(false); 
+                            },
                             className: 'flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-800/50 rounded-b-md',
                             disabled: customer.member_status === 'Under Fraud Investigation'
                         }, [React.createElement(Trash2, { key: 'trash-icon', size: 16 }), 'Delete'])
@@ -629,6 +660,111 @@ window.Views.LoyaltyView= ({
                 ])
             ]),
 
+            // Customer Promotions
+            customerSearchResults.length > 0 && customerPromotions.length > 0 && React.createElement('div', { 
+                key: 'customer-promotions', 
+                className: 'bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6' 
+            }, [
+                React.createElement('h4', { 
+                    key: 'promotions-title', 
+                    className: 'font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2' 
+                }, [
+                    React.createElement(Tag, { key: 'promotions-icon', size: 18 }),
+                    'Available Promotions'
+                ]),
+                React.createElement('div', { 
+                    key: 'promotions-grid', 
+                    className: 'grid grid-cols-1 md:grid-cols-2 gap-4' 
+                }, 
+                    customerPromotions.map(promo => 
+                        React.createElement('div', { 
+                            key: `promo-${promo.id}`, 
+                            className: `p-4 border rounded-lg transition-all ${
+                                promo.is_enrolled 
+                                    ? 'border-green-300 bg-green-50 dark:bg-green-900/10 dark:border-green-700' 
+                                    : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
+                            }` 
+                        }, [
+                            // Header
+                            React.createElement('div', { 
+                                key: 'promo-header', 
+                                className: 'flex items-start justify-between mb-3' 
+                            }, [
+                                React.createElement('div', { key: 'promo-icon', className: 'w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center' }, [
+                                    React.createElement(Tag, { key: 'icon', size: 20, className: 'text-blue-600 dark:text-blue-400' })
+                                ]),
+                                promo.is_enrolled && React.createElement('span', {
+                                    key: 'enrolled-badge',
+                                    className: 'px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                                }, '✓ Enrolled')
+                            ]),
+                            
+                            // Title and description
+                            React.createElement('h5', { 
+                                key: 'promo-title', 
+                                className: 'font-semibold text-gray-900 dark:text-white mb-1' 
+                            }, promo.display_name || promo.name),
+                            
+                            promo.description && React.createElement('p', { 
+                                key: 'promo-desc', 
+                                className: 'text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2' 
+                            }, promo.description),
+                            
+                            // Details
+                            React.createElement('div', { key: 'promo-details', className: 'space-y-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700' }, [
+                                promo.total_reward_points && React.createElement('div', {
+                                    key: 'points',
+                                    className: 'flex items-center gap-2 text-sm'
+                                }, [
+                                    React.createElement(TrendingUp, { key: 'points-icon', size: 14, className: 'text-blue-600 dark:text-blue-400' }),
+                                    React.createElement('span', { key: 'points-text', className: 'font-semibold text-blue-600 dark:text-blue-400' }, 
+                                        `${promo.total_reward_points} Points`)
+                                ]),
+                                
+                                (promo.start_date || promo.start_date_time) && React.createElement('div', {
+                                    key: 'dates',
+                                    className: 'flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400'
+                                }, [
+                                    React.createElement(Calendar, { key: 'date-icon', size: 12 }),
+                                    React.createElement('span', { key: 'date-text' }, 
+                                        `Until ${new Date(promo.end_date || promo.end_date_time || Date.now() + 30*24*60*60*1000).toLocaleDateString()}`)
+                                ]),
+                                
+                                promo.is_enrollment_required && !promo.is_enrolled && React.createElement('div', {
+                                    key: 'enroll-notice',
+                                    className: 'text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1'
+                                }, [
+                                    React.createElement('span', { key: 'icon' }, '⚠️'),
+                                    React.createElement('span', { key: 'text' }, 'Enrollment required')
+                                ]),
+                                
+                                // Progress bar for enrolled promotions
+                                promo.is_enrolled && promo.cumulative_usage_target > 0 && React.createElement('div', {
+                                    key: 'progress',
+                                    className: 'mt-2'
+                                }, [
+                                    React.createElement('div', { key: 'progress-header', className: 'flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1' }, [
+                                        React.createElement('span', { key: 'label' }, 'Progress'),
+                                        React.createElement('span', { key: 'percent' }, `${Math.round(promo.cumulative_usage_complete_percent || 0)}%`)
+                                    ]),
+                                    React.createElement('div', { 
+                                        key: 'progress-bar', 
+                                        className: 'w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden' 
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'progress-fill',
+                                            className: 'bg-green-600 h-full transition-all',
+                                            style: { width: `${Math.min(promo.cumulative_usage_complete_percent || 0, 100)}%` }
+                                        })
+                                    ])
+                                ])
+                            ])
+                        ])
+                    )
+                )
+            ])
+        ]),
+
         // Customer Management Tab
         currentTab === 'manage' && React.createElement('div', { key: 'manage-content', className: 'space-y-3' }, [
             // Customer List
@@ -696,6 +832,17 @@ window.Views.LoyaltyView= ({
             onClose: () => {
                 setShowVouchersModal(false);
                 setSelectedCustomerForVouchers(null);
+            }
+        }),
+
+        // Customer 360 View Modal
+        window.Modals.Customer360Modal && React.createElement(window.Modals.Customer360Modal, {
+            key: '360-modal',
+            customer: selectedCustomerFor360,
+            isOpen: show360Modal,
+            onClose: () => {
+                setShow360Modal(false);
+                setSelectedCustomerFor360(null);
             }
         })
     ]);

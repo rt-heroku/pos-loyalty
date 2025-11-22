@@ -9,7 +9,6 @@ import {
   Star,
   TrendingUp,
   Calendar,
-  Search,
   Crown,
   Award,
   Users,
@@ -42,31 +41,6 @@ interface PointsData {
     total: number;
     totalPages: number;
   };
-}
-
-interface Reward {
-  id: number;
-  reward_name: string;
-  reward_type: string;
-  points_required: number;
-  discount_percentage?: number;
-  discount_amount?: number;
-  description: string;
-  terms_conditions: string;
-  valid_from: string;
-  valid_until?: string;
-  max_redemptions?: number;
-  current_redemptions: number;
-  tier_restriction?: string;
-  is_active: boolean;
-  isAvailable: boolean;
-  remainingRedemptions?: number;
-}
-
-interface RewardsData {
-  rewards: Reward[];
-  redeemedRewards: any[];
-  customerTier: string;
 }
 
 interface Voucher {
@@ -131,20 +105,15 @@ interface LoyaltyTier {
 }
 
 export default function LoyaltyPage() {
-  const { user, loading, refreshUser } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const [pointsData, setPointsData] = useState<PointsData | null>(null);
-  const [rewardsData, setRewardsData] = useState<RewardsData | null>(null);
   const [vouchersData, setVouchersData] = useState<VouchersData | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [promotions, setPromotions] = useState<any[]>([]);
   const [tiers, setTiers] = useState<LoyaltyTier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
-  const [showRedeemModal, setShowRedeemModal] = useState(false);
-  const [redeemQuantity, setRedeemQuantity] = useState(1);
-  const [isRedeeming, setIsRedeeming] = useState(false);
   const [toast, setToast] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -160,6 +129,7 @@ export default function LoyaltyPage() {
     if (user) {
       fetchLoyaltyData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchLoyaltyData = async () => {
@@ -167,7 +137,9 @@ export default function LoyaltyPage() {
       setIsLoading(true);
 
       // Fetch loyalty tiers
-      const tiersResponse = await fetch('/loyalty/api/loyalty/tiers');
+      const tiersResponse = await fetch('/loyalty/api/loyalty/tiers', {
+        credentials: 'include',
+      });
       if (tiersResponse.ok) {
         const tiersData = await tiersResponse.json();
         setTiers(tiersData);
@@ -175,72 +147,66 @@ export default function LoyaltyPage() {
       }
 
       // Fetch points data
-      const pointsResponse = await fetch('/loyalty/api/loyalty/points');
+      const pointsResponse = await fetch('/loyalty/api/loyalty/points', {
+        credentials: 'include',
+      });
       if (pointsResponse.ok) {
         const pointsData = await pointsResponse.json();
         setPointsData(pointsData);
       }
 
-      // Fetch rewards data
-      const rewardsResponse = await fetch('/loyalty/api/loyalty/rewards');
-      if (rewardsResponse.ok) {
-        const rewardsData = await rewardsResponse.json();
-        setRewardsData(rewardsData);
-      }
-
       // Fetch vouchers data
-      const vouchersResponse = await fetch('/loyalty/api/loyalty/vouchers');
+      const vouchersResponse = await fetch('/loyalty/api/loyalty/vouchers', {
+        credentials: 'include',
+      });
       if (vouchersResponse.ok) {
         const vouchersData = await vouchersResponse.json();
         setVouchersData(vouchersData);
       }
 
       // Fetch orders data
-      const ordersResponse = await fetch('/loyalty/api/orders');
+      console.log('[Loyalty] Fetching orders for user:', user?.id, user?.email);
+      const ordersResponse = await fetch('/loyalty/api/orders', {
+        credentials: 'include', // Ensure cookies are sent
+      });
       if (ordersResponse.ok) {
         const ordersData = await ordersResponse.json();
         setOrders(ordersData);
-        console.log('[Loyalty] Orders loaded:', ordersData.length);
+        console.log('[Loyalty] Orders loaded:', ordersData.length, 'orders:', ordersData);
+      } else if (ordersResponse.status === 401) {
+        console.warn('[Loyalty] Orders fetch failed: Not authenticated');
+        setOrders([]); // Set empty array if not authenticated
       } else {
         console.error('[Loyalty] Orders fetch failed:', ordersResponse.status);
+        const errorText = await ordersResponse.text();
+        console.error('[Loyalty] Orders error response:', errorText);
+        setOrders([]); // Set empty array on error
+      }
+
+      // Fetch promotions data
+      if (user?.loyaltyNumber) {
+        console.log('[Loyalty] Fetching promotions for loyalty number:', user.loyaltyNumber);
+        const promotionsResponse = await fetch(`/loyalty/api/promotions?loyalty_number=${user.loyaltyNumber}`, {
+          credentials: 'include',
+        });
+        if (promotionsResponse.ok) {
+          const promotionsData = await promotionsResponse.json();
+          setPromotions(promotionsData.promotions || []);
+          console.log('[Loyalty] Promotions loaded:', promotionsData.promotions?.length || 0, 'promotions:', promotionsData.promotions);
+        } else {
+          console.error('[Loyalty] Promotions fetch failed:', promotionsResponse.status);
+          const errorText = await promotionsResponse.text();
+          console.error('[Loyalty] Promotions error response:', errorText);
+          setPromotions([]);
+        }
+      } else {
+        console.warn('[Loyalty] No loyaltyNumber found for user:', user);
+        setPromotions([]);
       }
     } catch (error) {
       console.error('Error fetching loyalty data:', error);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleRedeem = async () => {
-    if (!selectedReward) return;
-
-    try {
-      setIsRedeeming(true);
-      const response = await fetch('/loyalty/api/loyalty/redeem', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          rewardId: selectedReward.id,
-          quantity: redeemQuantity,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        showToast('success', 'Reward redeemed successfully!');
-        setShowRedeemModal(false);
-        setSelectedReward(null);
-        setRedeemQuantity(1);
-        await refreshUser();
-        fetchLoyaltyData(); // Refresh data
-      } else {
-        showToast('error', data.error || 'Failed to redeem reward');
-      }
-    } catch (error) {
-      showToast('error', 'Network error occurred');
-    } finally {
-      setIsRedeeming(false);
     }
   };
 
@@ -254,13 +220,6 @@ export default function LoyaltyPage() {
     setToast({ type, message });
     setTimeout(() => setToast(null), 5000);
   };
-
-  const filteredRewards =
-    rewardsData?.rewards.filter(
-      reward =>
-        reward.reward_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        reward.description.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
 
   if (loading || isLoading) {
     return (
@@ -316,7 +275,7 @@ export default function LoyaltyPage() {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Star },
-    { id: 'rewards', label: 'Promotions', icon: Gift },
+    { id: 'promotions', label: 'Promotions', icon: Gift },
     { id: 'vouchers', label: 'Vouchers', icon: Percent },
     { id: 'orders', label: 'Online Orders', icon: ShoppingBag },
     { id: 'history', label: 'In-Store Transactions', icon: Calendar },
@@ -480,99 +439,86 @@ export default function LoyaltyPage() {
           )}
 
           {/* Rewards Tab */}
-          {activeTab === 'rewards' && (
+          {activeTab === 'promotions' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  Available Promotions
+                  My Promotions
                 </h2>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search promotions..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:border-transparent focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {filteredRewards.map(reward => (
-                  <div
-                    key={reward.id}
-                    className="rounded-xl border border-gray-200 bg-gray-50 p-6 transition-shadow hover:shadow-lg"
-                  >
-                    <div className="mb-4 flex items-center justify-between">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100">
-                        {reward.reward_type === 'discount' ? (
-                          <Percent className="h-6 w-6 text-primary-600" />
-                        ) : (
-                          <Gift className="h-6 w-6 text-primary-600" />
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary-600">
-                          {reward.points_required}
+              {promotions.length > 0 ? (
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {promotions.map(promo => (
+                    <div
+                      key={promo.id}
+                      className={cn(
+                        "rounded-xl border p-6 transition-shadow hover:shadow-lg",
+                        promo.is_enrolled
+                          ? 'border-green-300 bg-green-50'
+                          : 'border-gray-200 bg-gray-50'
+                      )}
+                    >
+                      {promo.image_url && (
+                        <div className="mb-4 h-32 w-full overflow-hidden rounded-lg">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={promo.image_url}
+                            alt={promo.name}
+                            className="h-full w-full object-cover"
+                          />
                         </div>
-                        <div className="text-sm text-gray-600">points</div>
-                      </div>
-                    </div>
+                      )}
 
-                    <h3 className="mb-2 font-semibold text-gray-900">
-                      {reward.reward_name}
-                    </h3>
-                    <p className="mb-4 text-sm text-gray-600">
-                      {reward.description}
-                    </p>
-
-                    {reward.reward_type === 'discount' && (
                       <div className="mb-4">
-                        {reward.discount_percentage ? (
-                          <div className="text-lg font-bold text-green-600">
-                            {reward.discount_percentage}% OFF
+                        <div className="mb-2 flex items-start justify-between">
+                          <h3 className="font-semibold text-gray-900">
+                            {promo.display_name || promo.name}
+                          </h3>
+                          {promo.is_enrolled && (
+                            <span className="rounded-full bg-green-600 px-2 py-1 text-xs font-medium text-white">
+                              ✓ Enrolled
+                            </span>
+                          )}
+                        </div>
+                        {promo.description && (
+                          <p className="mb-3 text-sm text-gray-600">
+                            {promo.description}
+                          </p>
+                        )}
+                        {promo.total_reward_points && (
+                          <div className="text-lg font-bold text-primary-600">
+                            {promo.total_reward_points} points
                           </div>
-                        ) : reward.discount_amount ? (
-                          <div className="text-lg font-bold text-green-600">
-                            ${reward.discount_amount} OFF
-                          </div>
-                        ) : null}
+                        )}
                       </div>
-                    )}
 
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs text-gray-500">
-                        {reward.remainingRedemptions !== null && (
-                          <span>{reward.remainingRedemptions} left</span>
+                      <div className="space-y-2 text-xs text-gray-500">
+                        {promo.promotion_source && (
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium">Type:</span>
+                            <span className="capitalize">{promo.promotion_source}</span>
+                          </div>
+                        )}
+                        {promo.start_date && (
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            <span>
+                              {new Date(promo.start_date).toLocaleDateString()}
+                              {promo.end_date && ` - ${new Date(promo.end_date).toLocaleDateString()}`}
+                            </span>
+                          </div>
                         )}
                       </div>
-                      <button
-                        onClick={() => {
-                          setSelectedReward(reward);
-                          setShowRedeemModal(true);
-                        }}
-                        disabled={!reward.isAvailable}
-                        className={cn(
-                          'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-                          reward.isAvailable
-                            ? 'bg-primary-600 text-white hover:bg-primary-700'
-                            : 'cursor-not-allowed bg-gray-300 text-gray-500'
-                        )}
-                      >
-                        {reward.isAvailable ? 'Redeem' : 'Unavailable'}
-                      </button>
                     </div>
-                  </div>
-                ))}
-              </div>
-
-              {filteredRewards.length === 0 && (
+                  ))}
+                </div>
+              ) : (
                 <div className="py-12 text-center">
                   <Gift className="mx-auto mb-4 h-16 w-16 text-gray-300" />
-                  <p className="text-gray-500">No promotions found</p>
+                  <p className="text-gray-500">No promotions available</p>
                   <p className="text-sm text-gray-400">
-                    Try adjusting your search terms
+                    Check back later for new promotions
                   </p>
                 </div>
               )}
@@ -1145,95 +1091,6 @@ export default function LoyaltyPage() {
           )}
         </div>
       </div>
-
-      {/* Redeem Modal */}
-      {showRedeemModal && selectedReward && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-gray-900">Redeem Reward</h3>
-              <button
-                onClick={() => setShowRedeemModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="rounded-lg bg-gray-50 p-4">
-                <h4 className="font-semibold text-gray-900">
-                  {selectedReward.reward_name}
-                </h4>
-                <p className="text-sm text-gray-600">
-                  {selectedReward.description}
-                </p>
-                <div className="mt-2 text-lg font-bold text-primary-600">
-                  {selectedReward.points_required} points
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Quantity
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={redeemQuantity}
-                  onChange={e =>
-                    setRedeemQuantity(parseInt(e.target.value) || 1)
-                  }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-
-              <div className="rounded-lg bg-blue-50 p-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Total Points:</span>
-                  <span className="font-semibold">
-                    {selectedReward.points_required * redeemQuantity}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Your Balance:</span>
-                  <span className="font-semibold">
-                    {pointsData?.currentBalance}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowRedeemModal(false)}
-                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleRedeem}
-                  disabled={
-                    isRedeeming ||
-                    (pointsData?.currentBalance || 0) <
-                      selectedReward.points_required * redeemQuantity
-                  }
-                  className={cn(
-                    'flex-1 rounded-lg px-4 py-2 text-white transition-colors',
-                    isRedeeming ||
-                      (pointsData?.currentBalance || 0) <
-                        selectedReward.points_required * redeemQuantity
-                      ? 'cursor-not-allowed bg-gray-300'
-                      : 'bg-primary-600 hover:bg-primary-700'
-                  )}
-                >
-                  {isRedeeming ? 'Redeeming...' : 'Confirm Redemption'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Toast Notifications */}
       {toast && (

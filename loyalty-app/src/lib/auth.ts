@@ -15,6 +15,7 @@ export interface AuthenticatedUser {
   tier?: string;
   memberStatus?: string;
   enrollmentDate?: string;
+  loyaltyNumber?: string;
 }
 
 export interface JWTPayload {
@@ -51,7 +52,7 @@ export async function verifyToken(
 
     if (user.role === 'customer') {
       const customerResult = await query(
-        `SELECT c.points, c.total_spent, c.visit_count, c.customer_tier, c.member_status, c.enrollment_date
+        `SELECT c.points, c.total_spent, c.visit_count, c.customer_tier, c.member_status, c.enrollment_date, c.loyalty_number
          FROM customers c
          WHERE c.user_id = $1`,
         [user.id]
@@ -66,6 +67,7 @@ export async function verifyToken(
           tier: customer.customer_tier,
           memberStatus: customer.member_status,
           enrollmentDate: customer.enrollment_date,
+          loyaltyNumber: customer.loyalty_number,
         };
       }
     }

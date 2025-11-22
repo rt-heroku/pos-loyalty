@@ -4566,19 +4566,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_update_promotions_updated_at
+CREATE OR REPLACE TRIGGER trigger_update_promotions_updated_at
     BEFORE UPDATE ON promotions
     FOR EACH ROW
     EXECUTE FUNCTION update_promotions_updated_at();
 
 -- Add trigger to update updated_at timestamp for customer_promotions
-CREATE TRIGGER trigger_update_customer_promotions_updated_at
+CREATE OR REPLACE TRIGGER trigger_update_customer_promotions_updated_at
     BEFORE UPDATE ON customer_promotions
     FOR EACH ROW
     EXECUTE FUNCTION update_promotions_updated_at();
 
 -- Add trigger to update updated_at timestamp for loyalty_tier_promotions
-CREATE TRIGGER trigger_update_loyalty_tier_promotions_updated_at
+CREATE OR REPLACE TRIGGER trigger_update_loyalty_tier_promotions_updated_at
     BEFORE UPDATE ON loyalty_tier_promotions
     FOR EACH ROW
     EXECUTE FUNCTION update_promotions_updated_at();
@@ -4608,7 +4608,7 @@ SELECT
     c.first_name,
     c.last_name,
     c.email,
-    c.loyalty_tier,
+    c.customer_tier,
     p.name as promotion_name,
     p.display_name as promotion_display_name,
     p.image_url as promotion_image_url,

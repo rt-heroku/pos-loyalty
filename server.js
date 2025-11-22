@@ -3240,6 +3240,174 @@ app.post('/api/loyalty/create', async (req, res) => {
   }
 });
 
+// Get all promotions for a specific customer by loyalty number
+app.get('/api/loyalty/:loyaltyNumber/promotions', async (req, res) => {
+  try {
+    const { loyaltyNumber } = req.params;
+    
+    // Get customer details
+    const customerResult = await pool.query(
+      'SELECT id, name, loyalty_number, tier FROM customers WHERE loyalty_number = $1',
+      [loyaltyNumber.toUpperCase()]
+    );
+    
+    if (customerResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+    
+    const customer = customerResult.rows[0];
+    
+    // Get all active promotions with customer enrollment status
+    const promotionsResult = await pool.query(`
+      SELECT 
+        p.*,
+        cp.id as enrollment_id,
+        cp.is_enrollment_active,
+        cp.enrolled_at,
+        cp.cumulative_usage_completed,
+        cp.cumulative_usage_target,
+        cp.cumulative_usage_complete_percent,
+        cp.status as enrollment_status,
+        cp.completed_at,
+        CASE 
+          WHEN cp.id IS NOT NULL THEN true 
+          ELSE false 
+        END as is_enrolled
+      FROM promotions p
+      LEFT JOIN customer_promotions cp 
+        ON p.id = cp.promotion_id 
+        AND cp.customer_id = $1
+      WHERE p.is_active = true
+        AND (p.start_date_time IS NULL OR p.start_date_time <= NOW())
+        AND (p.end_date_time IS NULL OR p.end_date_time >= NOW())
+      ORDER BY p.discount_order, p.name
+    `, [customer.id]);
+    
+    res.json({
+      customer: {
+        id: customer.id,
+        name: customer.name,
+        loyaltyNumber: customer.loyalty_number,
+        tier: customer.tier
+      },
+      promotions: promotionsResult.rows
+    });
+  } catch (err) {
+    console.error('Error fetching customer promotions:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all active promotions (for POS operations menu)
+app.get('/api/promotions', async (req, res) => {
+  try {
+    const promotionsResult = await pool.query(`
+      SELECT 
+        id,
+        sf_id,
+        name,
+        display_name,
+        description,
+        is_active,
+        is_automatic,
+        is_enrollment_required,
+        start_date,
+        start_date_time,
+        end_date,
+        end_date_time,
+        image_url,
+        promotion_code,
+        usage_type,
+        point_factor,
+        total_reward_points,
+        terms_and_conditions,
+        created_at,
+        updated_at
+      FROM promotions
+      WHERE is_active = true
+        AND (start_date_time IS NULL OR start_date_time <= NOW())
+        AND (end_date_time IS NULL OR end_date_time >= NOW())
+      ORDER BY discount_order, name
+    `);
+    
+    res.json({
+      promotions: promotionsResult.rows,
+      total: promotionsResult.rows.length
+    });
+  } catch (err) {
+    console.error('Error fetching promotions:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Enroll customer in a promotion
+app.post('/api/promotions/:promotionId/enroll', async (req, res) => {
+  try {
+    const { promotionId } = req.params;
+    const { customerId, loyaltyNumber } = req.body;
+    
+    let customerIdToUse = customerId;
+    
+    // If loyalty number provided, look up customer
+    if (!customerIdToUse && loyaltyNumber) {
+      const customerResult = await pool.query(
+        'SELECT id FROM customers WHERE loyalty_number = $1',
+        [loyaltyNumber.toUpperCase()]
+      );
+      
+      if (customerResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+      
+      customerIdToUse = customerResult.rows[0].id;
+    }
+    
+    if (!customerIdToUse) {
+      return res.status(400).json({ error: 'Customer ID or loyalty number required' });
+    }
+    
+    // Check if promotion exists and is active
+    const promotionResult = await pool.query(
+      'SELECT id, name, is_enrollment_required FROM promotions WHERE id = $1 AND is_active = true',
+      [promotionId]
+    );
+    
+    if (promotionResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Promotion not found or inactive' });
+    }
+    
+    // Check if already enrolled
+    const existingEnrollment = await pool.query(
+      'SELECT id FROM customer_promotions WHERE customer_id = $1 AND promotion_id = $2',
+      [customerIdToUse, promotionId]
+    );
+    
+    if (existingEnrollment.rows.length > 0) {
+      return res.status(400).json({ error: 'Customer already enrolled in this promotion' });
+    }
+    
+    // Enroll customer
+    const enrollmentResult = await pool.query(`
+      INSERT INTO customer_promotions (
+        customer_id, 
+        promotion_id, 
+        is_enrollment_active, 
+        enrolled_at,
+        status
+      ) VALUES ($1, $2, true, NOW(), 'active')
+      RETURNING *
+    `, [customerIdToUse, promotionId]);
+    
+    res.json({
+      success: true,
+      enrollment: enrollmentResult.rows[0]
+    });
+  } catch (err) {
+    console.error('Error enrolling in promotion:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Sales analytics
 app.get('/api/analytics', async (req, res) => {
   try {
@@ -6858,6 +7026,175 @@ app.get('/api/customers/:id/orders/history', async (req, res) => {
   } catch (error) {
     console.error('Error fetching customer order history:', error);
     res.status(500).json({ error: 'Failed to fetch order history' });
+  }
+});
+
+// Get customer promotions (individual + tier + general)
+app.get('/api/customers/:id/promotions', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // First get customer details to know their tier
+    const customerResult = await pool.query(`
+      SELECT c.*, lt.name as tier_name, lt.id as tier_id
+      FROM customers c
+      LEFT JOIN loyalty_tiers lt ON c.customer_tier = lt.name
+      WHERE c.id = $1
+    `, [id]);
+    
+    if (customerResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+    
+    const customer = customerResult.rows[0];
+    
+    // Get customer-specific promotions
+    const customerPromotionsQuery = await pool.query(`
+      SELECT 
+        p.*,
+        cp.enrollment_date,
+        cp.enrollment_status,
+        cp.progress,
+        true as is_enrolled,
+        'customer' as promotion_source
+      FROM customer_promotions cp
+      INNER JOIN promotions p ON cp.promotion_id = p.id
+      WHERE cp.customer_id = $1 AND p.is_active = true
+      ORDER BY cp.enrollment_date DESC
+    `, [id]);
+    
+    // Get tier promotions (if customer has a tier)
+    let tierPromotionsQuery = { rows: [] };
+    if (customer.tier_id) {
+      tierPromotionsQuery = await pool.query(`
+        SELECT 
+          p.*,
+          false as is_enrolled,
+          'tier' as promotion_source
+        FROM loyalty_tier_promotions ltp
+        INNER JOIN promotions p ON ltp.promotion_id = p.id
+        WHERE ltp.loyalty_tier_id = $1 AND p.is_active = true
+      `, [customer.tier_id]);
+    }
+    
+    // Get general promotions (not assigned to any tier and not customer-specific)
+    const generalPromotionsQuery = await pool.query(`
+      SELECT 
+        p.*,
+        false as is_enrolled,
+        'general' as promotion_source
+      FROM promotions p
+      WHERE p.is_active = true
+        AND p.id NOT IN (
+          SELECT promotion_id FROM loyalty_tier_promotions
+        )
+        AND p.id NOT IN (
+          SELECT promotion_id FROM customer_promotions WHERE customer_id = $1
+        )
+      ORDER BY p.created_at DESC
+    `, [id]);
+    
+    // Combine all promotions
+    const allPromotions = [
+      ...customerPromotionsQuery.rows,
+      ...tierPromotionsQuery.rows,
+      ...generalPromotionsQuery.rows
+    ];
+    
+    res.json({ promotions: allPromotions });
+  } catch (error) {
+    console.error('Error fetching customer promotions:', error);
+    res.status(500).json({ error: 'Failed to fetch promotions' });
+  }
+});
+
+// Get customer transactions (purchase history)
+app.get('/api/customers/:id/transactions', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query(`
+      SELECT 
+        t.id,
+        t.created_at,
+        t.total,
+        t.payment_method,
+        t.status,
+        t.items,
+        t.transaction_type,
+        l.store_name as location_name
+      FROM transactions t
+      LEFT JOIN locations l ON t.location_id = l.id
+      WHERE t.customer_id = $1
+      ORDER BY t.created_at DESC
+      LIMIT 50
+    `, [id]);
+    
+    res.json({ transactions: result.rows });
+  } catch (error) {
+    console.error('Error fetching customer transactions:', error);
+    res.status(500).json({ error: 'Failed to fetch transactions' });
+  }
+});
+
+// Get Salesforce orders for customer
+app.get('/api/customers/:id/salesforce-orders', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Get customer sf_id
+    const customerResult = await pool.query(
+      'SELECT sf_id FROM customers WHERE id = $1',
+      [id]
+    );
+    
+    if (customerResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+    
+    const customer = customerResult.rows[0];
+    
+    if (!customer.sf_id) {
+      return res.json({ orders: [], message: 'Customer not synced with Salesforce' });
+    }
+    
+    // Get MuleSoft endpoint from settings
+    const settingsResult = await pool.query(
+      "SELECT setting_value FROM settings WHERE setting_key = 'mulesoft_endpoint' LIMIT 1"
+    );
+    
+    if (settingsResult.rows.length === 0) {
+      return res.status(500).json({ error: 'MuleSoft endpoint not configured' });
+    }
+    
+    const mulesoftEndpoint = settingsResult.rows[0].setting_value;
+    
+    // Call MuleSoft API to get Salesforce orders
+    const mulesoftResponse = await fetch(
+      `${mulesoftEndpoint}/loyalty/customers/${customer.sf_id}/orders`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.MULESOFT_ACCESS_TOKEN || 'your-token-here'}`
+        }
+      }
+    );
+    
+    if (!mulesoftResponse.ok) {
+      console.error('MuleSoft API error:', mulesoftResponse.status);
+      return res.status(mulesoftResponse.status).json({ 
+        error: 'Failed to fetch Salesforce orders',
+        orders: []
+      });
+    }
+    
+    const sfOrders = await mulesoftResponse.json();
+    res.json({ orders: sfOrders.orders || sfOrders || [] });
+    
+  } catch (error) {
+    console.error('Error fetching Salesforce orders:', error);
+    res.status(500).json({ error: 'Failed to fetch Salesforce orders', orders: [] });
   }
 });
 

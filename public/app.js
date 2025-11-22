@@ -107,6 +107,7 @@ const POSApp = () => {
     const [showLoyaltyModal, setShowLoyaltyModal] = useState(false);
     const [loyaltyNumber, setLoyaltyNumber] = useState('');
     const [customerSearchResults, setCustomerSearchResults] = useState([]);
+    const [customerPromotions, setCustomerPromotions] = useState([]);
     const [loyaltySearchTerm, setLoyaltySearchTerm] = useState('');
     const [customerHistory, setCustomerHistory] = useState([]);
     const [showCustomerHistory, setShowCustomerHistory] = useState(false);
@@ -1424,6 +1425,7 @@ const POSApp = () => {
     const searchCustomersByLoyalty = async (loyaltyNum) => {
         if (!loyaltyNum.trim()) {
             setCustomerSearchResults([]);
+            setCustomerPromotions([]);
             return;
         }
         
@@ -1434,12 +1436,34 @@ const POSApp = () => {
             try {
                 const customer = await window.API.customers.getByLoyalty(loyaltyNum);
                 setCustomerSearchResults([customer]);
+                
+                // Fetch promotions for this customer
+                try {
+                    const response = await fetch(`/api/loyalty/${loyaltyNum}/promotions`, {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        setCustomerPromotions(data.promotions || []);
+                    } else {
+                        console.warn('Could not fetch customer promotions');
+                        setCustomerPromotions([]);
+                    }
+                } catch (promosError) {
+                    console.warn('Error fetching customer promotions:', promosError);
+                    setCustomerPromotions([]);
+                }
+                
                 return;
             } catch (loyaltyError) {
                 // If not found, do a general search
                 if (loyaltyError.message.includes('404')) {
                     const results = await window.API.customers.search(loyaltyNum);
                     setCustomerSearchResults(results);
+                    setCustomerPromotions([]);
                     
                     if (results.length === 0) {
                         // Offer to create new customer
@@ -1457,6 +1481,7 @@ const POSApp = () => {
             console.error('Failed to search customers:', error);
             alert('Error searching for customers');
             setCustomerSearchResults([]);
+            setCustomerPromotions([]);
         } finally {
             setLoading(false);
         }
@@ -1495,7 +1520,7 @@ const POSApp = () => {
 
 
     // Get icons
-    const { ShoppingCart, Award, Package, BarChart3, Settings, Tag, ChevronDown, ChevronUp } = window.Icons;
+    const { ShoppingCart, Award, Package, BarChart3, Settings, Tag, ChevronDown, ChevronUp, Users } = window.Icons;
 
     // Authentication loading screen
     if (authLoading) {
@@ -1664,8 +1689,8 @@ const POSApp = () => {
                                     },
                                     className: 'w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
                                 }, [
-                                    React.createElement(Award, { key: 'loyalty-icon', size: 18 }),
-                                    React.createElement('span', { key: 'loyalty-text' }, 'Loyalty')
+                                    React.createElement(Users, { key: 'loyalty-icon', size: 18 }),
+                                    React.createElement('span', { key: 'loyalty-text' }, 'Customers')
                                 ]),
                                 React.createElement('button', {
                                     key: 'menu-promotions',
@@ -1853,6 +1878,7 @@ const POSApp = () => {
                 loyaltySearchTerm, 
                 setLoyaltySearchTerm: handleLoyaltySearch,
                 customerSearchResults,
+                customerPromotions,
                 onLoadCustomerHistory: loadCustomerHistory,
                 // New customer management props
                 customers,

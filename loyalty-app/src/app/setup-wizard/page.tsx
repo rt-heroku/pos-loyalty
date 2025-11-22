@@ -136,7 +136,7 @@ export default function SetupWizardPage() {
     };
 
     checkSetupStatus();
-  }, [router]);
+  }, [router, returnTo]);
 
   // Load company logo
   useEffect(() => {
@@ -223,6 +223,7 @@ export default function SetupWizardPage() {
     } else if (currentStep === 6 && connectionTestResult?.success) { // Load loyalty data on Step 6 if MuleSoft connected
       loadLoyaltyData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, connectionTestResult]);
 
   // Test MuleSoft connection
@@ -612,6 +613,7 @@ export default function SetupWizardPage() {
         <div className="mb-8 text-center">
           {companyLogo && (
             <div className="mb-6 flex justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={companyLogo}
                 alt="Company Logo"
@@ -1345,6 +1347,7 @@ sfdc.consumer_secret=`}
                       {/* Logo Preview */}
                       {step3Data.locationLogo ? (
                         <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border-2 border-gray-300">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={step3Data.locationLogo}
                             alt="Store logo"

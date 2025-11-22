@@ -4,104 +4,81 @@ if (!window.Views) {
 
 // Promotions View Component
 window.Views.PromotionsView = () => {
-    const { Grid3X3, List, Calendar, Tag } = window.Icons;
+    const { Grid3X3, List, Calendar, Tag, AlertCircle, Loader } = window.Icons;
 
     const [viewMode, setViewMode] = React.useState('list'); // 'list' or 'grid'
+    const [promotions, setPromotions] = React.useState([]);
+    const [loading, setLoading] = React.useState(true);
+    const [error, setError] = React.useState(null);
 
-    // Static promotions data from the image
-    const promotions = [
-        {
-            id: 1,
-            name: 'Holiday promotion',
-            startDate: '7/1/2025',
-            loyaltyPromotionType: '',
-            fulfillmentAction: '',
-            endDate: '',
-            enrollmentRequired: false
-        },
-        {
-            id: 2,
-            name: 'Share Post on Social',
-            startDate: '9/25/2023',
-            loyaltyPromotionType: '',
-            fulfillmentAction: '',
-            endDate: '',
-            enrollmentRequired: false
-        },
-        {
-            id: 3,
-            name: 'Welcome Offer: Complete Your Profile',
-            startDate: '9/1/2023',
-            loyaltyPromotionType: 'Standard',
-            fulfillmentAction: 'Credit Points',
-            endDate: '',
-            enrollmentRequired: true
-        },
-        {
-            id: 4,
-            name: 'Download the App',
-            startDate: '9/1/2023',
-            loyaltyPromotionType: 'Standard',
-            fulfillmentAction: 'Credit Points',
-            endDate: '',
-            enrollmentRequired: true
-        },
-        {
-            id: 5,
-            name: 'Bonus 200 points on $100 Burger Monthly Spend',
-            startDate: '9/1/2023',
-            loyaltyPromotionType: 'Cumulative',
-            fulfillmentAction: 'Credit Points',
-            endDate: '',
-            enrollmentRequired: false
-        },
-        {
-            id: 6,
-            name: 'Enrollment Free fries',
-            startDate: '9/1/2025',
-            loyaltyPromotionType: '',
-            fulfillmentAction: '',
-            endDate: '',
-            enrollmentRequired: false
-        },
-        {
-            id: 7,
-            name: '2x Points to reengage Silver Members close to Gold',
-            startDate: '10/6/2025',
-            loyaltyPromotionType: '',
-            fulfillmentAction: '',
-            endDate: '',
-            enrollmentRequired: false
-        },
-        {
-            id: 8,
-            name: 'Member Enrollment: Free Fries',
-            startDate: '10/1/2025',
-            loyaltyPromotionType: '',
-            fulfillmentAction: '',
-            endDate: '',
-            enrollmentRequired: false
-        }
-    ];
+    // Fetch promotions from API
+    React.useEffect(() => {
+        const fetchPromotions = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                
+                const response = await fetch('/api/promotions');
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch promotions');
+                }
+                
+                const data = await response.json();
+                setPromotions(data.promotions || []);
+            } catch (err) {
+                console.error('Error fetching promotions:', err);
+                setError(err.message || 'Failed to load promotions');
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        fetchPromotions();
+    }, []);
 
     // Format date
     const formatDate = (dateStr) => {
         if (!dateStr) return '-';
-        return dateStr;
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        return date.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'numeric', 
+            day: 'numeric' 
+        });
     };
 
-    // Get badge color for promotion type
-    const getPromotionTypeColor = (type) => {
+    // Get badge color for usage type
+    const getUsageTypeColor = (type) => {
         if (!type) return '';
         const colors = {
-            'Standard': 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300',
-            'Cumulative': 'bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300'
+            'Unlimited': 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300',
+            'Limited': 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300',
+            'Once': 'bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300'
         };
         return colors[type] || 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
     };
 
     // List view
     const renderListView = () => {
+        if (promotions.length === 0) {
+            return React.createElement('div', {
+                key: 'empty-list',
+                className: 'bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center'
+            }, [
+                React.createElement(Tag, {
+                    key: 'empty-icon',
+                    size: 48,
+                    className: 'mx-auto text-gray-400 mb-4'
+                }),
+                React.createElement('p', {
+                    key: 'empty-text',
+                    className: 'text-gray-500 dark:text-gray-400'
+                }, 'No active promotions available')
+            ]);
+        }
+
         return React.createElement('div', {
             key: 'list-view',
             className: 'bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden'
@@ -113,8 +90,8 @@ window.Views.PromotionsView = () => {
             }, [
                 React.createElement('div', { key: 'header-name' }, 'Name'),
                 React.createElement('div', { key: 'header-start' }, 'Start Date'),
-                React.createElement('div', { key: 'header-type' }, 'Loyalty Promotion Type'),
-                React.createElement('div', { key: 'header-action' }, 'Fulfillment Action'),
+                React.createElement('div', { key: 'header-type' }, 'Usage Type'),
+                React.createElement('div', { key: 'header-points' }, 'Reward Points'),
                 React.createElement('div', { key: 'header-end' }, 'End Date'),
                 React.createElement('div', { key: 'header-enrollment' }, 'Enrollment Required')
             ]),
@@ -126,33 +103,39 @@ window.Views.PromotionsView = () => {
             }, promotions.map(promo =>
                 React.createElement('div', {
                     key: `promo-row-${promo.id}`,
-                    className: 'grid grid-cols-6 gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors'
+                    className: 'grid grid-cols-6 gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer'
                 }, [
                     React.createElement('div', {
                         key: `name-${promo.id}`,
                         className: 'font-medium text-gray-900 dark:text-white'
-                    }, promo.name),
+                    }, [
+                        React.createElement('div', { key: `title-${promo.id}` }, promo.display_name || promo.name),
+                        promo.description && React.createElement('div', {
+                            key: `desc-${promo.id}`,
+                            className: 'text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1'
+                        }, promo.description)
+                    ]),
                     React.createElement('div', {
                         key: `start-${promo.id}`,
-                        className: 'text-gray-600 dark:text-gray-400'
-                    }, formatDate(promo.startDate)),
+                        className: 'text-gray-600 dark:text-gray-400 text-sm'
+                    }, formatDate(promo.start_date || promo.start_date_time)),
                     React.createElement('div', {
                         key: `type-${promo.id}`
-                    }, promo.loyaltyPromotionType ? React.createElement('span', {
+                    }, promo.usage_type ? React.createElement('span', {
                         key: `type-badge-${promo.id}`,
-                        className: `inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPromotionTypeColor(promo.loyaltyPromotionType)}`
-                    }, promo.loyaltyPromotionType) : React.createElement('span', {
+                        className: `inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getUsageTypeColor(promo.usage_type)}`
+                    }, promo.usage_type) : React.createElement('span', {
                         key: `type-empty-${promo.id}`,
                         className: 'text-gray-400'
                     }, '-')),
                     React.createElement('div', {
-                        key: `action-${promo.id}`,
+                        key: `points-${promo.id}`,
                         className: 'text-gray-600 dark:text-gray-400'
-                    }, promo.fulfillmentAction || '-'),
+                    }, promo.total_reward_points ? `${promo.total_reward_points} pts` : '-'),
                     React.createElement('div', {
                         key: `end-${promo.id}`,
-                        className: 'text-gray-600 dark:text-gray-400'
-                    }, formatDate(promo.endDate)),
+                        className: 'text-gray-600 dark:text-gray-400 text-sm'
+                    }, formatDate(promo.end_date || promo.end_date_time)),
                     React.createElement('div', {
                         key: `enrollment-${promo.id}`,
                         className: 'flex items-center'
@@ -160,7 +143,7 @@ window.Views.PromotionsView = () => {
                         React.createElement('input', {
                             key: `checkbox-${promo.id}`,
                             type: 'checkbox',
-                            checked: promo.enrollmentRequired,
+                            checked: promo.is_enrollment_required,
                             readOnly: true,
                             className: 'w-4 h-4 text-blue-600 rounded focus:ring-blue-500'
                         })
@@ -172,13 +155,30 @@ window.Views.PromotionsView = () => {
 
     // Grid view
     const renderGridView = () => {
+        if (promotions.length === 0) {
+            return React.createElement('div', {
+                key: 'empty-grid',
+                className: 'bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center'
+            }, [
+                React.createElement(Tag, {
+                    key: 'empty-icon',
+                    size: 48,
+                    className: 'mx-auto text-gray-400 mb-4'
+                }),
+                React.createElement('p', {
+                    key: 'empty-text',
+                    className: 'text-gray-500 dark:text-gray-400'
+                }, 'No active promotions available')
+            ]);
+        }
+
         return React.createElement('div', {
             key: 'grid-view',
             className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
         }, promotions.map(promo =>
             React.createElement('div', {
                 key: `promo-card-${promo.id}`,
-                className: 'bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow'
+                className: 'bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow cursor-pointer'
             }, [
                 // Header
                 React.createElement('div', {
@@ -195,22 +195,28 @@ window.Views.PromotionsView = () => {
                             size: 24
                         })
                     ]),
-                    promo.loyaltyPromotionType && React.createElement('span', {
+                    promo.usage_type && React.createElement('span', {
                         key: `card-type-badge-${promo.id}`,
-                        className: `px-2 py-1 text-xs font-semibold rounded-full ${getPromotionTypeColor(promo.loyaltyPromotionType)}`
-                    }, promo.loyaltyPromotionType)
+                        className: `px-2 py-1 text-xs font-semibold rounded-full ${getUsageTypeColor(promo.usage_type)}`
+                    }, promo.usage_type)
                 ]),
 
                 // Title
                 React.createElement('h3', {
                     key: `card-title-${promo.id}`,
-                    className: 'text-lg font-semibold text-gray-900 dark:text-white mb-4'
-                }, promo.name),
+                    className: 'text-lg font-semibold text-gray-900 dark:text-white mb-2'
+                }, promo.display_name || promo.name),
+
+                // Description
+                promo.description && React.createElement('p', {
+                    key: `card-desc-${promo.id}`,
+                    className: 'text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2'
+                }, promo.description),
 
                 // Details
                 React.createElement('div', {
                     key: `card-details-${promo.id}`,
-                    className: 'space-y-3'
+                    className: 'space-y-3 mt-4'
                 }, [
                     React.createElement('div', {
                         key: `card-start-${promo.id}`,
@@ -228,10 +234,10 @@ window.Views.PromotionsView = () => {
                         React.createElement('span', {
                             key: `start-value-${promo.id}`,
                             className: 'text-sm font-medium text-gray-900 dark:text-white'
-                        }, formatDate(promo.startDate))
+                        }, formatDate(promo.start_date || promo.start_date_time))
                     ]),
 
-                    promo.endDate && React.createElement('div', {
+                    (promo.end_date || promo.end_date_time) && React.createElement('div', {
                         key: `card-end-${promo.id}`,
                         className: 'flex items-center gap-2'
                     }, [
@@ -247,24 +253,24 @@ window.Views.PromotionsView = () => {
                         React.createElement('span', {
                             key: `end-value-${promo.id}`,
                             className: 'text-sm font-medium text-gray-900 dark:text-white'
-                        }, formatDate(promo.endDate))
+                        }, formatDate(promo.end_date || promo.end_date_time))
                     ]),
 
-                    promo.fulfillmentAction && React.createElement('div', {
-                        key: `card-action-${promo.id}`,
+                    promo.total_reward_points && React.createElement('div', {
+                        key: `card-points-${promo.id}`,
                         className: 'pt-3 border-t border-gray-200 dark:border-gray-700'
                     }, [
                         React.createElement('span', {
-                            key: `action-label-${promo.id}`,
+                            key: `points-label-${promo.id}`,
                             className: 'text-xs text-gray-500 dark:text-gray-400'
-                        }, 'Action:'),
+                        }, 'Reward:'),
                         React.createElement('span', {
-                            key: `action-value-${promo.id}`,
-                            className: 'ml-2 text-sm font-medium text-gray-900 dark:text-white'
-                        }, promo.fulfillmentAction)
+                            key: `points-value-${promo.id}`,
+                            className: 'ml-2 text-sm font-bold text-blue-600 dark:text-blue-400'
+                        }, `${promo.total_reward_points} Points`)
                     ]),
 
-                    promo.enrollmentRequired && React.createElement('div', {
+                    promo.is_enrollment_required && React.createElement('div', {
                         key: `card-enrollment-${promo.id}`,
                         className: 'flex items-center gap-2 pt-2'
                     }, [
@@ -284,6 +290,56 @@ window.Views.PromotionsView = () => {
             ])
         ));
     };
+
+    // Loading state
+    if (loading) {
+        return React.createElement('div', {
+            key: 'loading-view',
+            className: 'h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900'
+        }, [
+            React.createElement('div', {
+                key: 'loading-content',
+                className: 'text-center'
+            }, [
+                React.createElement(Loader, {
+                    key: 'loader-icon',
+                    size: 48,
+                    className: 'mx-auto text-blue-600 dark:text-blue-400 animate-spin'
+                }),
+                React.createElement('p', {
+                    key: 'loading-text',
+                    className: 'mt-4 text-gray-600 dark:text-gray-400'
+                }, 'Loading promotions...')
+            ])
+        ]);
+    }
+
+    // Error state
+    if (error) {
+        return React.createElement('div', {
+            key: 'error-view',
+            className: 'h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900'
+        }, [
+            React.createElement('div', {
+                key: 'error-content',
+                className: 'text-center max-w-md'
+            }, [
+                React.createElement(AlertCircle, {
+                    key: 'error-icon',
+                    size: 48,
+                    className: 'mx-auto text-red-500 mb-4'
+                }),
+                React.createElement('h2', {
+                    key: 'error-title',
+                    className: 'text-xl font-semibold text-gray-900 dark:text-white mb-2'
+                }, 'Failed to Load Promotions'),
+                React.createElement('p', {
+                    key: 'error-message',
+                    className: 'text-gray-600 dark:text-gray-400'
+                }, error)
+            ])
+        ]);
+    }
 
     return React.createElement('div', {
         key: 'promotions-view',
