@@ -184,25 +184,43 @@ export default function LoyaltyPage() {
       }
 
       // Fetch promotions data
+      console.log('[Loyalty] ===== PROMOTIONS FETCH DEBUG =====');
+      console.log('[Loyalty] User object:', user);
+      console.log('[Loyalty] User loyaltyNumber:', user?.loyaltyNumber);
+      console.log('[Loyalty] User id:', user?.id);
+      console.log('[Loyalty] User email:', user?.email);
+      
       if (user?.loyaltyNumber) {
-        console.log('[Loyalty] Fetching promotions for loyalty number:', user.loyaltyNumber);
-        const promotionsResponse = await fetch(`/loyalty/api/promotions?loyalty_number=${user.loyaltyNumber}`, {
+        const promotionsUrl = `/loyalty/api/promotions?loyalty_number=${user.loyaltyNumber}`;
+        console.log('[Loyalty] Fetching promotions from URL:', promotionsUrl);
+        
+        const promotionsResponse = await fetch(promotionsUrl, {
           credentials: 'include',
         });
+        
+        console.log('[Loyalty] Promotions response status:', promotionsResponse.status);
+        console.log('[Loyalty] Promotions response headers:', Object.fromEntries(promotionsResponse.headers.entries()));
+        
         if (promotionsResponse.ok) {
           const promotionsData = await promotionsResponse.json();
+          console.log('[Loyalty] Promotions data received:', promotionsData);
+          console.log('[Loyalty] Promotions array length:', promotionsData.promotions?.length || 0);
+          console.log('[Loyalty] Promotions array:', promotionsData.promotions);
+          
           setPromotions(promotionsData.promotions || []);
-          console.log('[Loyalty] Promotions loaded:', promotionsData.promotions?.length || 0, 'promotions:', promotionsData.promotions);
+          console.log('[Loyalty] ✅ Promotions successfully set in state');
         } else {
-          console.error('[Loyalty] Promotions fetch failed:', promotionsResponse.status);
+          console.error('[Loyalty] ❌ Promotions fetch failed with status:', promotionsResponse.status);
           const errorText = await promotionsResponse.text();
-          console.error('[Loyalty] Promotions error response:', errorText);
+          console.error('[Loyalty] Error response text:', errorText);
           setPromotions([]);
         }
       } else {
-        console.warn('[Loyalty] No loyaltyNumber found for user:', user);
+        console.warn('[Loyalty] ❌ No loyaltyNumber found for user');
+        console.warn('[Loyalty] User object keys:', Object.keys(user || {}));
         setPromotions([]);
       }
+      console.log('[Loyalty] ===== END PROMOTIONS FETCH DEBUG =====');
     } catch (error) {
       console.error('Error fetching loyalty data:', error);
     } finally {
@@ -439,11 +457,15 @@ export default function LoyaltyPage() {
           )}
 
           {/* Rewards Tab */}
-          {activeTab === 'promotions' && (
+          {activeTab === 'promotions' && (() => {
+            console.log('[Loyalty Render] Promotions tab active');
+            console.log('[Loyalty Render] Promotions state length:', promotions.length);
+            console.log('[Loyalty Render] Promotions state:', promotions);
+            return (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  My Promotions
+                  My Promotions ({promotions.length})
                 </h2>
               </div>
 
@@ -523,7 +545,8 @@ export default function LoyaltyPage() {
                 </div>
               )}
             </div>
-          )}
+            );
+          })()}
 
           {/* Vouchers Tab */}
           {activeTab === 'vouchers' && (

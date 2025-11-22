@@ -379,7 +379,9 @@ window.Views.LoyaltyView= ({
         ]);
     };
 
-    return React.createElement('div', { className: 'space-y-2 lg:space-y-3' }, [
+    return React.createElement(React.Fragment, null, [
+        // Main content div
+        React.createElement('div', { key: 'main-content', className: 'space-y-2 lg:space-y-3' }, [
         // Header with tabs
         React.createElement('div', { key: 'header', className: 'bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6' }, [
             React.createElement('div', { key: 'header-content', className: 'flex items-center justify-between mb-2' }, [
