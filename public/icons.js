@@ -278,6 +278,19 @@ window.Icons = {
         React.createElement('circle', { key: 'circle', cx: "7.5", cy: "7.5", r: ".5" })
     ]),
 
+    Ticket: (props) => React.createElement('svg', { ...iconProps, ...props }, [
+        React.createElement('path', { key: 'path', d: "M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" }),
+        React.createElement('path', { key: 'line1', d: "M13 5v2" }),
+        React.createElement('path', { key: 'line2', d: "M13 17v2" }),
+        React.createElement('path', { key: 'line3', d: "M13 11v2" })
+    ]),
+
+    ShoppingBag: (props) => React.createElement('svg', { ...iconProps, ...props }, [
+        React.createElement('path', { key: 'path1', d: "M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" }),
+        React.createElement('path', { key: 'path2', d: "M3 6h18" }),
+        React.createElement('path', { key: 'path3', d: "M16 10a4 4 0 0 1-8 0" })
+    ]),
+
     ChevronDown: (props) => React.createElement('svg', { ...iconProps, ...props }, [
         React.createElement('path', { key: 'path', d: "m6 9 6 6 6-6" })
     ]),
