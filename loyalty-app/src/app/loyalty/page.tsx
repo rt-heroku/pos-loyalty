@@ -439,6 +439,7 @@ export default function LoyaltyPage() {
                     No benefits information available for this tier.
                   </p>
                 )}
+              </div>
 
               {/* Quick Stats */}
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
