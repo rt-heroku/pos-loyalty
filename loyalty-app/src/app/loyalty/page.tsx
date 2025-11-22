@@ -272,8 +272,6 @@ export default function LoyaltyPage() {
   const tierBenefits = currentTierData?.benefits?.features || [];
   const tierDescription = currentTierData?.benefits?.description || '';
   
-  // Get badge classes from getLoyaltyTierInfo (still useful for styling)
-  const tierInfo = getLoyaltyTierInfo(normalizedTier);
   const nextTierData = currentTierIndex >= 0 && currentTierIndex < sortedTiers.length - 1 
     ? sortedTiers[currentTierIndex + 1] 
     : null;
