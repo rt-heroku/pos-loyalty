@@ -259,7 +259,6 @@ export default function LoyaltyPage() {
   };
 
   const normalizedTier = normalizeTier(pointsData?.tier || 'Bronze');
-  const tierInfo = getLoyaltyTierInfo(normalizedTier);
   
   // Calculate actual progress to next tier using database tiers
   const currentTierName = normalizedTier;
@@ -268,6 +267,13 @@ export default function LoyaltyPage() {
   const sortedTiers = [...tiers].sort((a, b) => a.tier_level - b.tier_level);
   const currentTierData = sortedTiers.find(t => normalizeTier(t.tier_name) === currentTierName);
   const currentTierIndex = sortedTiers.findIndex(t => t.id === currentTierData?.id);
+  
+  // Get tier benefits from database instead of hardcoded
+  const tierBenefits = currentTierData?.benefits?.features || [];
+  const tierDescription = currentTierData?.benefits?.description || '';
+  
+  // Get badge classes from getLoyaltyTierInfo (still useful for styling)
+  const tierInfo = getLoyaltyTierInfo(normalizedTier);
   const nextTierData = currentTierIndex >= 0 && currentTierIndex < sortedTiers.length - 1 
     ? sortedTiers[currentTierIndex + 1] 
     : null;
@@ -411,20 +417,28 @@ export default function LoyaltyPage() {
                 <h3 className="mb-4 text-lg font-semibold text-gray-900">
                   Your {normalizedTier} Benefits
                 </h3>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {tierInfo.benefits.map((benefit, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center space-x-3 rounded-lg bg-gray-50 p-3"
-                    >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100">
-                        <Award className="h-4 w-4 text-primary-600" />
+                {tierDescription && (
+                  <p className="mb-4 text-sm text-gray-600">{tierDescription}</p>
+                )}
+                {tierBenefits.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {tierBenefits.map((benefit, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center space-x-3 rounded-lg bg-gray-50 p-3"
+                      >
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100">
+                          <Award className="h-4 w-4 text-primary-600" />
+                        </div>
+                        <span className="text-sm text-gray-700">{benefit}</span>
                       </div>
-                      <span className="text-sm text-gray-700">{benefit}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    No benefits information available for this tier.
+                  </p>
+                )}
 
               {/* Quick Stats */}
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
