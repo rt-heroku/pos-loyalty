@@ -277,7 +277,7 @@ export default function LoyaltyPage() {
   
   // Calculate actual progress to next tier using database tiers
   const currentTierName = normalizedTier;
-  const currentPoints = pointsData?.currentBalance || 0;
+  const currentTierPoints = pointsData?.tierPoints || 0;
   
   const sortedTiers = [...tiers].sort((a, b) => a.tier_level - b.tier_level);
   const currentTierData = sortedTiers.find(t => normalizeTier(t.tier_name) === currentTierName);
@@ -292,22 +292,22 @@ export default function LoyaltyPage() {
     : null;
   
   let progressToNext = 0;
-  let pointsToNext = 0;
+  let tierPointsToNext = 0;
   
   if (nextTierData && currentTierData) {
     const currentTierThreshold = currentTierData.min_points;
     const nextTierThreshold = nextTierData.min_points;
-    const pointsInCurrentTier = currentPoints - currentTierThreshold;
-    const pointsNeededForNextTier = nextTierThreshold - currentTierThreshold;
+    const tierPointsInCurrentTier = currentTierPoints - currentTierThreshold;
+    const tierPointsNeededForNextTier = nextTierThreshold - currentTierThreshold;
     
-    if (pointsNeededForNextTier > 0) {
-      progressToNext = Math.min(100, Math.max(0, (pointsInCurrentTier / pointsNeededForNextTier) * 100));
-      pointsToNext = Math.max(0, nextTierThreshold - currentPoints);
+    if (tierPointsNeededForNextTier > 0) {
+      progressToNext = Math.min(100, Math.max(0, (tierPointsInCurrentTier / tierPointsNeededForNextTier) * 100));
+      tierPointsToNext = Math.max(0, nextTierThreshold - currentTierPoints);
     }
   } else if (!nextTierData && currentTierData) {
     // At max tier
     progressToNext = 100;
-    pointsToNext = 0;
+    tierPointsToNext = 0;
   }
 
   const tabs = [
@@ -376,7 +376,7 @@ export default function LoyaltyPage() {
               </div>
               <div className="text-right">
                 <div className="text-sm font-medium text-gray-900">
-                  {nextTierData ? `${pointsToNext} points to go` : 'Congratulations!'}
+                  {nextTierData ? `${tierPointsToNext} tier points to go` : 'Congratulations!'}
                 </div>
                 <div className="text-xs text-gray-500">
                   {Math.round(progressToNext)}% complete

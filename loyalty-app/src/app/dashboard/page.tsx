@@ -168,27 +168,27 @@ export default function Dashboard() {
                 Loyalty Status
               </h2>
 
-              {/* Current Points */}
+              {/* Current Tier Points */}
               <div className="mb-6">
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-600">
-                    Current Points
+                    Current Tier Points
                   </span>
                   <span className="text-2xl font-bold text-primary-600">
-                    {user.points || 0}
+                    {user.tier_points || 0}
                   </span>
                 </div>
                 <div className="h-3 w-full rounded-full bg-gray-200">
                   <div
                     className="h-3 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 transition-all duration-500"
                     style={{
-                      width: `${Math.min(100, ((user.points || 0) / (tierInfo.pointsToNext + (user.points || 0))) * 100)}%`,
+                      width: `${Math.min(100, ((user.tier_points || 0) / (tierInfo.pointsToNext + (user.tier_points || 0))) * 100)}%`,
                     }}
                   ></div>
                 </div>
                 <p className="mt-2 text-sm text-gray-500">
                   {pointsToNextTier > 0
-                    ? `${pointsToNextTier} points to reach ${nextTier} tier`
+                    ? `${pointsToNextTier} tier points to reach ${nextTier} tier`
                     : "You've reached the highest tier!"}
                 </p>
               </div>
