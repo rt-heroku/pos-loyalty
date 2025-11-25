@@ -27,6 +27,7 @@ import {
 
 interface PointsData {
   currentBalance: number;
+  tierPoints: number;
   totalEarned: number;
   totalRedeemed: number;
   totalTransactions: number;
@@ -342,12 +343,12 @@ export default function LoyaltyPage() {
               <p className="text-gray-600">Current Points</p>
             </div>
 
-            {/* Total Earned */}
+            {/* Tier Points */}
             <div className="text-center">
-              <div className="mb-2 text-2xl font-bold text-green-600">
-                {pointsData?.totalEarned?.toLocaleString() || 0}
+              <div className="mb-2 text-2xl font-bold text-orange-600">
+                {pointsData?.tierPoints?.toLocaleString() || 0}
               </div>
-              <p className="text-gray-600">Total Earned</p>
+              <p className="text-gray-600">Tier Points</p>
             </div>
 
             {/* Total Redeemed */}
