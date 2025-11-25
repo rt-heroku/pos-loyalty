@@ -2254,6 +2254,48 @@ async function syncMulesoftTiers() {
   }
 }
 
+// Helper function to pull member data from MuleSoft (async, non-blocking)
+async function pullMemberFromMulesoft(sfId) {
+  try {
+    if (!sfId) {
+      console.log('⚠️  No Salesforce ID provided, skipping member pull');
+      return;
+    }
+
+    // Get MuleSoft endpoint from system settings
+    const settingsResult = await pool.query(
+      "SELECT setting_value FROM system_settings WHERE setting_key = 'mulesoft_loyalty_sync_endpoint'"
+    );
+    
+    if (!settingsResult.rows.length || !settingsResult.rows[0].setting_value) {
+      console.log('⚠️  MuleSoft endpoint not configured, skipping member pull');
+      return;
+    }
+
+    const mulesoftEndpoint = settingsResult.rows[0].setting_value;
+    const memberPullUrl = `${mulesoftEndpoint}/members/pull/${sfId}`;
+
+    console.log('🔄 Pulling member data from MuleSoft:', memberPullUrl);
+
+    const response = await fetch(memberPullUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.MULESOFT_ACCESS_TOKEN || ''}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`✅ Successfully pulled member data from MuleSoft for SF ID: ${sfId}`);
+    } else {
+      console.error(`❌ Failed to pull member data from MuleSoft for SF ID: ${sfId}. Status:`, response.status);
+    }
+  } catch (error) {
+    console.error(`❌ Error pulling member data from MuleSoft for SF ID: ${sfId}:`, error.message);
+  }
+}
+
 // Search customer by loyalty number
 app.get('/api/customers/loyalty/:loyaltyNumber', async (req, res) => {
   try {
@@ -4894,6 +4936,26 @@ app.post('/api/mulesoft/flows', async (req, res) => {
     } catch (err) {
         console.error('Error updating MuleSoft flows:', err);
         res.status(500).json({ error: 'Failed to update flows in MuleSoft' });
+    }
+});
+
+// Pull specific member data from MuleSoft (async trigger endpoint)
+app.post('/api/mulesoft/members/pull', async (req, res) => {
+    try {
+        const { sf_id } = req.query;
+        
+        if (!sf_id) {
+            return res.status(400).json({ error: 'Salesforce ID is required' });
+        }
+        
+        // Fire async call (non-blocking)
+        pullMemberFromMulesoft(sf_id);
+        
+        // Return immediately
+        res.json({ success: true, message: 'Member pull triggered' });
+    } catch (err) {
+        console.error('Error triggering member pull:', err);
+        res.status(500).json({ error: 'Failed to trigger member pull' });
     }
 });
 

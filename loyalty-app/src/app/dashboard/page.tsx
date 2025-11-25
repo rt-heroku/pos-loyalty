@@ -29,10 +29,17 @@ export default function Dashboard() {
   useEffect(() => {
     const loadDashboardData = async () => {
       await fetchDashboardStats();
+      
+      // Trigger async member pull from MuleSoft if user has sf_id (fire-and-forget)
+      if (user?.sf_id) {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/mulesoft/members/pull?sf_id=${user.sf_id}`, {
+          method: 'POST'
+        }).catch(err => console.log('Member pull triggered (async)'));
+      }
     };
 
     loadDashboardData();
-  }, [fetchDashboardStats]);
+  }, [fetchDashboardStats, user?.sf_id]);
 
   if (loading) {
     return (

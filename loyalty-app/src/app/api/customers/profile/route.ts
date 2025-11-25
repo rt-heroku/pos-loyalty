@@ -63,6 +63,13 @@ export async function GET(request: NextRequest) {
 
     const avatar = avatarResult.rows.length > 0 ? avatarResult.rows[0] : null;
     
+    // Trigger async member pull from MuleSoft if sf_id exists (fire-and-forget)
+    if (customer.sf_id) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/mulesoft/members/pull?sf_id=${customer.sf_id}`, {
+        method: 'POST'
+      }).catch(err => console.log('Member pull triggered (async)'));
+    }
+    
     return NextResponse.json({
       success: true,
       customer: {

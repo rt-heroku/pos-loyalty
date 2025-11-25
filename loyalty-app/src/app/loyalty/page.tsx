@@ -135,6 +135,13 @@ export default function LoyaltyPage() {
     try {
       setIsLoading(true);
 
+      // Trigger async member pull from MuleSoft if user has sf_id (fire-and-forget)
+      if (user?.sf_id) {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/mulesoft/members/pull?sf_id=${user.sf_id}`, {
+          method: 'POST'
+        }).catch(err => console.log('Member pull triggered (async)'));
+      }
+
       // Fetch loyalty tiers
       const tiersResponse = await fetch('/loyalty/api/loyalty/tiers', {
         credentials: 'include',

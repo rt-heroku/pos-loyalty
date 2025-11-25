@@ -35,6 +35,13 @@ window.Modals.Customer360Modal = ({ customer, isOpen, onClose }) => {
     React.useEffect(() => {
         if (isOpen && customer) {
             fetchCustomerData();
+            
+            // Trigger async member pull from MuleSoft if sf_id exists (fire-and-forget)
+            if (customer.sf_id) {
+                fetch(`/api/mulesoft/members/pull?sf_id=${customer.sf_id}`, {
+                    method: 'POST'
+                }).catch(err => console.log('Member pull triggered (async)'));
+            }
         }
     }, [isOpen, customer?.id, activeTab]);
 
