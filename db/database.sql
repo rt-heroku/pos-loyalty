@@ -148,6 +148,7 @@ CREATE TABLE customers (
     email VARCHAR(255),
     phone VARCHAR(20),
     points INTEGER DEFAULT 0,
+    tier_points INTEGER DEFAULT 0,
     total_spent DECIMAL(10,2) DEFAULT 0.00,
     visit_count INTEGER DEFAULT 0,
     last_visit TIMESTAMP,
@@ -1089,6 +1090,7 @@ SELECT
     c.name,
     c.email,
     c.points,
+    c.tier_points,
     c.total_spent,
     c.visit_count,
     c.customer_tier,
@@ -1494,6 +1496,7 @@ ALTER TABLE customers ADD COLUMN IF NOT EXISTS enrollment_date TIMESTAMP DEFAULT
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS member_type VARCHAR(20) DEFAULT 'Individual';
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS customer_tier VARCHAR(20) DEFAULT 'Bronze';
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id);
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS tier_points INTEGER DEFAULT 0;
 
 -- Update user_sessions table to use token_hash instead of session_token for better security
 ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS token_hash VARCHAR(255);
@@ -2465,6 +2468,7 @@ SELECT
     c.email,
     c.phone,
     c.points,
+    c.tier_points,
     c.total_spent,
     c.visit_count,
     c.last_visit,
@@ -3639,6 +3643,7 @@ SELECT
     c.email,
     c.phone,
     c.points,
+    c.tier_points,
     c.total_spent,
     c.visit_count,
     c.last_visit,

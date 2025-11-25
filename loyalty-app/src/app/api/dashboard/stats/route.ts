@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const customerResult = await query(
       `SELECT 
         points, 
+        tier_points,
         total_spent, 
         visit_count, 
         created_at as member_since,
@@ -89,6 +90,7 @@ export async function GET(request: NextRequest) {
       spendingTrend: Math.round(spendingTrend * 100) / 100, // Round to 2 decimal places
       tier: customer.customer_tier,
       points: customer.points,
+      tierPoints: customer.tier_points || 0,
     });
   } catch (error) {
     console.error('Error fetching customer stats:', error);

@@ -21,7 +21,7 @@ export async function GET() {
       // Get complete user data from database
       const userResult = await query(
         `SELECT u.id, u.email, u.first_name, u.last_name, u.is_active, u.phone, r.name as role_name,
-                c.points, c.total_spent, c.visit_count, c.customer_tier, c.member_status, c.enrollment_date, c.loyalty_number
+                c.points, c.tier_points, c.total_spent, c.visit_count, c.customer_tier, c.member_status, c.enrollment_date, c.loyalty_number, c.sf_id
          FROM users u 
          LEFT JOIN roles r ON u.role_id = r.id 
          LEFT JOIN customers c ON u.id = c.user_id
@@ -44,12 +44,14 @@ export async function GET() {
         role: user.role_name || 'customer',
         phone: user.phone,
         points: user.points,
+        tierPoints: user.tier_points || 0,
         totalSpent: user.total_spent,
         visitCount: user.visit_count,
         tier: user.customer_tier || 'Bronze',
         memberStatus: user.member_status,
         enrollmentDate: user.enrollment_date,
         loyaltyNumber: user.loyalty_number,
+        sf_id: user.sf_id,
         isAuthenticated: true,
       };
 

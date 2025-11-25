@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     // Get customer data
     const customerResult = await query(
-      `SELECT c.id, c.points, c.total_spent, c.customer_tier, c.member_status, c.enrollment_date
+      `SELECT c.id, c.points, c.tier_points, c.total_spent, c.customer_tier, c.member_status, c.enrollment_date
        FROM customers c
        WHERE c.user_id = $1`,
       [user.id]
@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       currentBalance: customer.points,
+      tierPoints: customer.tier_points || 0,
       totalEarned: parseInt(stats.total_earned),
       totalRedeemed: parseInt(stats.total_redeemed),
       totalTransactions: parseInt(stats.total_transactions),

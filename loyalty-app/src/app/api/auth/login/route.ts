@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
     // Get full user data for response
     const fullUserResult = await query(
       `SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.phone, u.is_active,
-              c.points, c.total_spent, c.visit_count, c.customer_tier, c.member_status, c.enrollment_date, c.loyalty_number
+              c.points, c.tier_points, c.total_spent, c.visit_count, c.customer_tier, c.member_status, c.enrollment_date, c.loyalty_number, c.sf_id
        FROM users u
        LEFT JOIN customers c ON u.id = c.user_id
        WHERE u.id = $1`,
@@ -152,12 +152,14 @@ export async function POST(request: NextRequest) {
         role: fullUser.role,
         phone: fullUser.phone,
         points: fullUser.points,
+        tierPoints: fullUser.tier_points || 0,
         totalSpent: fullUser.total_spent,
         visitCount: fullUser.visit_count,
         tier: fullUser.customer_tier,
         memberStatus: fullUser.member_status,
         enrollmentDate: fullUser.enrollment_date,
         loyaltyNumber: fullUser.loyalty_number,
+        sf_id: fullUser.sf_id,
       },
     });
 
