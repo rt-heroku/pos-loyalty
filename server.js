@@ -2296,6 +2296,48 @@ async function pullMemberFromMulesoft(sfId) {
   }
 }
 
+// Helper function to sync member promotions from MuleSoft (async, non-blocking)
+async function syncMemberPromotionsFromMulesoft(customerId) {
+  try {
+    if (!customerId) {
+      console.log('⚠️  No customer ID provided, skipping promotions sync');
+      return;
+    }
+
+    // Get MuleSoft endpoint from system settings
+    const settingsResult = await pool.query(
+      "SELECT setting_value FROM system_settings WHERE setting_key = 'mulesoft_loyalty_sync_endpoint'"
+    );
+    
+    if (!settingsResult.rows.length || !settingsResult.rows[0].setting_value) {
+      console.log('⚠️  MuleSoft endpoint not configured, skipping promotions sync');
+      return;
+    }
+
+    const mulesoftEndpoint = settingsResult.rows[0].setting_value;
+    const promotionsUrl = `${mulesoftEndpoint}/loyalty/members/${customerId}/promotions`;
+
+    console.log('🔄 Syncing member promotions from MuleSoft:', promotionsUrl);
+
+    const response = await fetch(promotionsUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.MULESOFT_ACCESS_TOKEN || ''}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`✅ Successfully synced promotions from MuleSoft for customer ID: ${customerId}`);
+    } else {
+      console.error(`❌ Failed to sync promotions from MuleSoft for customer ID: ${customerId}. Status:`, response.status);
+    }
+  } catch (error) {
+    console.error(`❌ Error syncing promotions from MuleSoft for customer ID: ${customerId}:`, error.message);
+  }
+}
+
 // Search customer by loyalty number
 app.get('/api/customers/loyalty/:loyaltyNumber', async (req, res) => {
   try {
@@ -4956,6 +4998,26 @@ app.post('/api/mulesoft/members/pull', async (req, res) => {
     } catch (err) {
         console.error('Error triggering member pull:', err);
         res.status(500).json({ error: 'Failed to trigger member pull' });
+    }
+});
+
+// Sync member promotions from MuleSoft (async trigger endpoint)
+app.post('/api/mulesoft/members/promotions/sync', async (req, res) => {
+    try {
+        const { customer_id } = req.query;
+        
+        if (!customer_id) {
+            return res.status(400).json({ error: 'Customer ID is required' });
+        }
+        
+        // Fire async call (non-blocking)
+        syncMemberPromotionsFromMulesoft(customer_id);
+        
+        // Return immediately
+        res.json({ success: true, message: 'Promotions sync triggered' });
+    } catch (err) {
+        console.error('Error triggering promotions sync:', err);
+        res.status(500).json({ error: 'Failed to trigger promotions sync' });
     }
 });
 

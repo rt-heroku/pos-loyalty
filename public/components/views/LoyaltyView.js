@@ -338,10 +338,14 @@ window.Views.LoyaltyView= ({
                 ])
             ]),
             
-            React.createElement('div', { key: 'stats', className: 'grid grid-cols-3 gap-4 pt-3 border-t' }, [
+            React.createElement('div', { key: 'stats', className: 'grid grid-cols-4 gap-3 pt-3 border-t' }, [
                 React.createElement('div', { key: 'points', className: 'text-center' }, [
                     React.createElement('div', { key: 'points-value', className: 'font-bold text-xl text-green-600' }, customer.points || 0),
                     React.createElement('div', { key: 'points-label', className: 'text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide' }, 'Points')
+                ]),
+                React.createElement('div', { key: 'tier-points', className: 'text-center' }, [
+                    React.createElement('div', { key: 'tier-points-value', className: 'font-bold text-xl text-orange-600' }, customer.tier_points || 0),
+                    React.createElement('div', { key: 'tier-points-label', className: 'text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide' }, 'Tier Points')
                 ]),
                 React.createElement('div', { key: 'spent', className: 'text-center' }, [
                     React.createElement('div', { key: 'spent-value', className: 'font-bold text-xl text-blue-600' }, 
@@ -640,10 +644,14 @@ window.Views.LoyaltyView= ({
                                         ])
                                     ])
                                 ]),
-                                React.createElement('div', { key: 'customer-stats', className: 'grid grid-cols-3 gap-4 text-sm' }, [
+                                React.createElement('div', { key: 'customer-stats', className: 'grid grid-cols-4 gap-3 text-sm' }, [
                                     React.createElement('div', { key: 'points', className: 'text-center' }, [
                                         React.createElement('div', { key: 'points-value', className: 'font-bold text-lg text-green-600' }, customer.points || 0),
                                         React.createElement('div', { key: 'points-label', className: 'text-gray-600 dark:text-gray-300 text-xs' }, 'Points')
+                                    ]),
+                                    React.createElement('div', { key: 'tier-points', className: 'text-center' }, [
+                                        React.createElement('div', { key: 'tier-points-value', className: 'font-bold text-lg text-orange-600' }, customer.tier_points || 0),
+                                        React.createElement('div', { key: 'tier-points-label', className: 'text-gray-600 dark:text-gray-300 text-xs' }, 'Tier Points')
                                     ]),
                                     React.createElement('div', { key: 'spent', className: 'text-center' }, [
                                         React.createElement('div', { key: 'spent-value', className: 'font-bold text-lg text-blue-600' }, 

@@ -139,7 +139,7 @@ export default function LoyaltyPage() {
       if (user?.sf_id) {
         fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/mulesoft/members/pull?sf_id=${user.sf_id}`, {
           method: 'POST'
-        }).catch(err => console.log('Member pull triggered (async)'));
+        }).catch(() => console.log('Member pull triggered (async)'));
       }
 
       // Fetch loyalty tiers
@@ -197,6 +197,14 @@ export default function LoyaltyPage() {
       console.log('[Loyalty] User email:', user?.email);
       
       if (user?.loyaltyNumber) {
+        // Trigger async promotions sync from MuleSoft (fire-and-forget)
+        if (user?.id) {
+          const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+          fetch(`${backendUrl}/api/mulesoft/members/promotions/sync?customer_id=${user.id}`, {
+            method: 'POST'
+          }).catch(() => console.log('[Loyalty] Promotions sync triggered (async)'));
+        }
+
         const promotionsUrl = `/loyalty/api/promotions?loyalty_number=${user.loyaltyNumber}`;
         console.log('[Loyalty] Fetching promotions from URL:', promotionsUrl);
         

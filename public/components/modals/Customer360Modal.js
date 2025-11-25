@@ -40,7 +40,14 @@ window.Modals.Customer360Modal = ({ customer, isOpen, onClose }) => {
             if (customer.sf_id) {
                 fetch(`/api/mulesoft/members/pull?sf_id=${customer.sf_id}`, {
                     method: 'POST'
-                }).catch(err => console.log('Member pull triggered (async)'));
+                }).catch(() => console.log('Member pull triggered (async)'));
+            }
+
+            // Trigger async promotions sync from MuleSoft (fire-and-forget)
+            if (customer.id) {
+                fetch(`/api/mulesoft/members/promotions/sync?customer_id=${customer.id}`, {
+                    method: 'POST'
+                }).catch(() => console.log('Promotions sync triggered (async)'));
             }
         }
     }, [isOpen, customer?.id, activeTab]);
@@ -227,7 +234,7 @@ window.Modals.Customer360Modal = ({ customer, isOpen, onClose }) => {
 
         return React.createElement('div', { key: 'loyalty-content', className: 'space-y-6' }, [
             // Stats Cards
-            React.createElement('div', { key: 'stats', className: 'grid grid-cols-1 md:grid-cols-3 gap-4' }, [
+            React.createElement('div', { key: 'stats', className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4' }, [
                 React.createElement('div', { key: 'points', className: 'bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg p-6 border border-green-200 dark:border-green-800' }, [
                     React.createElement('div', { key: 'icon', className: 'w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mb-3' }, [
                         React.createElement(TrendingUp, { key: 'icon-inner', size: 24, className: 'text-white' })
@@ -236,6 +243,15 @@ window.Modals.Customer360Modal = ({ customer, isOpen, onClose }) => {
                         customer.points || 0
                     ),
                     React.createElement('div', { key: 'label', className: 'text-sm text-green-600 dark:text-green-500 font-medium' }, 'Loyalty Points')
+                ]),
+                React.createElement('div', { key: 'tier-points', className: 'bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-lg p-6 border border-orange-200 dark:border-orange-800' }, [
+                    React.createElement('div', { key: 'icon', className: 'w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mb-3' }, [
+                        React.createElement(TrendingUp, { key: 'icon-inner', size: 24, className: 'text-white' })
+                    ]),
+                    React.createElement('div', { key: 'value', className: 'text-3xl font-bold text-orange-700 dark:text-orange-400' }, 
+                        customer.tier_points || 0
+                    ),
+                    React.createElement('div', { key: 'label', className: 'text-sm text-orange-600 dark:text-orange-500 font-medium' }, 'Tier Points')
                 ]),
                 React.createElement('div', { key: 'spent', className: 'bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800' }, [
                     React.createElement('div', { key: 'icon', className: 'w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-3' }, [
@@ -594,6 +610,14 @@ window.Modals.Customer360Modal = ({ customer, isOpen, onClose }) => {
             setSyncing(true);
             try {
                 await fetchCustomerData();
+                
+                // Trigger async member pull from MuleSoft if sf_id exists (fire-and-forget)
+                if (customer.sf_id) {
+                    fetch(`/api/mulesoft/members/pull?sf_id=${customer.sf_id}`, {
+                        method: 'POST'
+                    }).catch(() => console.log('Member pull triggered on refresh (async)'));
+                }
+                
                 setLastSync(new Date());
                 window.NotificationManager?.success('Data Refreshed', 'All customer data has been refreshed successfully');
             } catch (error) {

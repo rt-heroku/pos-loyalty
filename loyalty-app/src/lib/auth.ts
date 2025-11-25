@@ -10,12 +10,14 @@ export interface AuthenticatedUser {
   role: string;
   phone?: string;
   points?: number;
+  tier_points?: number;
   totalSpent?: string;
   visitCount?: number;
   tier?: string;
   memberStatus?: string;
   enrollmentDate?: string;
   loyaltyNumber?: string;
+  sf_id?: string;
 }
 
 export interface JWTPayload {

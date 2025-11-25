@@ -34,7 +34,7 @@ export default function Dashboard() {
       if (user?.sf_id) {
         fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/mulesoft/members/pull?sf_id=${user.sf_id}`, {
           method: 'POST'
-        }).catch(err => console.log('Member pull triggered (async)'));
+        }).catch(() => console.log('Member pull triggered (async)'));
       }
     };
 
