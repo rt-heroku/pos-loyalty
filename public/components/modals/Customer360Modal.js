@@ -17,7 +17,7 @@ window.Modals.Customer360Modal = ({ customer, isOpen, onClose }) => {
     const { 
         X, User, Award, Tag, Ticket, ShoppingBag, Receipt, FileText,
         Mail, Phone, MapPin, Calendar, TrendingUp, CreditCard,
-        Package, Clock, CheckCircle, AlertCircle, Loader
+        Package, Clock, CheckCircle, AlertCircle, Loader, RefreshCw
     } = window.Icons;
 
     const [activeTab, setActiveTab] = React.useState('info');
@@ -28,6 +28,8 @@ window.Modals.Customer360Modal = ({ customer, isOpen, onClose }) => {
     const [salesforceOrders, setSalesforceOrders] = React.useState([]);
     const [transactions, setTransactions] = React.useState([]);
     const [customerAvatar, setCustomerAvatar] = React.useState(null);
+    const [syncing, setSyncing] = React.useState(false);
+    const [lastSync, setLastSync] = React.useState(null);
 
     // Fetch data when modal opens
     React.useEffect(() => {
@@ -579,6 +581,137 @@ window.Modals.Customer360Modal = ({ customer, isOpen, onClose }) => {
         ]);
     };
 
+    // Sync Tab Content
+    const renderSyncTab = () => {
+        const handleRefreshAll = async () => {
+            setSyncing(true);
+            try {
+                await fetchCustomerData();
+                setLastSync(new Date());
+                window.NotificationManager?.success('Data Refreshed', 'All customer data has been refreshed successfully');
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+                window.NotificationManager?.error('Refresh Failed', 'Failed to refresh customer data');
+            } finally {
+                setSyncing(false);
+            }
+        };
+
+        const handleSyncSalesforce = async () => {
+            if (!customer.sf_id) {
+                window.NotificationManager?.warning('No Salesforce ID', 'This customer is not linked to Salesforce');
+                return;
+            }
+            
+            setSyncing(true);
+            try {
+                const response = await fetch(`/api/customers/${customer.id}/sync-salesforce`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    setLastSync(new Date());
+                    window.NotificationManager?.success('Sync Complete', 'Customer data synced with Salesforce');
+                    // Refresh the page to show updated data
+                    await fetchCustomerData();
+                } else {
+                    throw new Error('Sync failed');
+                }
+            } catch (error) {
+                console.error('Error syncing with Salesforce:', error);
+                window.NotificationManager?.error('Sync Failed', 'Failed to sync with Salesforce');
+            } finally {
+                setSyncing(false);
+            }
+        };
+
+        return React.createElement('div', { key: 'sync-content', className: 'space-y-6' }, [
+            // Info Section
+            React.createElement('div', { key: 'info-section', className: 'bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800' }, [
+                React.createElement('h4', { key: 'title', className: 'font-semibold text-blue-900 dark:text-blue-300 mb-2 flex items-center gap-2' }, [
+                    React.createElement('span', { key: 'icon' }, 'ℹ️'),
+                    'Data Synchronization'
+                ]),
+                React.createElement('p', { key: 'desc', className: 'text-sm text-blue-800 dark:text-blue-400' }, 
+                    'Refresh customer data from the database or sync with external systems like Salesforce.'
+                )
+            ]),
+
+            // Last Sync Info
+            lastSync && React.createElement('div', { key: 'last-sync', className: 'text-sm text-gray-600 dark:text-gray-400' }, [
+                React.createElement('strong', { key: 'label' }, 'Last synced: '),
+                React.createElement('span', { key: 'time' }, lastSync.toLocaleString())
+            ]),
+
+            // Sync Actions
+            React.createElement('div', { key: 'actions', className: 'space-y-4' }, [
+                // Refresh All Data
+                React.createElement('div', { key: 'refresh-all', className: 'bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6' }, [
+                    React.createElement('div', { key: 'content', className: 'flex items-start justify-between' }, [
+                        React.createElement('div', { key: 'info', className: 'flex-1' }, [
+                            React.createElement('h5', { key: 'title', className: 'font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2' }, [
+                                React.createElement(RefreshCw, { key: 'icon', size: 20, className: 'text-green-600' }),
+                                'Refresh All Data'
+                            ]),
+                            React.createElement('p', { key: 'desc', className: 'text-sm text-gray-600 dark:text-gray-400' }, 
+                                'Reload all customer information including promotions, vouchers, orders, and transactions.'
+                            )
+                        ]),
+                        React.createElement('button', {
+                            key: 'btn',
+                            onClick: handleRefreshAll,
+                            disabled: syncing,
+                            className: `px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors flex items-center gap-2 ${syncing ? 'opacity-50 cursor-not-allowed' : ''}`
+                        }, [
+                            React.createElement(RefreshCw, { 
+                                key: 'icon', 
+                                size: 18, 
+                                className: syncing ? 'animate-spin' : '' 
+                            }),
+                            syncing ? 'Refreshing...' : 'Refresh'
+                        ])
+                    ])
+                ]),
+
+                // Sync with Salesforce
+                React.createElement('div', { key: 'sync-sf', className: 'bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6' }, [
+                    React.createElement('div', { key: 'content', className: 'flex items-start justify-between' }, [
+                        React.createElement('div', { key: 'info', className: 'flex-1' }, [
+                            React.createElement('h5', { key: 'title', className: 'font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2' }, [
+                                React.createElement('span', { key: 'icon', className: 'text-xl' }, '☁️'),
+                                'Sync with Salesforce'
+                            ]),
+                            React.createElement('p', { key: 'desc', className: 'text-sm text-gray-600 dark:text-gray-400 mb-2' }, 
+                                'Synchronize customer data with Salesforce. This will update loyalty points, member status, and other information.'
+                            ),
+                            customer.sf_id ?
+                                React.createElement('p', { key: 'sf-id', className: 'text-xs text-blue-600 dark:text-blue-400 font-mono' }, 
+                                    `Salesforce ID: ${customer.sf_id}`
+                                ) :
+                                React.createElement('p', { key: 'no-sf', className: 'text-xs text-amber-600 dark:text-amber-400' }, 
+                                    '⚠️ No Salesforce ID linked'
+                                )
+                        ]),
+                        React.createElement('button', {
+                            key: 'btn',
+                            onClick: handleSyncSalesforce,
+                            disabled: syncing || !customer.sf_id,
+                            className: `px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors flex items-center gap-2 ${(syncing || !customer.sf_id) ? 'opacity-50 cursor-not-allowed' : ''}`
+                        }, [
+                            React.createElement(RefreshCw, { 
+                                key: 'icon', 
+                                size: 18, 
+                                className: syncing ? 'animate-spin' : '' 
+                            }),
+                            syncing ? 'Syncing...' : 'Sync'
+                        ])
+                    ])
+                ])
+            ])
+        ]);
+    };
+
     // Render tab content
     const renderTabContent = () => {
         switch (activeTab) {
@@ -589,6 +722,7 @@ window.Modals.Customer360Modal = ({ customer, isOpen, onClose }) => {
             case 'orders': return renderOrdersTab();
             case 'transactions': return renderTransactionsTab();
             case 'notes': return renderNotesTab();
+            case 'sync': return renderSyncTab();
             default: return null;
         }
     };
@@ -601,24 +735,24 @@ window.Modals.Customer360Modal = ({ customer, isOpen, onClose }) => {
     }, [
         React.createElement('div', {
             key: 'modal-content',
-            className: 'bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col',
+            className: 'bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-[1200px] h-[800px] overflow-hidden flex flex-col',
             onClick: (e) => e.stopPropagation()
         }, [
             // Modal Header
             React.createElement('div', { 
                 key: 'header', 
-                className: 'bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex items-center justify-between'
+                className: 'flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700'
             }, [
                 React.createElement('div', { key: 'title-section' }, [
-                    React.createElement('h2', { key: 'title', className: 'text-2xl font-bold' }, 'Customer 360° View'),
-                    React.createElement('p', { key: 'subtitle', className: 'text-blue-100 text-sm mt-1' }, 
+                    React.createElement('h2', { key: 'title', className: 'text-2xl font-bold text-gray-900 dark:text-white' }, 'Customer 360° View'),
+                    React.createElement('p', { key: 'subtitle', className: 'text-gray-600 dark:text-gray-400 text-sm mt-1' }, 
                         `${customer.name} • ${customer.loyalty_number}`
                     )
                 ]),
                 React.createElement('button', {
                     key: 'close-btn',
                     onClick: onClose,
-                    className: 'p-2 hover:bg-blue-500 rounded-lg transition-colors'
+                    className: 'p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-500 dark:text-gray-400'
                 }, React.createElement(X, { key: 'close-icon', size: 24 }))
             ]),
 
@@ -634,7 +768,8 @@ window.Modals.Customer360Modal = ({ customer, isOpen, onClose }) => {
                     React.createElement(Tab, { key: 'vouchers-tab', id: 'vouchers', label: 'Vouchers', icon: Ticket }),
                     React.createElement(Tab, { key: 'orders-tab', id: 'orders', label: 'Orders', icon: ShoppingBag }),
                     React.createElement(Tab, { key: 'transactions-tab', id: 'transactions', label: 'Transactions', icon: Receipt }),
-                    React.createElement(Tab, { key: 'notes-tab', id: 'notes', label: 'Notes', icon: FileText })
+                    React.createElement(Tab, { key: 'notes-tab', id: 'notes', label: 'Notes', icon: FileText }),
+                    React.createElement(Tab, { key: 'sync-tab', id: 'sync', label: 'Sync', icon: RefreshCw })
                 ])
             ]),
 

@@ -261,3 +261,4 @@ export DATABASE_URL='postgresql://username:password@localhost:5432/dbname'
 
 **Need help?** Check the console logs or create an issue in the repository.
 
+

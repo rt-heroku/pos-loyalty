@@ -209,3 +209,4 @@ Open browser console and navigate to `/loyalty`:
 6. Click "Online Orders" tab - should see orders
 7. Report back what you see in console and on screen
 
+

@@ -210,3 +210,4 @@ Returns purchase history from POS system
 - Add filters for date ranges on orders/transactions
 - Add pagination for long lists
 
+

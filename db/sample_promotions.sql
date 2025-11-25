@@ -357,3 +357,4 @@ END $$;
 \echo '  - POS: Operations → Promotions'
 \echo '  - Loyalty: Search for customer LOY001 to see their enrolled promotions'
 
+

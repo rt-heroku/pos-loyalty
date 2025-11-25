@@ -2208,11 +2208,51 @@ app.get('/api/customers', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM customers ORDER BY name');
     res.json(result.rows);
+    
+    // Async call to MuleSoft tiers API (non-blocking, fire-and-forget)
+    syncMulesoftTiers();
   } catch (err) {
     console.error('Error fetching customers:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// Helper function to sync loyalty tiers from MuleSoft (async, non-blocking)
+async function syncMulesoftTiers() {
+  try {
+    // Get MuleSoft endpoint from system settings
+    const settingsResult = await pool.query(
+      "SELECT setting_value FROM system_settings WHERE setting_key = 'mulesoft_loyalty_sync_endpoint'"
+    );
+    
+    if (!settingsResult.rows.length || !settingsResult.rows[0].setting_value) {
+      console.log('⚠️  MuleSoft endpoint not configured, skipping tiers sync');
+      return;
+    }
+
+    const mulesoftEndpoint = settingsResult.rows[0].setting_value;
+    const tiersUrl = `${mulesoftEndpoint}/loyalty/tiers`;
+
+    console.log('🔄 Syncing loyalty tiers from MuleSoft:', tiersUrl);
+
+    const response = await fetch(tiersUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.MULESOFT_ACCESS_TOKEN || ''}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Successfully synced loyalty tiers from MuleSoft:', data?.length || 0, 'tiers');
+    } else {
+      console.error('❌ Failed to sync loyalty tiers from MuleSoft. Status:', response.status);
+    }
+  } catch (error) {
+    console.error('❌ Error syncing loyalty tiers from MuleSoft:', error.message);
+  }
+}
 
 // Search customer by loyalty number
 app.get('/api/customers/loyalty/:loyaltyNumber', async (req, res) => {
@@ -7036,9 +7076,9 @@ app.get('/api/customers/:id/promotions', async (req, res) => {
     
     // First get customer details to know their tier
     const customerResult = await pool.query(`
-      SELECT c.*, lt.name as tier_name, lt.id as tier_id
+      SELECT c.*, lt.tier_name, lt.id as tier_id
       FROM customers c
-      LEFT JOIN loyalty_tiers lt ON c.customer_tier = lt.name
+      LEFT JOIN loyalty_tiers lt ON c.customer_tier = lt.tier_name
       WHERE c.id = $1
     `, [id]);
     
@@ -7052,15 +7092,15 @@ app.get('/api/customers/:id/promotions', async (req, res) => {
     const customerPromotionsQuery = await pool.query(`
       SELECT 
         p.*,
-        cp.enrollment_date,
-        cp.enrollment_status,
-        cp.progress,
+        cp.enrolled_at as enrollment_date,
+        cp.is_enrollment_active as enrollment_status,
+        cp.cumulative_usage_complete_percent as progress,
         true as is_enrolled,
         'customer' as promotion_source
       FROM customer_promotions cp
       INNER JOIN promotions p ON cp.promotion_id = p.id
       WHERE cp.customer_id = $1 AND p.is_active = true
-      ORDER BY cp.enrollment_date DESC
+      ORDER BY cp.enrolled_at DESC
     `, [id]);
     
     // Get tier promotions (if customer has a tier)
@@ -7118,14 +7158,30 @@ app.get('/api/customers/:id/transactions', async (req, res) => {
         t.id,
         t.created_at,
         t.total,
+        t.subtotal,
+        t.tax,
         t.payment_method,
         t.status,
-        t.items,
-        t.transaction_type,
-        l.store_name as location_name
+        t.discount_amount,
+        t.points_earned,
+        t.points_redeemed,
+        l.store_name as location_name,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'name', ti.product_name,
+              'quantity', ti.quantity,
+              'price', ti.product_price,
+              'subtotal', ti.subtotal
+            ) ORDER BY ti.id
+          ) FILTER (WHERE ti.id IS NOT NULL),
+          '[]'
+        ) as items
       FROM transactions t
       LEFT JOIN locations l ON t.location_id = l.id
+      LEFT JOIN transaction_items ti ON t.id = ti.transaction_id
       WHERE t.customer_id = $1
+      GROUP BY t.id, l.store_name
       ORDER BY t.created_at DESC
       LIMIT 50
     `, [id]);
@@ -7160,7 +7216,7 @@ app.get('/api/customers/:id/salesforce-orders', async (req, res) => {
     
     // Get MuleSoft endpoint from settings
     const settingsResult = await pool.query(
-      "SELECT setting_value FROM settings WHERE setting_key = 'mulesoft_endpoint' LIMIT 1"
+      "SELECT setting_value FROM system_settings WHERE setting_key = 'mulesoft_endpoint' LIMIT 1"
     );
     
     if (settingsResult.rows.length === 0) {

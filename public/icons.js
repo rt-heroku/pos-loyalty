@@ -342,5 +342,9 @@ window.Icons = {
         React.createElement('circle', { key: 'circle1', cx: "12", cy: "12", r: "1" }),
         React.createElement('circle', { key: 'circle2', cx: "12", cy: "5", r: "1" }),
         React.createElement('circle', { key: 'circle3', cx: "12", cy: "19", r: "1" })
+    ]),
+
+    Loader: (props) => React.createElement('svg', { ...iconProps, ...props }, [
+        React.createElement('path', { key: 'path', d: "M21 12a9 9 0 1 1-6.219-8.56" })
     ])
 };

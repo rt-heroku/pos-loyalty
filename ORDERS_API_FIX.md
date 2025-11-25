@@ -166,3 +166,4 @@ The `/loyalty/api/orders` route was likely copied from the shop app which uses a
 3. Test orders display in loyalty app at `/loyalty`
 4. Verify console logs show successful authentication
 
+

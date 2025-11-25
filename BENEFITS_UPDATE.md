@@ -157,3 +157,4 @@ The React Hooks error was **already fixed** in the code, but your browser is **c
 - The loyalty app fetches tiers on page load via `/loyalty/api/loyalty/tiers`
 - Benefits are displayed in a 2-column grid on desktop, 1-column on mobile
 
+
