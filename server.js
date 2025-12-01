@@ -7223,7 +7223,10 @@ app.get('/api/customers/:id/promotions', async (req, res) => {
         'customer' as promotion_source
       FROM customer_promotions cp
       INNER JOIN promotions p ON cp.promotion_id = p.id
-      WHERE cp.customer_id = $1 AND p.is_active = true
+      WHERE cp.customer_id = $1 
+        AND p.is_active = true
+        AND (p.start_date_time IS NULL OR p.start_date_time <= NOW())
+        AND (p.end_date_time IS NULL OR p.end_date_time >= NOW())
       ORDER BY cp.enrolled_at DESC
     `, [id]);
     
@@ -7237,7 +7240,10 @@ app.get('/api/customers/:id/promotions', async (req, res) => {
           'tier' as promotion_source
         FROM loyalty_tier_promotions ltp
         INNER JOIN promotions p ON ltp.promotion_id = p.id
-        WHERE ltp.loyalty_tier_id = $1 AND p.is_active = true
+        WHERE ltp.loyalty_tier_id = $1 
+          AND p.is_active = true
+          AND (p.start_date_time IS NULL OR p.start_date_time <= NOW())
+          AND (p.end_date_time IS NULL OR p.end_date_time >= NOW())
       `, [customer.tier_id]);
     }
     
@@ -7249,6 +7255,8 @@ app.get('/api/customers/:id/promotions', async (req, res) => {
         'general' as promotion_source
       FROM promotions p
       WHERE p.is_active = true
+        AND (p.start_date_time IS NULL OR p.start_date_time <= NOW())
+        AND (p.end_date_time IS NULL OR p.end_date_time >= NOW())
         AND p.id NOT IN (
           SELECT promotion_id FROM loyalty_tier_promotions
         )

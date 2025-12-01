@@ -321,7 +321,34 @@ window.Modals.Customer360Modal = ({ customer, isOpen, onClose }) => {
             ]);
         }
 
-        if (promotions.length === 0) {
+        // Filter promotions to ensure they're active and within date range
+        const now = new Date();
+        const activePromotions = promotions.filter(promo => {
+            // Check if active
+            if (!promo.is_active) return false;
+            
+            // Check start date
+            if (promo.start_date_time) {
+                const startDate = new Date(promo.start_date_time);
+                if (startDate > now) return false;
+            } else if (promo.start_date) {
+                const startDate = new Date(promo.start_date);
+                if (startDate > now) return false;
+            }
+            
+            // Check end date
+            if (promo.end_date_time) {
+                const endDate = new Date(promo.end_date_time);
+                if (endDate < now) return false;
+            } else if (promo.end_date) {
+                const endDate = new Date(promo.end_date);
+                if (endDate < now) return false;
+            }
+            
+            return true;
+        });
+
+        if (activePromotions.length === 0) {
             return React.createElement('div', { key: 'empty', className: 'text-center py-12' }, [
                 React.createElement(Tag, { key: 'icon', size: 48, className: 'mx-auto text-gray-400 mb-4' }),
                 React.createElement('p', { key: 'text', className: 'text-gray-600 dark:text-gray-400' }, 'No promotions available')
@@ -329,9 +356,9 @@ window.Modals.Customer360Modal = ({ customer, isOpen, onClose }) => {
         }
 
         // Group promotions by source
-        const customerPromotions = promotions.filter(p => p.promotion_source === 'customer');
-        const tierPromotions = promotions.filter(p => p.promotion_source === 'tier');
-        const generalPromotions = promotions.filter(p => p.promotion_source === 'general');
+        const customerPromotions = activePromotions.filter(p => p.promotion_source === 'customer');
+        const tierPromotions = activePromotions.filter(p => p.promotion_source === 'tier');
+        const generalPromotions = activePromotions.filter(p => p.promotion_source === 'general');
 
         const renderPromotionCard = (promo) => (
             React.createElement('div', {

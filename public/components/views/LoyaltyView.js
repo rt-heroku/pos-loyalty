@@ -671,22 +671,58 @@ window.Views.LoyaltyView= ({
             ]),
 
             // Customer Promotions
-            customerSearchResults.length > 0 && customerPromotions.length > 0 && React.createElement('div', { 
-                key: 'customer-promotions', 
-                className: 'bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6' 
-            }, [
-                React.createElement('h4', { 
-                    key: 'promotions-title', 
-                    className: 'font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2' 
+            customerSearchResults.length > 0 && customerPromotions.length > 0 && (() => {
+                // Filter promotions to ensure they're active and within date range
+                const now = new Date();
+                const activePromotions = customerPromotions.filter(promo => {
+                    // Check if active
+                    if (!promo.is_active) return false;
+                    
+                    // Check start date
+                    if (promo.start_date_time) {
+                        const startDate = new Date(promo.start_date_time);
+                        if (startDate > now) return false;
+                    } else if (promo.start_date) {
+                        const startDate = new Date(promo.start_date);
+                        if (startDate > now) return false;
+                    }
+                    
+                    // Check end date
+                    if (promo.end_date_time) {
+                        const endDate = new Date(promo.end_date_time);
+                        if (endDate < now) return false;
+                    } else if (promo.end_date) {
+                        const endDate = new Date(promo.end_date);
+                        if (endDate < now) return false;
+                    }
+                    
+                    return true;
+                });
+                
+                // Group by enrollment status
+                const enrolledPromotions = activePromotions.filter(p => p.is_enrolled);
+                const availablePromotions = activePromotions.filter(p => !p.is_enrolled);
+                
+                if (activePromotions.length === 0) return null;
+                
+                return React.createElement('div', { 
+                    key: 'customer-promotions', 
+                    className: 'bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-6' 
                 }, [
-                    React.createElement(Tag, { key: 'promotions-icon', size: 18 }),
-                    'Available Promotions'
-                ]),
-                React.createElement('div', { 
-                    key: 'promotions-grid', 
-                    className: 'grid grid-cols-1 md:grid-cols-2 gap-4' 
-                }, 
-                    customerPromotions.map(promo => 
+                    // My Enrolled Promotions Section
+                    enrolledPromotions.length > 0 && React.createElement('div', { key: 'enrolled-section' }, [
+                        React.createElement('h4', { 
+                            key: 'enrolled-title', 
+                            className: 'font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2' 
+                        }, [
+                            React.createElement('span', { key: 'icon', className: 'text-green-600' }, '✓'),
+                            `My Enrolled Promotions (${enrolledPromotions.length})`
+                        ]),
+                        React.createElement('div', { 
+                            key: 'enrolled-grid', 
+                            className: 'grid grid-cols-1 md:grid-cols-2 gap-4' 
+                        }, 
+                            enrolledPromotions.map(promo => 
                         React.createElement('div', { 
                             key: `promo-${promo.id}`, 
                             className: `p-4 border rounded-lg transition-all ${
@@ -770,9 +806,83 @@ window.Views.LoyaltyView= ({
                                 ])
                             ])
                         ])
-                    )
-                )
-            ])
+                            )
+                        )
+                    ]),
+                    
+                    // Available Promotions Section
+                    availablePromotions.length > 0 && React.createElement('div', { key: 'available-section' }, [
+                        React.createElement('h4', { 
+                            key: 'available-title', 
+                            className: 'font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2' 
+                        }, [
+                            React.createElement(Tag, { key: 'promotions-icon', size: 18 }),
+                            `Available Promotions (${availablePromotions.length})`
+                        ]),
+                        React.createElement('div', { 
+                            key: 'available-grid', 
+                            className: 'grid grid-cols-1 md:grid-cols-2 gap-4' 
+                        }, 
+                            availablePromotions.map(promo => 
+                                React.createElement('div', { 
+                                    key: `promo-${promo.id}`, 
+                                    className: 'p-4 border rounded-lg transition-all border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
+                                }, [
+                                    // Header
+                                    React.createElement('div', { 
+                                        key: 'promo-header', 
+                                        className: 'flex items-start justify-between mb-3' 
+                                    }, [
+                                        React.createElement('div', { key: 'promo-icon', className: 'w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center' }, [
+                                            React.createElement(Tag, { key: 'icon', size: 20, className: 'text-blue-600 dark:text-blue-400' })
+                                        ])
+                                    ]),
+                                    
+                                    // Title and description
+                                    React.createElement('h5', { 
+                                        key: 'promo-title', 
+                                        className: 'font-semibold text-gray-900 dark:text-white mb-1' 
+                                    }, promo.display_name || promo.name),
+                                    
+                                    promo.description && React.createElement('p', { 
+                                        key: 'promo-desc', 
+                                        className: 'text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2' 
+                                    }, promo.description),
+                                    
+                                    // Details
+                                    React.createElement('div', { key: 'promo-details', className: 'space-y-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700' }, [
+                                        promo.total_reward_points && React.createElement('div', {
+                                            key: 'points',
+                                            className: 'flex items-center gap-2 text-sm'
+                                        }, [
+                                            React.createElement(TrendingUp, { key: 'points-icon', size: 14, className: 'text-blue-600 dark:text-blue-400' }),
+                                            React.createElement('span', { key: 'points-text', className: 'font-semibold text-blue-600 dark:text-blue-400' }, 
+                                                `${promo.total_reward_points} Points`)
+                                        ]),
+                                        
+                                        (promo.start_date || promo.start_date_time) && React.createElement('div', {
+                                            key: 'dates',
+                                            className: 'flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400'
+                                        }, [
+                                            React.createElement(Calendar, { key: 'date-icon', size: 12 }),
+                                            React.createElement('span', { key: 'date-text' }, 
+                                                `Until ${new Date(promo.end_date || promo.end_date_time || Date.now() + 30*24*60*60*1000).toLocaleDateString()}`)
+                                        ]),
+                                        
+                                        promo.is_enrollment_required && React.createElement('div', {
+                                            key: 'enroll-notice',
+                                            className: 'text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1'
+                                        }, [
+                                            React.createElement('span', { key: 'icon' }, '⚠️'),
+                                            React.createElement('span', { key: 'text' }, 'Enrollment required')
+                                        ])
+                                    ])
+                                ])
+                            )
+                        )
+                    ])
+                ]);
+            })()
         ]),
 
         // Customer Management Tab

@@ -14,6 +14,7 @@ import {
   Users,
   Copy,
   Check,
+  CheckCircle,
   X,
   AlertCircle,
   ShoppingBag,
@@ -489,81 +490,191 @@ export default function LoyaltyPage() {
             console.log('[Loyalty Render] Promotions tab active');
             console.log('[Loyalty Render] Promotions state length:', promotions.length);
             console.log('[Loyalty Render] Promotions state:', promotions);
+            
+            // Filter promotions to ensure they're active and within date range
+            const now = new Date();
+            const activePromotions = promotions.filter(promo => {
+              // Check if active
+              if (!promo.is_active) return false;
+              
+              // Check start date
+              if (promo.start_date_time) {
+                const startDate = new Date(promo.start_date_time);
+                if (startDate > now) return false;
+              } else if (promo.start_date) {
+                const startDate = new Date(promo.start_date);
+                if (startDate > now) return false;
+              }
+              
+              // Check end date
+              if (promo.end_date_time) {
+                const endDate = new Date(promo.end_date_time);
+                if (endDate < now) return false;
+              } else if (promo.end_date) {
+                const endDate = new Date(promo.end_date);
+                if (endDate < now) return false;
+              }
+              
+              return true;
+            });
+            
+            // Group promotions by enrollment status
+            const enrolledPromotions = activePromotions.filter(p => p.is_enrolled);
+            const availablePromotions = activePromotions.filter(p => !p.is_enrolled);
+            
             return (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  My Promotions ({promotions.length})
-                </h2>
-              </div>
+            <div className="space-y-8">
+              {/* My Enrolled Promotions Section */}
+              {enrolledPromotions.length > 0 && (
+                <div>
+                  <div className="mb-4 flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        My Enrolled Promotions ({enrolledPromotions.length})
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Promotions you're currently enrolled in
+                      </p>
+                    </div>
+                  </div>
 
-              {promotions.length > 0 ? (
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {promotions.map(promo => (
-                    <div
-                      key={promo.id}
-                      className={cn(
-                        "rounded-xl border p-6 transition-shadow hover:shadow-lg",
-                        promo.is_enrolled
-                          ? 'border-green-300 bg-green-50'
-                          : 'border-gray-200 bg-gray-50'
-                      )}
-                    >
-                      {promo.image_url && (
-                        <div className="mb-4 h-32 w-full overflow-hidden rounded-lg">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={promo.image_url}
-                            alt={promo.name}
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                      )}
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {enrolledPromotions.map(promo => (
+                      <div
+                        key={promo.id}
+                        className="rounded-xl border border-green-300 bg-green-50 p-6 transition-shadow hover:shadow-lg"
+                      >
+                        {promo.image_url && (
+                          <div className="mb-4 h-32 w-full overflow-hidden rounded-lg">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={promo.image_url}
+                              alt={promo.name}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        )}
 
-                      <div className="mb-4">
-                        <div className="mb-2 flex items-start justify-between">
-                          <h3 className="font-semibold text-gray-900">
-                            {promo.display_name || promo.name}
-                          </h3>
-                          {promo.is_enrolled && (
+                        <div className="mb-4">
+                          <div className="mb-2 flex items-start justify-between">
+                            <h4 className="font-semibold text-gray-900">
+                              {promo.display_name || promo.name}
+                            </h4>
                             <span className="rounded-full bg-green-600 px-2 py-1 text-xs font-medium text-white">
                               ✓ Enrolled
                             </span>
+                          </div>
+                          {promo.description && (
+                            <p className="mb-3 text-sm text-gray-600">
+                              {promo.description}
+                            </p>
+                          )}
+                          {promo.total_reward_points && (
+                            <div className="text-lg font-bold text-primary-600">
+                              {promo.total_reward_points} points
+                            </div>
                           )}
                         </div>
-                        {promo.description && (
-                          <p className="mb-3 text-sm text-gray-600">
-                            {promo.description}
-                          </p>
-                        )}
-                        {promo.total_reward_points && (
-                          <div className="text-lg font-bold text-primary-600">
-                            {promo.total_reward_points} points
-                          </div>
-                        )}
-                      </div>
 
-                      <div className="space-y-2 text-xs text-gray-500">
-                        {promo.promotion_source && (
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium">Type:</span>
-                            <span className="capitalize">{promo.promotion_source}</span>
-                          </div>
-                        )}
-                        {promo.start_date && (
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>
-                              {new Date(promo.start_date).toLocaleDateString()}
-                              {promo.end_date && ` - ${new Date(promo.end_date).toLocaleDateString()}`}
-                            </span>
-                          </div>
-                        )}
+                        <div className="space-y-2 text-xs text-gray-500">
+                          {promo.enrolled_at && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">Enrolled:</span>
+                              <span>{new Date(promo.enrolled_at).toLocaleDateString()}</span>
+                            </div>
+                          )}
+                          {(promo.start_date_time || promo.start_date) && (
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              <span>
+                                {new Date(promo.start_date_time || promo.start_date).toLocaleDateString()}
+                                {(promo.end_date_time || promo.end_date) && 
+                                  ` - ${new Date(promo.end_date_time || promo.end_date).toLocaleDateString()}`}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              ) : (
+              )}
+
+              {/* Available Promotions Section */}
+              {availablePromotions.length > 0 && (
+                <div>
+                  <div className="mb-4 flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
+                      <Gift className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        Available Promotions ({availablePromotions.length})
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        General promotions available to all members
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {availablePromotions.map(promo => (
+                      <div
+                        key={promo.id}
+                        className="rounded-xl border border-gray-200 bg-gray-50 p-6 transition-shadow hover:shadow-lg"
+                      >
+                        {promo.image_url && (
+                          <div className="mb-4 h-32 w-full overflow-hidden rounded-lg">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={promo.image_url}
+                              alt={promo.name}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        )}
+
+                        <div className="mb-4">
+                          <div className="mb-2">
+                            <h4 className="font-semibold text-gray-900">
+                              {promo.display_name || promo.name}
+                            </h4>
+                          </div>
+                          {promo.description && (
+                            <p className="mb-3 text-sm text-gray-600">
+                              {promo.description}
+                            </p>
+                          )}
+                          {promo.total_reward_points && (
+                            <div className="text-lg font-bold text-primary-600">
+                              {promo.total_reward_points} points
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-2 text-xs text-gray-500">
+                          {(promo.start_date_time || promo.start_date) && (
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              <span>
+                                {new Date(promo.start_date_time || promo.start_date).toLocaleDateString()}
+                                {(promo.end_date_time || promo.end_date) && 
+                                  ` - ${new Date(promo.end_date_time || promo.end_date).toLocaleDateString()}`}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* No Promotions Message */}
+              {enrolledPromotions.length === 0 && availablePromotions.length === 0 && (
                 <div className="py-12 text-center">
                   <Gift className="mx-auto mb-4 h-16 w-16 text-gray-300" />
                   <p className="text-gray-500">No promotions available</p>
